@@ -120,6 +120,20 @@ export default function BookingPage() {
     );
   }
 
+  if (!(salon as any).online_booking_active) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-8 pb-8 space-y-3">
+            <Scissors className="h-12 w-12 mx-auto text-muted-foreground/40" />
+            <h2 className="text-xl font-bold">Online Randevu Kapalı</h2>
+            <p className="text-muted-foreground text-sm">{salon.name} şu anda online randevu kabul etmemektedir.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const handleBook = async () => {
     if (!selectedService || !selectedStaffId || !selectedDate || !selectedTime || !customerName || !customerPhone) {
       toast.error('Lütfen tüm bilgileri doldurun.');
