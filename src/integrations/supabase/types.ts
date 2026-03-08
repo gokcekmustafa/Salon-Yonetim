@@ -391,6 +391,88 @@ export type Database = {
         }
         Relationships: []
       }
+      popup_announcements: {
+        Row: {
+          created_at: string
+          created_by: string
+          duration_seconds: number
+          id: string
+          is_active: boolean
+          link_label: string | null
+          link_url: string | null
+          message: string
+          salon_id: string | null
+          target_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          duration_seconds?: number
+          id?: string
+          is_active?: boolean
+          link_label?: string | null
+          link_url?: string | null
+          message: string
+          salon_id?: string | null
+          target_type?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          duration_seconds?: number
+          id?: string
+          is_active?: boolean
+          link_label?: string | null
+          link_url?: string | null
+          message?: string
+          salon_id?: string | null
+          target_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "popup_announcements_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      popup_views: {
+        Row: {
+          id: string
+          popup_id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          popup_id: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          popup_id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "popup_views_popup_id_fkey"
+            columns: ["popup_id"]
+            isOneToOne: false
+            referencedRelation: "popup_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
