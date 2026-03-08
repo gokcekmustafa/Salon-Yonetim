@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSalonData, DbAppointment } from '@/hooks/useSalonData';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -258,7 +258,7 @@ export default function AppointmentsPage() {
       {/* New Appointment Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Yeni Randevu</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Yeni Randevu</DialogTitle><DialogDescription>Randevu bilgilerini girin</DialogDescription></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>Müşteri</Label>
@@ -308,7 +308,7 @@ export default function AppointmentsPage() {
       {/* Appointment Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={v => { setDetailOpen(v); if (!v) setDetailApt(null); }}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Randevu Detayı</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Randevu Detayı</DialogTitle><DialogDescription>Randevu bilgilerini görüntüleyin</DialogDescription></DialogHeader>
           {currentDetailApt && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">

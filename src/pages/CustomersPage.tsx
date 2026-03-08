@@ -3,7 +3,7 @@ import { useSalonData, DbCustomer } from '@/hooks/useSalonData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -148,7 +148,7 @@ export default function CustomersPage() {
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editing ? 'Müşteri Düzenle' : 'Yeni Müşteri'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? 'Müşteri Düzenle' : 'Yeni Müşteri'}</DialogTitle><DialogDescription>{editing ? 'Müşteri bilgilerini güncelleyin' : 'Yeni müşteri ekleyin'}</DialogDescription></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2"><Label className="text-xs font-semibold">Ad Soyad</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ad Soyad" className="h-10" /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Telefon</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0500 000 0000" type="tel" className="h-10" /></div>
@@ -167,7 +167,7 @@ export default function CustomersPage() {
       {/* History Dialog */}
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{selectedCustomer?.name} — Geçmiş</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{selectedCustomer?.name} — Geçmiş</DialogTitle><DialogDescription>Müşterinin geçmiş randevuları</DialogDescription></DialogHeader>
           {customerAppointments.length === 0 ? (
             <div className="empty-state py-8"><History className="empty-state-icon !h-8 !w-8" /><p className="empty-state-title">Geçmiş randevu yok</p></div>
           ) : (

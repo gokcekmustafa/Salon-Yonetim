@@ -3,7 +3,7 @@ import { useSalonData, DbBranch } from '@/hooks/useSalonData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Pencil, Trash2, Building2, MapPin, Phone, Loader2, Users } from 'lucide-react';
@@ -84,7 +84,7 @@ export default function BranchesPage() {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editing ? 'Şube Düzenle' : 'Yeni Şube'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? 'Şube Düzenle' : 'Yeni Şube'}</DialogTitle><DialogDescription>{editing ? 'Şube bilgilerini güncelleyin' : 'Yeni şube ekleyin'}</DialogDescription></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2"><Label className="text-xs font-semibold">Şube Adı</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Kadıköy Şubesi" className="h-10" /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Adres</Label><Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Kadıköy, İstanbul" className="h-10" /></div>
