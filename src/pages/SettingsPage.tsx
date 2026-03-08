@@ -9,9 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, MessageSquare, Phone, Clock, Send, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ChangeOwnPassword } from '@/components/password/ChangeOwnPassword';
+import { StaffPasswordManager } from '@/components/password/StaffPasswordManager';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
   const { salon, notificationSettings, updateNotificationSettings, loading } = useSalonData();
+  const { isSalonAdmin, isSuperAdmin } = useAuth();
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
@@ -41,6 +45,11 @@ export default function SettingsPage() {
           <div><p className="text-sm font-medium text-muted-foreground">Adres</p><p className="font-medium">{salon?.address || '-'}</p></div>
         </CardContent>
       </Card>
+
+      {/* Password Management */}
+      <ChangeOwnPassword />
+
+      {(isSalonAdmin || isSuperAdmin) && <StaffPasswordManager />}
 
       {ns && (
         <Card>
