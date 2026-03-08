@@ -58,6 +58,11 @@ export default function SettingsPage() {
         <AnnouncementManager mode="salon_admin" salonId={currentSalonId} />
       )}
 
+      {/* Salon Popup Announcements */}
+      {(isSalonAdmin || isSuperAdmin) && currentSalonId && (
+        <PopupManager mode="salon_admin" salonId={currentSalonId} />
+      )}
+
       {ns && (
         <Card>
           <CardHeader>
