@@ -453,7 +453,7 @@ export default function AppointmentsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>Tarih</Label>
                 <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
@@ -462,7 +462,7 @@ export default function AppointmentsPage() {
                 <Label>Saat</Label>
                 <Input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 col-span-2 sm:col-span-1">
                 <Label>Süre (dk)</Label>
                 <Select value={form.duration} onValueChange={v => setForm(f => ({ ...f, duration: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
