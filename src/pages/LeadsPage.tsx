@@ -281,14 +281,14 @@ export default function LeadsPage() {
       </div>
 
       {/* Search */}
-      <div className="flex gap-2 items-center max-w-lg">
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:max-w-lg">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Aday ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-10" />
         </div>
         {activeStaff.length > 0 && (
           <Select value={staffFilter} onValueChange={setStaffFilter}>
-            <SelectTrigger className="h-10 w-48"><SelectValue placeholder="Personele göre" /></SelectTrigger>
+            <SelectTrigger className="h-10 w-full sm:w-48"><SelectValue placeholder="Personele göre" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tüm Personel</SelectItem>
               {activeStaff.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
