@@ -408,6 +408,17 @@ export default function LeadsPage() {
                 </Select>
               </div>
             </div>
+            {activeStaff.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Görüşen Personel</Label>
+                <Select value={form.assigned_staff_id} onValueChange={v => setForm({ ...form, assigned_staff_id: v })}>
+                  <SelectTrigger className="h-10"><SelectValue placeholder="Personel seçin" /></SelectTrigger>
+                  <SelectContent>
+                    {activeStaff.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
