@@ -34,6 +34,7 @@ import {
   Bell,
   Activity,
   BadgeDollarSign,
+  CreditCard,
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
