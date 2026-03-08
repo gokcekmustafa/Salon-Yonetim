@@ -55,7 +55,7 @@ const financeMenu: MenuItem[] = [
 
 const otherMenu: MenuItem[] = [
   { title: 'Bildirimler', url: '/bildirimler', icon: Bell },
-  { title: 'Online Randevu', url: '/online-randevu', icon: Globe },
+  // Online Randevu link is dynamically set based on salon slug
   { title: 'Ayarlar', url: '/ayarlar', icon: Settings, roles: ['super_admin', 'salon_admin'] },
 ];
 
