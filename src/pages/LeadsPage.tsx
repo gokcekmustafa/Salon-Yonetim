@@ -348,6 +348,9 @@ export default function LeadsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
+                      <span className="text-xs text-muted-foreground">{lead.assigned_staff_id ? (activeStaff.find(s => s.id === lead.assigned_staff_id)?.name || '—') : '—'}</span>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <span className="text-xs text-muted-foreground">{lead.source || '—'}</span>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
