@@ -146,6 +146,8 @@ export default function AppointmentsPage() {
 
   const currentDetailApt = detailApt ? (appointments.find(a => a.id === detailApt.id) || detailApt) : null;
 
+  if (!hasPermission('can_manage_appointments')) return <NoPermission feature="Randevu Yönetimi" />;
+
   return (
     <div className="page-container animate-in">
       {/* Header */}
