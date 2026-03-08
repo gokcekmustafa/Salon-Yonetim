@@ -74,6 +74,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { roles, isSuperAdmin } = useAuth();
   const { hasPermission } = usePermissions();
+  const { branding } = useBranding();
 
   const filterByRole = (items: MenuItem[]) =>
     items.filter(item => {
