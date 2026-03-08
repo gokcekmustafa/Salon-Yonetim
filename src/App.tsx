@@ -23,6 +23,7 @@ import AuthPage from "./pages/AuthPage";
 import InstallmentsPage from "./pages/InstallmentsPage";
 import SessionsPage from "./pages/SessionsPage";
 import ContractsPage from "./pages/ContractsPage";
+import StaffPerformancePage from "./pages/StaffPerformancePage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
 import NotificationsPage from "./pages/NotificationsPage";
