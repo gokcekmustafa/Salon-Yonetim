@@ -18,6 +18,7 @@ import SettingsPage from "./pages/SettingsPage";
 import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
 import AuthPage from "./pages/AuthPage";
+import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
