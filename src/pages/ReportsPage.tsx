@@ -17,8 +17,10 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import {
   Building2, Users, UserCheck, TrendingUp, Wallet,
-  Calendar as CalendarIcon, BarChart3, Scissors, Banknote, CreditCard, ArrowRightLeft,
+  Calendar as CalendarIcon, BarChart3, Scissors, Banknote, CreditCard, ArrowRightLeft, FileSpreadsheet, FileText,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import {
   format, subDays, subMonths, subWeeks, eachDayOfInterval, eachMonthOfInterval, eachWeekOfInterval,
   isSameDay, isSameMonth, isSameWeek, parseISO, startOfDay, startOfWeek, startOfYear, endOfYear,
