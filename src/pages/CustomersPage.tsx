@@ -173,6 +173,10 @@ export default function CustomersPage() {
                   <TableCell className="hidden lg:table-cell text-muted-foreground">{c.tc_kimlik_no || '-'}</TableCell>
                   <TableCell className="hidden xl:table-cell max-w-[150px] truncate text-muted-foreground">{c.address || '-'}</TableCell>
                   <TableCell className="hidden lg:table-cell max-w-[200px] truncate text-muted-foreground">{c.notes || '-'}</TableCell>
+                  <TableCell className="hidden xl:table-cell text-muted-foreground">
+                    {c.source_type ? getSourceLabel(c.source_type) : '-'}
+                    {c.source_detail && <span className="text-xs text-muted-foreground/70 block">{c.source_detail}</span>}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => openHistory(c)}><History className="h-3.5 w-3.5" /></Button>
