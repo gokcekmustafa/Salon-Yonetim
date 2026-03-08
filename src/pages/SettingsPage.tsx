@@ -105,12 +105,12 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={notifSettings.whatsappEnabled ? 'default' : 'secondary'} className="text-xs">
-                  {notifSettings.whatsappEnabled ? 'Aktif' : 'Pasif'}
+                <Badge variant={notificationSettings.whatsappEnabled ? 'default' : 'secondary'} className="text-xs">
+                  {notificationSettings.whatsappEnabled ? 'Aktif' : 'Pasif'}
                 </Badge>
                 <Switch
-                  checked={notifSettings.whatsappEnabled}
-                  onCheckedChange={v => setNotifSettings(s => ({ ...s, whatsappEnabled: v }))}
+                  checked={notificationSettings.whatsappEnabled}
+                  onCheckedChange={v => updateNotificationSettings({ whatsappEnabled: v })}
                 />
               </div>
             </div>
