@@ -11,6 +11,7 @@ import { Bell, MessageSquare, Phone, Clock, Send, AlertTriangle, Loader2 } from 
 import { toast } from 'sonner';
 import { ChangeOwnPassword } from '@/components/password/ChangeOwnPassword';
 import { StaffPasswordManager } from '@/components/password/StaffPasswordManager';
+import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
