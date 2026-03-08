@@ -19,7 +19,7 @@ interface SalonContextType {
   addBranch: (b: Omit<Branch, 'id'>) => void;
   updateBranch: (id: string, b: Partial<Branch>) => void;
   deleteBranch: (id: string) => void;
-  addCustomer: (c: Omit<Customer, 'id' | 'createdAt'>) => void;
+  addCustomer: (c: Omit<Customer, 'id' | 'createdAt'> & { id?: string }) => string;
   updateCustomer: (id: string, c: Partial<Customer>) => void;
   deleteCustomer: (id: string) => void;
   addService: (s: Omit<Service, 'id'>) => void;
