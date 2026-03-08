@@ -19,8 +19,6 @@ type ViewMode = 'day' | 'week';
 
 export default function AppointmentsPage() {
   const { hasPermission } = usePermissions();
-  if (!hasPermission('can_manage_appointments')) return <NoPermission feature="Randevu Yönetimi" />;
-
   const {
     appointments, customers, staff, services, branches,
     addAppointment, updateAppointment, addPayment, hasConflict,
