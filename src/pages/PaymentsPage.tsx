@@ -218,7 +218,7 @@ export default function PaymentsPage() {
               {filteredPayments.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground text-sm"><Receipt className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />Bu dönemde ödeme yok</div>
               ) : (
-                <Table>
+                <Table className="min-w-[600px]">
                   <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="font-semibold">Tarih</TableHead><TableHead className="font-semibold">Müşteri</TableHead><TableHead className="font-semibold">Hizmet</TableHead><TableHead className="font-semibold">Ödeme Türü</TableHead><TableHead className="text-right font-semibold">Tutar</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {filteredPayments.map(p => (
