@@ -84,10 +84,12 @@ export default function BookingPage() {
     }
 
     const existing = customers.find(c => c.phone === customerPhone.trim());
-    const customerId = existing?.id || crypto.randomUUID();
+    let customerId: string;
 
-    if (!existing) {
-      addCustomer({ name: customerName.trim(), phone: customerPhone.trim() });
+    if (existing) {
+      customerId = existing.id;
+    } else {
+      customerId = addCustomer({ name: customerName.trim(), phone: customerPhone.trim() });
     }
 
     const start = new Date(`${selectedDate}T${selectedTime}`);
