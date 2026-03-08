@@ -4,59 +4,41 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { toast } from 'sonner';
 import {
-  Plus, Search, Building2, Users, Calendar, CreditCard,
-  MoreHorizontal, Edit, Trash2, Eye, Loader2, Crown,
+  Plus, Search, Building2, Users, Calendar, Eye, Loader2, Crown,
+  MoreHorizontal, Edit, Trash2, LogIn,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useNavigate } from 'react-router-dom';
 
 type Salon = {
-  id: string;
-  name: string;
-  slug: string;
-  phone: string | null;
-  address: string | null;
+  id: string; name: string; slug: string; phone: string | null; address: string | null;
   subscription_plan: 'free' | 'starter' | 'professional' | 'enterprise';
-  subscription_expires_at: string | null;
-  is_active: boolean;
-  owner_user_id: string | null;
-  created_at: string;
+  is_active: boolean; created_at: string;
 };
 
-type SalonStats = {
-  salon_id: string;
-  staff_count: number;
-  customer_count: number;
-  appointment_count: number;
-};
+type SalonStats = { staff_count: number; customer_count: number; appointment_count: number; };
 
 const planColors: Record<string, string> = {
-  free: 'bg-muted text-muted-foreground',
-  starter: 'bg-blue-100 text-blue-700',
-  professional: 'bg-primary/10 text-primary',
-  enterprise: 'bg-amber-100 text-amber-700',
+  free: 'bg-muted text-muted-foreground', starter: 'bg-blue-100 text-blue-700',
+  professional: 'bg-primary/10 text-primary', enterprise: 'bg-amber-100 text-amber-700',
 };
-
 const planLabels: Record<string, string> = {
-  free: 'Ücretsiz',
-  starter: 'Başlangıç',
-  professional: 'Profesyonel',
-  enterprise: 'Kurumsal',
+  free: 'Ücretsiz', starter: 'Başlangıç', professional: 'Profesyonel', enterprise: 'Kurumsal',
 };
 
 export default function SuperAdminSalonsPage() {
-  const { isSuperAdmin } = useAuth();
-  const { toast } = useToast();
+  const { isSuperAdmin, setCurrentSalonId } = useAuth();
+  const navigate = useNavigate();
 
   const [salons, setSalons] = useState<Salon[]>([]);
   const [stats, setStats] = useState<Record<string, SalonStats>>({});
@@ -66,7 +48,6 @@ export default function SuperAdminSalonsPage() {
   const [editing, setEditing] = useState<Salon | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Form state
   const [formName, setFormName] = useState('');
   const [formSlug, setFormSlug] = useState('');
   const [formPhone, setFormPhone] = useState('');
@@ -76,16 +57,11 @@ export default function SuperAdminSalonsPage() {
 
   const fetchSalons = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('salons')
-      .select('*')
-      .order('created_at', { ascending: false });
-
+    const { data, error } = await supabase.from('salons').select('*').order('created_at', { ascending: false });
     if (error) {
-      toast({ title: 'Hata', description: error.message, variant: 'destructive' });
+      toast.error('Salonlar yüklenemedi: ' + error.message);
     } else {
       setSalons(data || []);
-      // Fetch stats for each salon
       const statsMap: Record<string, SalonStats> = {};
       for (const salon of data || []) {
         const [staffRes, custRes, aptRes] = await Promise.all([
@@ -94,7 +70,6 @@ export default function SuperAdminSalonsPage() {
           supabase.from('appointments').select('id', { count: 'exact', head: true }).eq('salon_id', salon.id),
         ]);
         statsMap[salon.id] = {
-          salon_id: salon.id,
           staff_count: staffRes.count || 0,
           customer_count: custRes.count || 0,
           appointment_count: aptRes.count || 0,
@@ -105,39 +80,25 @@ export default function SuperAdminSalonsPage() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    if (isSuperAdmin) fetchSalons();
-  }, [isSuperAdmin]);
+  useEffect(() => { if (isSuperAdmin) fetchSalons(); }, [isSuperAdmin]);
 
   const openCreate = () => {
-    setEditing(null);
-    setFormName('');
-    setFormSlug('');
-    setFormPhone('');
-    setFormAddress('');
-    setFormPlan('free');
-    setFormActive(true);
+    setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress(''); setFormPlan('free'); setFormActive(true);
     setDialogOpen(true);
   };
 
   const openEdit = (salon: Salon) => {
-    setEditing(salon);
-    setFormName(salon.name);
-    setFormSlug(salon.slug);
-    setFormPhone(salon.phone || '');
-    setFormAddress(salon.address || '');
-    setFormPlan(salon.subscription_plan);
-    setFormActive(salon.is_active);
+    setEditing(salon); setFormName(salon.name); setFormSlug(salon.slug);
+    setFormPhone(salon.phone || ''); setFormAddress(salon.address || '');
+    setFormPlan(salon.subscription_plan); setFormActive(salon.is_active);
     setDialogOpen(true);
   };
 
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
+  const generateSlug = (name: string) =>
+    name.toLowerCase()
       .replace(/[çÇ]/g, 'c').replace(/[ğĞ]/g, 'g').replace(/[ıİ]/g, 'i')
       .replace(/[öÖ]/g, 'o').replace(/[şŞ]/g, 's').replace(/[üÜ]/g, 'u')
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  };
 
   const handleNameChange = (val: string) => {
     setFormName(val);
@@ -145,77 +106,42 @@ export default function SuperAdminSalonsPage() {
   };
 
   const handleSave = async () => {
-    if (!formName.trim() || !formSlug.trim()) {
-      toast({ title: 'Hata', description: 'Salon adı ve slug zorunludur', variant: 'destructive' });
-      return;
-    }
+    if (!formName.trim() || !formSlug.trim()) { toast.error('Salon adı ve slug zorunludur'); return; }
     setSaving(true);
+    const payload = {
+      name: formName.trim(), slug: formSlug.trim(),
+      phone: formPhone.trim() || null, address: formAddress.trim() || null,
+      subscription_plan: formPlan as Salon['subscription_plan'], is_active: formActive,
+    };
 
-    if (editing) {
-      const { error } = await supabase
-        .from('salons')
-        .update({
-          name: formName.trim(),
-          slug: formSlug.trim(),
-          phone: formPhone.trim() || null,
-          address: formAddress.trim() || null,
-          subscription_plan: formPlan as Salon['subscription_plan'],
-          is_active: formActive,
-        })
-        .eq('id', editing.id);
+    const { error } = editing
+      ? await supabase.from('salons').update(payload).eq('id', editing.id)
+      : await supabase.from('salons').insert(payload);
 
-      if (error) {
-        toast({ title: 'Hata', description: error.message, variant: 'destructive' });
-      } else {
-        toast({ title: 'Başarılı', description: 'Salon güncellendi' });
-        setDialogOpen(false);
-        fetchSalons();
-      }
-    } else {
-      const { error } = await supabase
-        .from('salons')
-        .insert({
-          name: formName.trim(),
-          slug: formSlug.trim(),
-          phone: formPhone.trim() || null,
-          address: formAddress.trim() || null,
-          subscription_plan: formPlan as Salon['subscription_plan'],
-          is_active: formActive,
-        });
-
-      if (error) {
-        toast({ title: 'Hata', description: error.message, variant: 'destructive' });
-      } else {
-        toast({ title: 'Başarılı', description: 'Yeni salon oluşturuldu' });
-        setDialogOpen(false);
-        fetchSalons();
-      }
-    }
+    if (error) { toast.error(error.message); }
+    else { toast.success(editing ? 'Salon güncellendi' : 'Yeni salon oluşturuldu'); setDialogOpen(false); fetchSalons(); }
     setSaving(false);
   };
 
   const handleDelete = async (salon: Salon) => {
-    if (!confirm(`"${salon.name}" salonunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) return;
+    if (!confirm(`"${salon.name}" salonunu silmek istediğinizden emin misiniz?`)) return;
     const { error } = await supabase.from('salons').delete().eq('id', salon.id);
-    if (error) {
-      toast({ title: 'Hata', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Başarılı', description: 'Salon silindi' });
-      fetchSalons();
-    }
+    if (error) toast.error(error.message);
+    else { toast.success('Salon silindi'); fetchSalons(); }
   };
 
   const toggleActive = async (salon: Salon) => {
-    const { error } = await supabase
-      .from('salons')
-      .update({ is_active: !salon.is_active })
-      .eq('id', salon.id);
+    const { error } = await supabase.from('salons').update({ is_active: !salon.is_active }).eq('id', salon.id);
     if (!error) fetchSalons();
   };
 
+  const manageSalon = (salon: Salon) => {
+    setCurrentSalonId(salon.id);
+    navigate('/');
+  };
+
   const filtered = salons.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.slug.toLowerCase().includes(search.toLowerCase())
+    s.name.toLowerCase().includes(search.toLowerCase()) || s.slug.toLowerCase().includes(search.toLowerCase())
   );
 
   const totalStats = {
@@ -229,88 +155,50 @@ export default function SuperAdminSalonsPage() {
     <div className="page-container animate-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-display text-foreground flex items-center gap-2">
-            <Crown className="h-6 w-6 text-primary" />
-            Platform Yönetimi
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Crown className="h-6 w-6 text-primary" /> Platform Yönetimi
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Tüm salonları yönetin ve izleyin</p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="h-4 w-4" /> Yeni Salon
-        </Button>
+        <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Yeni Salon</Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card className="stat-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/8"><Building2 className="h-5 w-5 text-primary" /></div>
-              <div>
-                <p className="text-2xl font-bold">{totalStats.salons}</p>
-                <p className="text-xs text-muted-foreground">Toplam Salon</p>
+        {[
+          { label: 'Toplam Salon', value: totalStats.salons, icon: Building2, color: 'text-primary bg-primary/8' },
+          { label: 'Aktif Salon', value: totalStats.active, icon: Eye, color: 'text-success bg-success/10' },
+          { label: 'Toplam Personel', value: totalStats.totalStaff, icon: Users, color: 'text-blue-600 bg-blue-50' },
+          { label: 'Toplam Müşteri', value: totalStats.totalCustomers, icon: Calendar, color: 'text-amber-600 bg-amber-50' },
+        ].map(stat => (
+          <Card key={stat.label}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${stat.color}`}><stat.icon className="h-5 w-5" /></div>
+                <div>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="stat-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10"><Eye className="h-5 w-5 text-success" /></div>
-              <div>
-                <p className="text-2xl font-bold">{totalStats.active}</p>
-                <p className="text-xs text-muted-foreground">Aktif Salon</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="stat-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-50"><Users className="h-5 w-5 text-blue-600" /></div>
-              <div>
-                <p className="text-2xl font-bold">{totalStats.totalStaff}</p>
-                <p className="text-xs text-muted-foreground">Toplam Personel</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="stat-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-50"><Calendar className="h-5 w-5 text-amber-600" /></div>
-              <div>
-                <p className="text-2xl font-bold">{totalStats.totalCustomers}</p>
-                <p className="text-xs text-muted-foreground">Toplam Müşteri</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Search */}
       <div className="relative mb-4 max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Salon ara..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="pl-10"
-        />
+        <Input placeholder="Salon ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       ) : filtered.length === 0 ? (
-        <div className="empty-state">
+        <div className="text-center py-16">
           <Building2 className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-muted-foreground">Henüz salon bulunmuyor</p>
-          <Button onClick={openCreate} variant="outline" className="mt-3">
-            <Plus className="h-4 w-4 mr-2" /> İlk Salonu Oluştur
-          </Button>
+          <Button onClick={openCreate} variant="outline" className="mt-3"><Plus className="h-4 w-4 mr-2" /> İlk Salonu Oluştur</Button>
         </div>
       ) : (
         <Card>
@@ -322,7 +210,6 @@ export default function SuperAdminSalonsPage() {
                 <TableHead className="hidden lg:table-cell">Plan</TableHead>
                 <TableHead className="hidden md:table-cell text-center">Personel</TableHead>
                 <TableHead className="hidden md:table-cell text-center">Müşteri</TableHead>
-                <TableHead className="hidden lg:table-cell text-center">Randevu</TableHead>
                 <TableHead className="text-center">Durum</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
@@ -333,49 +220,28 @@ export default function SuperAdminSalonsPage() {
                 return (
                   <TableRow key={salon.id} className="group">
                     <TableCell>
-                      <div>
-                        <p className="font-medium text-sm">{salon.name}</p>
-                        <p className="text-xs text-muted-foreground">{salon.phone || '—'}</p>
-                      </div>
+                      <div><p className="font-medium text-sm">{salon.name}</p><p className="text-xs text-muted-foreground">{salon.phone || '—'}</p></div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded">/{salon.slug}</code>
-                    </TableCell>
+                    <TableCell className="hidden md:table-cell"><code className="text-xs bg-muted px-1.5 py-0.5 rounded">/{salon.slug}</code></TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      <Badge variant="secondary" className={planColors[salon.subscription_plan]}>
-                        {planLabels[salon.subscription_plan]}
-                      </Badge>
+                      <Badge variant="secondary" className={planColors[salon.subscription_plan]}>{planLabels[salon.subscription_plan]}</Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-center text-sm">{s.staff_count}</TableCell>
                     <TableCell className="hidden md:table-cell text-center text-sm">{s.customer_count}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-center text-sm">{s.appointment_count}</TableCell>
                     <TableCell className="text-center">
-                      <Badge
-                        variant="secondary"
-                        className={salon.is_active ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}
-                        onClick={() => toggleActive(salon)}
-                        style={{ cursor: 'pointer' }}
-                      >
+                      <Badge variant="secondary" className={salon.is_active ? 'bg-success/10 text-success cursor-pointer' : 'bg-destructive/10 text-destructive cursor-pointer'} onClick={() => toggleActive(salon)}>
                         {salon.is_active ? 'Aktif' : 'Pasif'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(salon)}>
-                            <Edit className="h-4 w-4 mr-2" /> Düzenle
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(salon)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" /> Sil
-                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => manageSalon(salon)}><LogIn className="h-4 w-4 mr-2" /> Yönet</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openEdit(salon)}><Edit className="h-4 w-4 mr-2" /> Düzenle</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDelete(salon)} className="text-destructive focus:text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Sil</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -390,9 +256,7 @@ export default function SuperAdminSalonsPage() {
       {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editing ? 'Salon Düzenle' : 'Yeni Salon Oluştur'}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? 'Salon Düzenle' : 'Yeni Salon Oluştur'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">Salon Adı</Label>
@@ -432,10 +296,7 @@ export default function SuperAdminSalonsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editing ? 'Güncelle' : 'Oluştur'}
-            </Button>
+            <Button onClick={handleSave} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}{editing ? 'Güncelle' : 'Oluştur'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
