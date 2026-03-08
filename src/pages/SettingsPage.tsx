@@ -174,8 +174,8 @@ export default function SettingsPage() {
               <Send className="h-4 w-4" /> Mesaj Şablonu
             </h3>
             <Textarea
-              value={notifSettings.messageTemplate}
-              onChange={e => setNotifSettings(s => ({ ...s, messageTemplate: e.target.value }))}
+              value={notificationSettings.messageTemplate}
+              onChange={e => updateNotificationSettings({ messageTemplate: e.target.value })}
               rows={3}
               className="text-sm"
             />
