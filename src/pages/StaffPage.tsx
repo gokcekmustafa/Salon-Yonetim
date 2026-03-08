@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Staff } from '@/types/salon';
+import { toast } from 'sonner';
 
 export default function StaffPage() {
   const { staff, addStaff, updateStaff, branches } = useSalon();
@@ -33,9 +34,17 @@ export default function StaffPage() {
   };
 
   const handleSave = () => {
-    if (!form.name.trim() || !form.branchId) return;
-    if (editing) updateStaff(editing.id, form);
-    else addStaff(form);
+    if (!form.name.trim() || !form.branchId) {
+      toast.error('Ad ve şube zorunludur.');
+      return;
+    }
+    if (editing) {
+      updateStaff(editing.id, form);
+      toast.success('Personel güncellendi.');
+    } else {
+      addStaff(form);
+      toast.success('Personel eklendi.');
+    }
     setDialogOpen(false);
   };
 
@@ -48,7 +57,40 @@ export default function StaffPage() {
         <Button onClick={openAdd}><Plus className="h-4 w-4 mr-1" /> Ekle</Button>
       </div>
 
-      <Card>
+      {/* Mobile card view */}
+      <div className="block md:hidden space-y-3">
+        {staff.length === 0 ? (
+          <p className="text-center py-8 text-muted-foreground text-sm">Personel bulunamadı.</p>
+        ) : staff.map(s => (
+          <Card key={s.id} className={!s.active ? 'opacity-60' : ''}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{s.name}</p>
+                    <p className="text-xs text-muted-foreground">{s.phone}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-muted-foreground">{getBranchName(s.branchId)}</span>
+                      <Badge variant={s.active ? 'default' : 'secondary'} className="text-[10px]">
+                        {s.active ? 'Aktif' : 'Pasif'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(s)}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop table view */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -64,7 +106,7 @@ export default function StaffPage() {
               {staff.length === 0 ? (
                 <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Personel bulunamadı.</TableCell></TableRow>
               ) : staff.map(s => (
-                <TableRow key={s.id}>
+                <TableRow key={s.id} className={!s.active ? 'opacity-60' : ''}>
                   <TableCell className="font-medium">{s.name}</TableCell>
                   <TableCell>{s.phone}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{getBranchName(s.branchId)}</TableCell>
@@ -84,12 +126,12 @@ export default function StaffPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{editing ? 'Personel Düzenle' : 'Yeni Personel'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>Ad Soyad</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-            <div><Label>Telefon</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
-            <div>
+            <div className="space-y-1.5"><Label>Ad Soyad</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ad Soyad" /></div>
+            <div className="space-y-1.5"><Label>Telefon</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0500 000 0000" /></div>
+            <div className="space-y-1.5">
               <Label>Şube</Label>
               <Select value={form.branchId} onValueChange={v => setForm(f => ({ ...f, branchId: v }))}>
                 <SelectTrigger><SelectValue placeholder="Şube seçin" /></SelectTrigger>

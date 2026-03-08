@@ -61,7 +61,31 @@ export default function PaymentsPage() {
         <Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-48" />
       </div>
 
-      <Card>
+      {/* Mobile card view */}
+      <div className="block md:hidden space-y-3">
+        {monthPayments.length === 0 ? (
+          <p className="text-center py-8 text-muted-foreground text-sm">Bu ay ödeme bulunmamaktadır.</p>
+        ) : monthPayments.map(p => (
+          <Card key={p.id}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="font-medium text-sm">{getCustomerName(p.appointmentId)}</p>
+                  <p className="text-xs text-muted-foreground">{getServiceName(p.appointmentId)}</p>
+                  <p className="text-xs text-muted-foreground">{format(parseISO(p.date), 'd MMM yyyy HH:mm', { locale: tr })}</p>
+                </div>
+                <div className="text-right space-y-1">
+                  <p className="font-bold">₺{p.amount.toLocaleString('tr-TR')}</p>
+                  <Badge variant="secondary">{p.type === 'nakit' ? 'Nakit' : 'Kart'}</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
