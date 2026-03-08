@@ -84,7 +84,7 @@ export default function CustomersPage() {
       address: form.address || null,
       secondary_phone: form.secondary_phone || null,
       source_type: form.source_type || null,
-      source_detail: form.source_type === 'other' ? (form.source_detail || null) : null,
+      source_detail: form.source_detail || null,
       customer_type: form.customer_type,
     };
     if (editing) {
@@ -286,8 +286,8 @@ export default function CustomersPage() {
                 </SelectContent>
               </Select>
             </div>
-            {form.source_type === 'other' && (
-              <div className="space-y-2"><Label className="text-xs font-semibold">Kaynak Detayı</Label><Input value={form.source_detail} onChange={e => set('source_detail', e.target.value)} placeholder="Detay yazın..." className="h-10" /></div>
+            {form.source_type && (
+              <div className="space-y-2"><Label className="text-xs font-semibold">Kaynak Detayı <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input value={form.source_detail} onChange={e => set('source_detail', e.target.value)} placeholder="Kaynak adı veya tanımı yazın..." className="h-10" /></div>
             )}
           </div>
           <DialogFooter>
