@@ -7,18 +7,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Scissors, Clock, User, CalendarDays, CheckCircle2, ChevronLeft, Phone, MapPin } from 'lucide-react';
+import { Scissors, Clock, User, CalendarDays, CheckCircle2, ChevronLeft, Phone, MapPin, Building2 } from 'lucide-react';
 import { format, addMinutes, addDays, isBefore, startOfDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 
-type BookingStep = 'service' | 'staff' | 'datetime' | 'info';
+type BookingStep = 'branch' | 'service' | 'staff' | 'datetime' | 'info';
 
 export default function BookingPage() {
   const { salonSlug } = useParams<{ salonSlug: string }>();
-  const { salon, services, staff, appointments, addAppointment, addCustomer, customers, hasConflict } = useSalon();
+  const { salon, services, staff, branches, appointments, addAppointment, addCustomer, customers, hasConflict } = useSalon();
 
-  const [step, setStep] = useState<BookingStep>('service');
+  const [step, setStep] = useState<BookingStep>('branch');
+  const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [selectedStaffId, setSelectedStaffId] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
@@ -27,9 +28,11 @@ export default function BookingPage() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [booked, setBooked] = useState(false);
 
-  const activeStaff = staff.filter(s => s.active);
+  const activeBranches = branches.filter(b => b.active);
+  const branchStaff = staff.filter(s => s.active && s.branchId === selectedBranchId);
   const selectedService = services.find(s => s.id === selectedServiceId);
   const selectedStaff = staff.find(s => s.id === selectedStaffId);
+  const selectedBranch = branches.find(b => b.id === selectedBranchId);
 
   const availableDates = useMemo(() => {
     const dates: Date[] = [];
@@ -60,7 +63,7 @@ export default function BookingPage() {
   }, [selectedStaffId, selectedDate, selectedService, hasConflict]);
 
   // Validate salon slug
-  if (salonSlug !== salon.slug) {
+  if (salonSlug && salonSlug !== salon.slug) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="max-w-md w-full text-center">
@@ -95,12 +98,11 @@ export default function BookingPage() {
       return;
     }
 
-    const staffMember = staff.find(s => s.id === selectedStaffId);
     addAppointment({
       customerId,
       staffId: selectedStaffId,
       serviceId: selectedServiceId,
-      branchId: staffMember?.branchId || '',
+      branchId: selectedBranchId,
       startTime: start.toISOString(),
       endTime: end.toISOString(),
       status: 'bekliyor',
@@ -109,15 +111,18 @@ export default function BookingPage() {
     setBooked(true);
   };
 
+  const allSteps: BookingStep[] = ['branch', 'service', 'staff', 'datetime', 'info'];
+  const stepLabels = ['Şube', 'Hizmet', 'Personel', 'Tarih & Saat', 'Bilgiler'];
+
   const goBack = () => {
-    const steps: BookingStep[] = ['service', 'staff', 'datetime', 'info'];
-    const idx = steps.indexOf(step);
-    if (idx > 0) setStep(steps[idx - 1]);
+    const idx = allSteps.indexOf(step);
+    if (idx > 0) setStep(allSteps[idx - 1]);
   };
 
   const resetBooking = () => {
     setBooked(false);
-    setStep('service');
+    setStep('branch');
+    setSelectedBranchId('');
     setSelectedServiceId('');
     setSelectedStaffId('');
     setSelectedDate('');
@@ -137,7 +142,7 @@ export default function BookingPage() {
             <h2 className="text-2xl font-bold">Randevunuz Oluşturuldu!</h2>
             <div className="text-sm text-muted-foreground space-y-1">
               <p><strong>{selectedService?.name}</strong></p>
-              <p>{selectedStaff?.name} ile</p>
+              <p>{selectedStaff?.name} ile • {selectedBranch?.name}</p>
               <p>{selectedDate && format(new Date(selectedDate), 'd MMMM yyyy', { locale: tr })} — {selectedTime}</p>
             </div>
             <Separator />
@@ -152,6 +157,8 @@ export default function BookingPage() {
       </div>
     );
   }
+
+  const stepIdx = allSteps.indexOf(step);
 
   return (
     <div className="min-h-screen bg-background">
@@ -175,23 +182,21 @@ export default function BookingPage() {
 
       {/* Progress */}
       <div className="max-w-2xl mx-auto px-4 py-4">
-        <div className="flex items-center gap-2 text-xs">
-          {(['service', 'staff', 'datetime', 'info'] as BookingStep[]).map((s, i) => {
-            const labels = ['Hizmet', 'Personel', 'Tarih & Saat', 'Bilgiler'];
-            const stepIdx = ['service', 'staff', 'datetime', 'info'].indexOf(step);
+        <div className="flex items-center gap-1 text-xs">
+          {allSteps.map((s, i) => {
             const isActive = i === stepIdx;
             const isDone = i < stepIdx;
             return (
-              <div key={s} className="flex items-center gap-2 flex-1">
-                <div className={`flex items-center gap-1.5 ${isActive ? 'text-primary font-semibold' : isDone ? 'text-primary/60' : 'text-muted-foreground'}`}>
+              <div key={s} className="flex items-center gap-1 flex-1">
+                <div className={`flex items-center gap-1 ${isActive ? 'text-primary font-semibold' : isDone ? 'text-primary/60' : 'text-muted-foreground'}`}>
                   <div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold border-2 ${
                     isActive ? 'border-primary bg-primary text-primary-foreground' : isDone ? 'border-primary/60 bg-primary/10 text-primary' : 'border-muted-foreground/30'
                   }`}>
                     {isDone ? '✓' : i + 1}
                   </div>
-                  <span className="hidden sm:inline">{labels[i]}</span>
+                  <span className="hidden sm:inline">{stepLabels[i]}</span>
                 </div>
-                {i < 3 && <div className={`flex-1 h-0.5 ${i < stepIdx ? 'bg-primary/40' : 'bg-border'}`} />}
+                {i < allSteps.length - 1 && <div className={`flex-1 h-0.5 ${i < stepIdx ? 'bg-primary/40' : 'bg-border'}`} />}
               </div>
             );
           })}
@@ -200,13 +205,48 @@ export default function BookingPage() {
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 pb-8">
-        {step !== 'service' && (
+        {step !== 'branch' && (
           <Button variant="ghost" size="sm" className="mb-3 -ml-2" onClick={goBack}>
             <ChevronLeft className="h-4 w-4 mr-1" /> Geri
           </Button>
         )}
 
-        {/* Step 1: Service */}
+        {/* Step 1: Branch */}
+        {step === 'branch' && (
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold">Şube Seçin</h2>
+            <div className="grid gap-3">
+              {activeBranches.map(branch => (
+                <Card
+                  key={branch.id}
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    selectedBranchId === branch.id ? 'ring-2 ring-primary shadow-md' : ''
+                  }`}
+                  onClick={() => {
+                    setSelectedBranchId(branch.id);
+                    setSelectedStaffId('');
+                    setStep('service');
+                  }}
+                >
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Building2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{branch.name}</p>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {branch.address}</span>
+                        <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {branch.phone}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Service */}
         {step === 'service' && (
           <div className="space-y-3">
             <h2 className="text-lg font-semibold">Hizmet Seçin</h2>
@@ -242,38 +282,42 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Step 2: Staff */}
+        {/* Step 3: Staff (filtered by branch) */}
         {step === 'staff' && (
           <div className="space-y-3">
             <h2 className="text-lg font-semibold">Personel Seçin</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {activeStaff.map(member => (
-                <Card
-                  key={member.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${
-                    selectedStaffId === member.id ? 'ring-2 ring-primary shadow-md' : ''
-                  }`}
-                  onClick={() => {
-                    setSelectedStaffId(member.id);
-                    setStep('datetime');
-                  }}
-                >
-                  <CardContent className="flex items-center gap-3 p-4">
-                    <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{member.name}</p>
-                      <p className="text-xs text-muted-foreground">Müsait</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {branchStaff.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">Bu şubede aktif personel bulunmamaktadır.</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {branchStaff.map(member => (
+                  <Card
+                    key={member.id}
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      selectedStaffId === member.id ? 'ring-2 ring-primary shadow-md' : ''
+                    }`}
+                    onClick={() => {
+                      setSelectedStaffId(member.id);
+                      setStep('datetime');
+                    }}
+                  >
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{member.name}</p>
+                        <p className="text-xs text-muted-foreground">Müsait</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Step 3: Date & Time */}
+        {/* Step 4: Date & Time */}
         {step === 'datetime' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Tarih & Saat Seçin</h2>
@@ -337,12 +381,16 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Step 4: Customer Info */}
+        {/* Step 5: Customer Info */}
         {step === 'info' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Bilgileriniz</h2>
             <Card>
               <CardContent className="p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Şube</span>
+                  <span className="font-medium">{selectedBranch?.name}</span>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Hizmet</span>
                   <span className="font-medium">{selectedService?.name}</span>
