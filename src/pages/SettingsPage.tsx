@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { ChangeOwnPassword } from '@/components/password/ChangeOwnPassword';
 import { StaffPasswordManager } from '@/components/password/StaffPasswordManager';
 import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
+import { PopupManager } from '@/components/popup/PopupManager';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
