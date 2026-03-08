@@ -23,7 +23,7 @@ export function PopupDisplay() {
     if (!popup || !user) return;
     setVisible(false);
     // Track view
-    await supabase.from('popup_views' as any).insert({ popup_id: popup.id, user_id: user.id } as any).select();
+    await supabase.from('popup_views').insert({ popup_id: popup.id, user_id: user.id });
   }, [popup, user]);
 
   useEffect(() => {
