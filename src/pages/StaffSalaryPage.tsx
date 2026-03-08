@@ -513,7 +513,10 @@ export default function StaffSalaryPage() {
                 <Select value={payCashBoxId} onValueChange={setPayCashBoxId}>
                   <SelectTrigger className="h-10"><SelectValue placeholder="Kasa seçin" /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">— Genel —</SelectItem>
                     {cashBoxes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
                   </SelectContent>
                 </Select>
               </div>
