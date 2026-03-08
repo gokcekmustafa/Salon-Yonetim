@@ -93,6 +93,7 @@ export default function SuperAdminSalonsPage() {
     setEditing(salon); setFormName(salon.name); setFormSlug(salon.slug);
     setFormPhone(salon.phone || ''); setFormAddress(salon.address || '');
     setFormPlan(salon.subscription_plan); setFormActive(salon.is_active);
+    setFormExpiry((salon as any).subscription_expires_at ? (salon as any).subscription_expires_at.split('T')[0] : '');
     setDialogOpen(true);
   };
 
