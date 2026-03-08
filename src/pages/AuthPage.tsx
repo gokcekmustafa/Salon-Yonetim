@@ -149,7 +149,7 @@ export default function AuthPage() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-8">
-          © 2026 SalonYönetim • Multi-Salon SaaS Platform
+          © 2026 {branding.company_name} • {branding.app_name}
         </p>
       </div>
     </div>
