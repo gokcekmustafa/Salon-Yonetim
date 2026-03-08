@@ -13,6 +13,13 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
+
+const STAFF_COLUMNS: ColumnMapping[] = [
+  { excelHeader: 'Ad Soyad', dbKey: 'name', required: true },
+  { excelHeader: 'Telefon', dbKey: 'phone' },
+  { excelHeader: 'Aktif', dbKey: 'is_active' },
+];
 
 export default function StaffPage() {
   const { hasPermission } = usePermissions();
