@@ -25,12 +25,13 @@ import {
   Building2,
   BarChart3,
   Globe,
+  ChevronRight,
 } from 'lucide-react';
 
 const mainMenu = [
   { title: 'Panel', url: '/', icon: LayoutDashboard },
-  { title: 'Müşteriler', url: '/musteriler', icon: Users },
   { title: 'Randevular', url: '/randevular', icon: Calendar },
+  { title: 'Müşteriler', url: '/musteriler', icon: Users },
   { title: 'Hizmetler', url: '/hizmetler', icon: Scissors },
   { title: 'Personel', url: '/personel', icon: UserCheck },
   { title: 'Şubeler', url: '/subeler', icon: Building2 },
@@ -53,63 +54,76 @@ export function AppSidebar() {
 
   const renderMenu = (items: typeof mainMenu) => (
     <SidebarMenu>
-      {items.map((item) => (
-        <SidebarMenuItem key={item.title}>
-          <SidebarMenuButton
-            asChild
-            isActive={location.pathname === item.url}
-            tooltip={item.title}
-          >
-            <NavLink
-              to={item.url}
-              end={item.url === '/'}
-              className="hover:bg-sidebar-accent/50"
-              activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+      {items.map((item) => {
+        const active = location.pathname === item.url;
+        return (
+          <SidebarMenuItem key={item.title}>
+            <SidebarMenuButton
+              asChild
+              isActive={active}
+              tooltip={item.title}
             >
-              <item.icon className="h-4 w-4" />
-              {!collapsed && <span>{item.title}</span>}
-            </NavLink>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      ))}
+              <NavLink
+                to={item.url}
+                end={item.url === '/'}
+                className="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150 hover:bg-sidebar-accent/60 text-sidebar-foreground"
+                activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+              >
+                <item.icon className="h-[18px] w-[18px] shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1">{item.title}</span>
+                    {active && <ChevronRight className="h-3.5 w-3.5 opacity-50" />}
+                  </>
+                )}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        );
+      })}
     </SidebarMenu>
   );
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <Sparkles className="h-4 w-4 text-sidebar-primary-foreground" />
+      <SidebarHeader className="p-4 pb-2">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shadow-sm">
+            <Sparkles className="h-4.5 w-4.5 text-sidebar-primary-foreground" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold text-sidebar-foreground">
-              SalonYönetim
-            </span>
+            <div>
+              <span className="text-base font-bold text-sidebar-accent-foreground font-display tracking-tight">
+                SalonYönetim
+              </span>
+              <p className="text-[10px] text-sidebar-foreground/50 leading-none mt-0.5">Yönetim Paneli</p>
+            </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2 mt-2">
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Yönetim</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold mb-1 px-3">Yönetim</SidebarGroupLabel>}
           <SidebarGroupContent>{renderMenu(mainMenu)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Finans</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold mb-1 px-3 mt-2">Finans</SidebarGroupLabel>}
           <SidebarGroupContent>{renderMenu(financeMenu)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Diğer</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold mb-1 px-3 mt-2">Diğer</SidebarGroupLabel>}
           <SidebarGroupContent>{renderMenu(otherMenu)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 pt-2">
         {!collapsed && (
-          <p className="text-xs text-sidebar-foreground/50">© 2026 SalonYönetim</p>
+          <div className="rounded-lg bg-sidebar-accent/30 p-3 text-center">
+            <p className="text-[10px] text-sidebar-foreground/40">© 2026 SalonYönetim</p>
+          </div>
         )}
       </SidebarFooter>
     </Sidebar>
