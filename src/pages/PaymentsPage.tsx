@@ -7,8 +7,13 @@ import { Input } from '@/components/ui/input';
 import { format, parseISO, isToday, isSameMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { Wallet, TrendingUp, Receipt, Loader2 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { NoPermission } from '@/components/permissions/NoPermission';
 
 export default function PaymentsPage() {
+  const { hasPermission } = usePermissions();
+  if (!hasPermission('can_manage_payments')) return <NoPermission feature="Kasa / Ödemeler" />;
+
   const { payments, appointments, customers, services, loading } = useSalonData();
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
 

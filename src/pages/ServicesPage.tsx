@@ -8,8 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Pencil, Trash2, Clock, Scissors, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/usePermissions';
+import { NoPermission } from '@/components/permissions/NoPermission';
 
 export default function ServicesPage() {
+  const { hasPermission } = usePermissions();
+  if (!hasPermission('can_manage_services')) return <NoPermission feature="Hizmet Yönetimi" />;
+
   const { services, addService, updateService, deleteService, loading } = useSalonData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DbService | null>(null);

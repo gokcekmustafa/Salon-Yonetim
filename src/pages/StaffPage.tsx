@@ -11,8 +11,13 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Pencil, User, UserCheck, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/usePermissions';
+import { NoPermission } from '@/components/permissions/NoPermission';
 
 export default function StaffPage() {
+  const { hasPermission } = usePermissions();
+  if (!hasPermission('can_manage_staff')) return <NoPermission feature="Personel Yönetimi" />;
+
   const { staff, addStaff, updateStaff, branches, loading } = useSalonData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DbStaff | null>(null);
