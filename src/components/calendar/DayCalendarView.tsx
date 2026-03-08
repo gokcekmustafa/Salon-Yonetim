@@ -29,6 +29,7 @@ interface DayCalendarViewProps {
   filteredStaffId: string | null;
   filteredBranchId?: string | null;
   onAppointmentClick: (apt: DbAppointment) => void;
+  rooms?: { id: string; name: string }[];
 }
 
 export default function DayCalendarView({ date, filteredStaffId, filteredBranchId, onAppointmentClick }: DayCalendarViewProps) {
