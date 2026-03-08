@@ -16,7 +16,16 @@ import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 
-const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '' };
+const SOURCE_OPTIONS = [
+  { value: 'advertisement', label: 'Reklam' },
+  { value: 'social_media', label: 'Sosyal Medya Reklamı' },
+  { value: 'referral', label: 'Tanıdık Tavsiyesi' },
+  { value: 'surveyor', label: 'Anketör / Personel' },
+  { value: 'other', label: 'Diğer' },
+];
+const getSourceLabel = (val: string | null) => SOURCE_OPTIONS.find(o => o.value === val)?.label ?? val ?? '-';
+
+const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '' };
 
 export default function CustomersPage() {
   const { hasPermission } = usePermissions();
