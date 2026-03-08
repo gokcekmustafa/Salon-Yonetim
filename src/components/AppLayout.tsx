@@ -26,6 +26,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { profile, roles, signOut, isSuperAdmin, currentSalonId } = useAuth();
   const { salon } = useSalonData();
   const navigate = useNavigate();
+  useOnlineHeartbeat();
 
   const initials = (profile?.full_name || 'U')
     .split(' ')
