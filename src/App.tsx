@@ -20,6 +20,7 @@ import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
 import CashPage from "./pages/CashPage";
 import AuthPage from "./pages/AuthPage";
+import SessionsPage from "./pages/SessionsPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
 import NotificationsPage from "./pages/NotificationsPage";
