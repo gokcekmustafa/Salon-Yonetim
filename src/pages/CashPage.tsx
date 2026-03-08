@@ -342,18 +342,20 @@ export default function CashPage() {
 
       {/* Tab Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <TabsList className="h-10">
-            {DEFAULT_BOXES.map(b => {
-              const Icon = TAB_ICONS[b.payment_method];
-              return (
-                <TabsTrigger key={b.payment_method} value={b.payment_method} className="gap-1.5 text-xs sm:text-sm">
-                  <Icon className="h-4 w-4" /> <span className="hidden sm:inline">{b.name}</span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-          <Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-44 h-10" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="h-10 w-max">
+              {DEFAULT_BOXES.map(b => {
+                const Icon = TAB_ICONS[b.payment_method];
+                return (
+                  <TabsTrigger key={b.payment_method} value={b.payment_method} className="gap-1.5 text-xs sm:text-sm">
+                    <Icon className="h-4 w-4" /> <span className="hidden sm:inline">{b.name}</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </div>
+          <Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-full sm:w-44 h-10" />
         </div>
 
         {DEFAULT_BOXES.map(b => (

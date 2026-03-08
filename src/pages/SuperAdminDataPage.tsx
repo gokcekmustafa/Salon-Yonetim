@@ -174,23 +174,25 @@ export default function SuperAdminDataPage() {
       </div>
 
       <Tabs defaultValue="customers" className="space-y-4">
-        <TabsList className="h-11 flex-wrap">
-          <TabsTrigger value="customers" className="gap-1.5 text-sm">
-            <Users className="h-3.5 w-3.5" /> Müşteriler <Badge variant="secondary" className="ml-1 text-[10px]">{customers.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="appointments" className="gap-1.5 text-sm">
-            <Calendar className="h-3.5 w-3.5" /> Randevular <Badge variant="secondary" className="ml-1 text-[10px]">{appointments.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="payments" className="gap-1.5 text-sm">
-            <Wallet className="h-3.5 w-3.5" /> Ödemeler <Badge variant="secondary" className="ml-1 text-[10px]">{payments.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="staff" className="gap-1.5 text-sm">
-            <UserCheck className="h-3.5 w-3.5" /> Personel <Badge variant="secondary" className="ml-1 text-[10px]">{staffList.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="services" className="gap-1.5 text-sm">
-            <Scissors className="h-3.5 w-3.5" /> Hizmetler <Badge variant="secondary" className="ml-1 text-[10px]">{services.length}</Badge>
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="h-11 w-max">
+            <TabsTrigger value="customers" className="gap-1.5 text-sm">
+              <Users className="h-3.5 w-3.5" /> Müşteriler <Badge variant="secondary" className="ml-1 text-[10px]">{customers.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="appointments" className="gap-1.5 text-sm">
+              <Calendar className="h-3.5 w-3.5" /> Randevular <Badge variant="secondary" className="ml-1 text-[10px]">{appointments.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="gap-1.5 text-sm">
+              <Wallet className="h-3.5 w-3.5" /> Ödemeler <Badge variant="secondary" className="ml-1 text-[10px]">{payments.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="staff" className="gap-1.5 text-sm">
+              <UserCheck className="h-3.5 w-3.5" /> Personel <Badge variant="secondary" className="ml-1 text-[10px]">{staffList.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="services" className="gap-1.5 text-sm">
+              <Scissors className="h-3.5 w-3.5" /> Hizmetler <Badge variant="secondary" className="ml-1 text-[10px]">{services.length}</Badge>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Customers Tab */}
         <TabsContent value="customers" className="space-y-4">

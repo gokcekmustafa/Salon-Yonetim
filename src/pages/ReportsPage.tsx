@@ -339,11 +339,11 @@ export default function ReportsPage() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-4 pb-4">
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Periyot</Label>
               <Select value={dateRange} onValueChange={v => setDateRange(v as DateRange)}>
-                <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="daily">Günlük</SelectItem>
                   <SelectItem value="weekly">Haftalık</SelectItem>
@@ -356,7 +356,7 @@ export default function ReportsPage() {
             <div className="space-y-1">
               <Label className="text-xs flex items-center gap-1"><Building2 className="h-3 w-3" /> Şube</Label>
               <Select value={selectedBranchId || 'all'} onValueChange={v => { setSelectedBranchId(v === 'all' ? null : v); setSelectedStaffId(null); }}>
-                <SelectTrigger className="w-40 h-9 text-sm"><SelectValue placeholder="Tüm Şubeler" /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-40 h-9 text-sm"><SelectValue placeholder="Tüm Şubeler" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tüm Şubeler</SelectItem>
                   {activeBranches.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
@@ -367,7 +367,7 @@ export default function ReportsPage() {
             <div className="space-y-1">
               <Label className="text-xs flex items-center gap-1"><UserCheck className="h-3 w-3" /> Personel</Label>
               <Select value={selectedStaffId || 'all'} onValueChange={v => setSelectedStaffId(v === 'all' ? null : v)}>
-                <SelectTrigger className="w-40 h-9 text-sm"><SelectValue placeholder="Tüm Personel" /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-40 h-9 text-sm"><SelectValue placeholder="Tüm Personel" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tüm Personel</SelectItem>
                   {activeStaff.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
@@ -375,7 +375,7 @@ export default function ReportsPage() {
               </Select>
             </div>
 
-            <div className="ml-auto text-xs text-muted-foreground">
+            <div className="col-span-2 sm:col-span-1 sm:ml-auto text-xs text-muted-foreground">
               {format(startDate, 'd MMM yyyy', { locale: tr })} — {format(endDate, 'd MMM yyyy', { locale: tr })}
             </div>
           </div>
