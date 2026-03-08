@@ -10,6 +10,13 @@ import { Plus, Pencil, Trash2, Clock, Scissors, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
+
+const SERVICE_COLUMNS: ColumnMapping[] = [
+  { excelHeader: 'Hizmet Adı', dbKey: 'name', required: true },
+  { excelHeader: 'Süre (dk)', dbKey: 'duration', required: true },
+  { excelHeader: 'Fiyat (₺)', dbKey: 'price', required: true },
+];
 
 export default function ServicesPage() {
   const { hasPermission } = usePermissions();
