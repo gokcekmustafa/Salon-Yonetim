@@ -331,8 +331,12 @@ export default function SuperAdminSalonsPage() {
                   <TableRow key={salon.id} className="group">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Building2 className="h-4 w-4 text-primary" />
+                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                          {salon.logo_url ? (
+                            <img src={salon.logo_url} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <Building2 className="h-4 w-4 text-primary" />
+                          )}
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{salon.name}</p>
