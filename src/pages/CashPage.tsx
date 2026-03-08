@@ -107,7 +107,7 @@ export default function CashPage() {
   const resetForm = useCallback(() => {
     setTxType('income'); setTxAmount(''); setTxDescription('');
     setTxDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
-    setTxPaymentMethod('cash'); setTxCashBoxId('');
+    setTxPaymentMethod('cash'); setTxCashBoxId('none');
     setEditingTx(null);
   }, []);
 
