@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import SuperAdminDashboard from './SuperAdminDashboard';
 
 export default function Dashboard() {
   const { isSuperAdmin, currentSalonId } = useAuth();
@@ -27,23 +28,9 @@ export default function Dashboard() {
     </div>
   );
 
+  // Super admin without selected salon: show platform dashboard
   if (isSuperAdmin && !currentSalonId) {
-    return (
-      <div className="page-container animate-in">
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="h-20 w-20 rounded-2xl flex items-center justify-center mb-6 btn-gradient">
-            <Shield className="h-10 w-10 text-primary-foreground" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">Hoşgeldiniz, Super Admin!</h2>
-          <p className="text-muted-foreground text-sm mb-8 max-w-md leading-relaxed">
-            Dashboard'u görüntülemek için önce Platform Yönetimi sayfasından bir salon oluşturun veya mevcut bir salonu yönetmeye başlayın.
-          </p>
-          <Button onClick={() => navigate('/admin/salonlar')} className="gap-2 btn-gradient h-11 px-6 rounded-xl">
-            <Building2 className="h-4 w-4" /> Platform Yönetimine Git
-          </Button>
-        </div>
-      </div>
-    );
+    return <SuperAdminDashboard />;
   }
 
   const filteredAppointments = appointments.filter(a => selectedBranchId ? a.branch_id === selectedBranchId : true);

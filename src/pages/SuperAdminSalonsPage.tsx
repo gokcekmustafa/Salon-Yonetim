@@ -55,6 +55,7 @@ export default function SuperAdminSalonsPage() {
   const [formAddress, setFormAddress] = useState('');
   const [formPlan, setFormPlan] = useState<string>('free');
   const [formActive, setFormActive] = useState(true);
+  const [formExpiry, setFormExpiry] = useState('');
 
   const fetchSalons = async () => {
     setLoading(true);
@@ -84,7 +85,7 @@ export default function SuperAdminSalonsPage() {
   useEffect(() => { if (isSuperAdmin) fetchSalons(); }, [isSuperAdmin]);
 
   const openCreate = () => {
-    setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress(''); setFormPlan('free'); setFormActive(true);
+    setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress(''); setFormPlan('free'); setFormActive(true); setFormExpiry('');
     setDialogOpen(true);
   };
 
@@ -92,6 +93,7 @@ export default function SuperAdminSalonsPage() {
     setEditing(salon); setFormName(salon.name); setFormSlug(salon.slug);
     setFormPhone(salon.phone || ''); setFormAddress(salon.address || '');
     setFormPlan(salon.subscription_plan); setFormActive(salon.is_active);
+    setFormExpiry((salon as any).subscription_expires_at ? (salon as any).subscription_expires_at.split('T')[0] : '');
     setDialogOpen(true);
   };
 
@@ -113,6 +115,7 @@ export default function SuperAdminSalonsPage() {
       name: formName.trim(), slug: formSlug.trim(),
       phone: formPhone.trim() || null, address: formAddress.trim() || null,
       subscription_plan: formPlan as Salon['subscription_plan'], is_active: formActive,
+      subscription_expires_at: formExpiry ? new Date(formExpiry).toISOString() : null,
     };
 
     const { error } = editing
@@ -309,6 +312,11 @@ export default function SuperAdminSalonsPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Abonelik Bitiş Tarihi</Label>
+              <Input type="date" value={formExpiry} onChange={e => setFormExpiry(e.target.value)} className="h-10" />
+              <p className="text-xs text-muted-foreground">Boş bırakılırsa süresiz olur</p>
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Adres</Label>

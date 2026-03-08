@@ -19,6 +19,7 @@ import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
 import AuthPage from "./pages/AuthPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
+import SuperAdminDataPage from "./pages/SuperAdminDataPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
 
               {/* Super Admin */}
               <Route path="/admin/salonlar" element={<SuperAdminRoute><SuperAdminSalonsPage /></SuperAdminRoute>} />
+              <Route path="/admin/veriler" element={<SuperAdminRoute><SuperAdminDataPage /></SuperAdminRoute>} />
 
               {/* Admin panel - all authenticated users */}
               <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />

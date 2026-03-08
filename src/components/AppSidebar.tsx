@@ -58,7 +58,8 @@ const otherMenu: MenuItem[] = [
 ];
 
 const superAdminMenu: MenuItem[] = [
-  { title: 'Tüm Salonlar', url: '/admin/salonlar', icon: Shield, roles: ['super_admin'] },
+  { title: 'Platform Yönetimi', url: '/admin/salonlar', icon: Shield, roles: ['super_admin'] },
+  { title: 'Tüm Veriler', url: '/admin/veriler', icon: BarChart3, roles: ['super_admin'] },
 ];
 
 export function AppSidebar() {
