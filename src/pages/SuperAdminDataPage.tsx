@@ -227,7 +227,8 @@ export default function SuperAdminDataPage() {
                 if (!importSalonId) { toast.error('Lütfen bir salon seçin'); return { success: 0, errors: 1 }; }
                 let success = 0, errors = 0;
                 for (const row of rows) {
-                  const { error } = await supabase.from('customers').insert({ ...row, salon_id: importSalonId });
+                  const insertData = { ...row, salon_id: importSalonId } as any;
+                  const { error } = await supabase.from('customers').insert(insertData);
                   if (error) errors++; else success++;
                 }
                 fetchAll();
