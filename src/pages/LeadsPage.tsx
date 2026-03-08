@@ -128,6 +128,7 @@ export default function LeadsPage() {
       phone: lead.phone || '',
       source: lead.source || '',
       status: lead.status,
+      assigned_staff_id: lead.assigned_staff_id || '',
     });
     setDialogOpen(true);
   };
