@@ -14,6 +14,7 @@ import BranchesPage from "./pages/BranchesPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import SettingsPage from "./pages/SettingsPage";
 import BookingPage from "./pages/BookingPage";
+import ReportsPage from "./pages/ReportsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,7 +41,7 @@ const App = () => (
                   <Route path="/personel" element={<StaffPage />} />
                   <Route path="/subeler" element={<BranchesPage />} />
                   <Route path="/kasa" element={<PaymentsPage />} />
-                  <Route path="/raporlar" element={<Dashboard />} />
+                  <Route path="/raporlar" element={<ReportsPage />} />
                   <Route path="/online-randevu" element={<BookingPage />} />
                   <Route path="/ayarlar" element={<SettingsPage />} />
                   <Route path="*" element={<NotFound />} />
