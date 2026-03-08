@@ -121,20 +121,20 @@ export default function BranchesPage() {
 
       {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editing ? 'Şube Düzenle' : 'Yeni Şube'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
+            <div className="space-y-1.5">
               <Label>Şube Adı</Label>
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Kadıköy Şubesi" />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Adres</Label>
               <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Kadıköy, İstanbul" />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Telefon</Label>
               <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0212 555 1234" />
             </div>

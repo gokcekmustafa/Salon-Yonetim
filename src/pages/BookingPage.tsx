@@ -84,10 +84,12 @@ export default function BookingPage() {
     }
 
     const existing = customers.find(c => c.phone === customerPhone.trim());
-    const customerId = existing?.id || crypto.randomUUID();
+    let customerId: string;
 
-    if (!existing) {
-      addCustomer({ name: customerName.trim(), phone: customerPhone.trim() });
+    if (existing) {
+      customerId = existing.id;
+    } else {
+      customerId = addCustomer({ name: customerName.trim(), phone: customerPhone.trim() });
     }
 
     const start = new Date(`${selectedDate}T${selectedTime}`);
@@ -416,7 +418,7 @@ export default function BookingPage() {
             </Card>
 
             <div className="space-y-3">
-              <div>
+              <div className="space-y-1.5">
                 <Label>Ad Soyad</Label>
                 <Input
                   value={customerName}
@@ -424,12 +426,13 @@ export default function BookingPage() {
                   placeholder="Adınız ve soyadınız"
                 />
               </div>
-              <div>
+              <div className="space-y-1.5">
                 <Label>Telefon</Label>
                 <Input
                   value={customerPhone}
                   onChange={e => setCustomerPhone(e.target.value)}
                   placeholder="0500 000 0000"
+                  type="tel"
                 />
               </div>
             </div>
