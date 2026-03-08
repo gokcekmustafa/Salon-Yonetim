@@ -3,7 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { SalonProvider } from "@/contexts/SalonContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import CustomersPage from "./pages/CustomersPage";
@@ -15,44 +17,60 @@ import PaymentsPage from "./pages/PaymentsPage";
 import SettingsPage from "./pages/SettingsPage";
 import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
+import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AdminRoute = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute anyRole={['super_admin', 'salon_admin', 'staff']}>
+    <AppLayout>{children}</AppLayout>
+  </ProtectedRoute>
+);
+
+const FinanceRoute = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute anyRole={['super_admin', 'salon_admin']}>
+    <AppLayout>{children}</AppLayout>
+  </ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <SalonProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public booking page */}
-            <Route path="/book/:salonSlug" element={<BookingPage />} />
+      <AuthProvider>
+        <SalonProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public */}
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/book/:salonSlug" element={<BookingPage />} />
 
-            {/* Admin panel */}
-            <Route path="/" element={
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
-            } />
-            <Route path="/musteriler" element={<AppLayout><CustomersPage /></AppLayout>} />
-            <Route path="/randevular" element={<AppLayout><AppointmentsPage /></AppLayout>} />
-            <Route path="/hizmetler" element={<AppLayout><ServicesPage /></AppLayout>} />
-            <Route path="/personel" element={<AppLayout><StaffPage /></AppLayout>} />
-            <Route path="/subeler" element={<AppLayout><BranchesPage /></AppLayout>} />
-            <Route path="/kasa" element={<AppLayout><PaymentsPage /></AppLayout>} />
-            <Route path="/raporlar" element={<AppLayout><ReportsPage /></AppLayout>} />
-            <Route path="/online-randevu" element={<AppLayout><BookingPage /></AppLayout>} />
-            <Route path="/ayarlar" element={<AppLayout><SettingsPage /></AppLayout>} />
+              {/* Admin panel - all authenticated users */}
+              <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
+              <Route path="/musteriler" element={<AdminRoute><CustomersPage /></AdminRoute>} />
+              <Route path="/randevular" element={<AdminRoute><AppointmentsPage /></AdminRoute>} />
+              <Route path="/hizmetler" element={<AdminRoute><ServicesPage /></AdminRoute>} />
+              <Route path="/personel" element={<AdminRoute><StaffPage /></AdminRoute>} />
+              <Route path="/subeler" element={<AdminRoute><BranchesPage /></AdminRoute>} />
 
-            {/* Public salon slug - must be LAST to avoid catching admin routes */}
-            <Route path="/:salonSlug" element={<BookingPage />} />
+              {/* Finance - admin only */}
+              <Route path="/kasa" element={<FinanceRoute><PaymentsPage /></FinanceRoute>} />
+              <Route path="/raporlar" element={<FinanceRoute><ReportsPage /></FinanceRoute>} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </SalonProvider>
+              {/* Settings - admin only */}
+              <Route path="/ayarlar" element={<FinanceRoute><SettingsPage /></FinanceRoute>} />
+              <Route path="/online-randevu" element={<AdminRoute><BookingPage /></AdminRoute>} />
+
+              {/* Public salon slug */}
+              <Route path="/:salonSlug" element={<BookingPage />} />
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </SalonProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

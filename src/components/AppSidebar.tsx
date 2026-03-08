@@ -1,5 +1,6 @@
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
   SidebarContent,
@@ -26,9 +27,18 @@ import {
   BarChart3,
   Globe,
   ChevronRight,
+  Shield,
+  type LucideIcon,
 } from 'lucide-react';
 
-const mainMenu = [
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  roles?: ('super_admin' | 'salon_admin' | 'staff')[];
+}
+
+const mainMenu: MenuItem[] = [
   { title: 'Panel', url: '/', icon: LayoutDashboard },
   { title: 'Randevular', url: '/randevular', icon: Calendar },
   { title: 'Müşteriler', url: '/musteriler', icon: Users },
@@ -37,52 +47,60 @@ const mainMenu = [
   { title: 'Şubeler', url: '/subeler', icon: Building2 },
 ];
 
-const financeMenu = [
-  { title: 'Kasa', url: '/kasa', icon: Wallet },
-  { title: 'Raporlar', url: '/raporlar', icon: BarChart3 },
+const financeMenu: MenuItem[] = [
+  { title: 'Kasa', url: '/kasa', icon: Wallet, roles: ['super_admin', 'salon_admin'] },
+  { title: 'Raporlar', url: '/raporlar', icon: BarChart3, roles: ['super_admin', 'salon_admin'] },
 ];
 
-const otherMenu = [
+const otherMenu: MenuItem[] = [
   { title: 'Online Randevu', url: '/online-randevu', icon: Globe },
-  { title: 'Ayarlar', url: '/ayarlar', icon: Settings },
+  { title: 'Ayarlar', url: '/ayarlar', icon: Settings, roles: ['super_admin', 'salon_admin'] },
+];
+
+const superAdminMenu: MenuItem[] = [
+  { title: 'Tüm Salonlar', url: '/admin/salonlar', icon: Shield, roles: ['super_admin'] },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
+  const { roles } = useAuth();
 
-  const renderMenu = (items: typeof mainMenu) => (
-    <SidebarMenu>
-      {items.map((item) => {
-        const active = location.pathname === item.url;
-        return (
-          <SidebarMenuItem key={item.title}>
-            <SidebarMenuButton
-              asChild
-              isActive={active}
-              tooltip={item.title}
-            >
-              <NavLink
-                to={item.url}
-                end={item.url === '/'}
-                className="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150 hover:bg-sidebar-accent/60 text-sidebar-foreground"
-                activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-              >
-                <item.icon className="h-[18px] w-[18px] shrink-0" />
-                {!collapsed && (
-                  <>
-                    <span className="flex-1">{item.title}</span>
-                    {active && <ChevronRight className="h-3.5 w-3.5 opacity-50" />}
-                  </>
-                )}
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        );
-      })}
-    </SidebarMenu>
-  );
+  const filterByRole = (items: MenuItem[]) =>
+    items.filter(item => !item.roles || item.roles.some(r => roles.includes(r)));
+
+  const renderMenu = (items: MenuItem[]) => {
+    const filtered = filterByRole(items);
+    if (filtered.length === 0) return null;
+    return (
+      <SidebarMenu>
+        {filtered.map((item) => {
+          const active = location.pathname === item.url;
+          return (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
+                <NavLink
+                  to={item.url}
+                  end={item.url === '/'}
+                  className="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150 hover:bg-sidebar-accent/60 text-sidebar-foreground"
+                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                >
+                  <item.icon className="h-[18px] w-[18px] shrink-0" />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1">{item.title}</span>
+                      {active && <ChevronRight className="h-3.5 w-3.5 opacity-50" />}
+                    </>
+                  )}
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    );
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -96,13 +114,21 @@ export function AppSidebar() {
               <span className="text-base font-bold text-sidebar-accent-foreground font-display tracking-tight">
                 SalonYönetim
               </span>
-              <p className="text-[10px] text-sidebar-foreground/50 leading-none mt-0.5">Yönetim Paneli</p>
+              <p className="text-[10px] text-sidebar-foreground/50 leading-none mt-0.5">SaaS Platform</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
       <SidebarContent className="px-2 mt-2">
+        {/* Super Admin section */}
+        {roles.includes('super_admin') && (
+          <SidebarGroup>
+            {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold mb-1 px-3">Platform</SidebarGroupLabel>}
+            <SidebarGroupContent>{renderMenu(superAdminMenu)}</SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         <SidebarGroup>
           {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold mb-1 px-3">Yönetim</SidebarGroupLabel>}
           <SidebarGroupContent>{renderMenu(mainMenu)}</SidebarGroupContent>
