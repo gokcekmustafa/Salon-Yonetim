@@ -1,6 +1,7 @@
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   Sidebar,
   SidebarContent,
@@ -31,26 +32,28 @@ import {
   Bell,
   type LucideIcon,
 } from 'lucide-react';
+import type { SalonPermissions } from '@/hooks/usePermissions';
 
 interface MenuItem {
   title: string;
   url: string;
   icon: LucideIcon;
   roles?: ('super_admin' | 'salon_admin' | 'staff')[];
+  permissionKey?: keyof SalonPermissions;
 }
 
 const mainMenu: MenuItem[] = [
-  { title: 'Panel', url: '/', icon: LayoutDashboard },
-  { title: 'Randevular', url: '/randevular', icon: Calendar },
-  { title: 'Müşteriler', url: '/musteriler', icon: Users },
-  { title: 'Hizmetler', url: '/hizmetler', icon: Scissors },
-  { title: 'Personel', url: '/personel', icon: UserCheck },
-  { title: 'Şubeler', url: '/subeler', icon: Building2 },
+  { title: 'Panel', url: '/', icon: LayoutDashboard, permissionKey: 'can_view_dashboard' },
+  { title: 'Randevular', url: '/randevular', icon: Calendar, permissionKey: 'can_manage_appointments' },
+  { title: 'Müşteriler', url: '/musteriler', icon: Users, permissionKey: 'can_manage_customers' },
+  { title: 'Hizmetler', url: '/hizmetler', icon: Scissors, permissionKey: 'can_manage_services' },
+  { title: 'Personel', url: '/personel', icon: UserCheck, permissionKey: 'can_manage_staff' },
+  { title: 'Şubeler', url: '/subeler', icon: Building2, permissionKey: 'can_add_branches' },
 ];
 
 const financeMenu: MenuItem[] = [
-  { title: 'Kasa', url: '/kasa', icon: Wallet, roles: ['super_admin', 'salon_admin'] },
-  { title: 'Raporlar', url: '/raporlar', icon: BarChart3, roles: ['super_admin', 'salon_admin'] },
+  { title: 'Kasa', url: '/kasa', icon: Wallet, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
+  { title: 'Raporlar', url: '/raporlar', icon: BarChart3, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
 ];
 
 const otherMenu: MenuItem[] = [
@@ -67,10 +70,17 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { roles } = useAuth();
+  const { roles, isSuperAdmin } = useAuth();
+  const { hasPermission } = usePermissions();
 
   const filterByRole = (items: MenuItem[]) =>
-    items.filter(item => !item.roles || item.roles.some(r => roles.includes(r)));
+    items.filter(item => {
+      // Role check
+      if (item.roles && !item.roles.some(r => roles.includes(r))) return false;
+      // Permission check (super admin bypasses)
+      if (item.permissionKey && !isSuperAdmin && !hasPermission(item.permissionKey)) return false;
+      return true;
+    });
 
   const renderMenu = (items: MenuItem[]) => {
     const filtered = filterByRole(items);
