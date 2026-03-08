@@ -31,7 +31,8 @@ export function StaffPasswordManager() {
   const canManage = isSuperAdmin || isSalonAdmin;
 
   useEffect(() => {
-    if (!currentSalonId || !canManage) return;
+    if (!canManage) { setLoading(false); return; }
+    if (!currentSalonId) { setLoading(false); setStaffUsers([]); return; }
     fetchStaffUsers();
   }, [currentSalonId, canManage]);
 
