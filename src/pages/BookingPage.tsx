@@ -95,10 +95,12 @@ export default function BookingPage() {
       return;
     }
 
+    const staffMember = staff.find(s => s.id === selectedStaffId);
     addAppointment({
       customerId,
       staffId: selectedStaffId,
       serviceId: selectedServiceId,
+      branchId: staffMember?.branchId || '',
       startTime: start.toISOString(),
       endTime: end.toISOString(),
       status: 'bekliyor',
