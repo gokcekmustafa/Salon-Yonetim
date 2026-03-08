@@ -78,7 +78,7 @@ export default function LeadsPage() {
   // Create/Edit lead dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Lead | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', source: '', status: 'new' as LeadStatus });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', source: '', status: 'new' as LeadStatus, assigned_staff_id: '' });
   const [saving, setSaving] = useState(false);
 
   // Detail sheet
