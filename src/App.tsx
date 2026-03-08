@@ -54,6 +54,9 @@ const App = () => (
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/book/:salonSlug" element={<BookingPage />} />
 
+              {/* Super Admin */}
+              <Route path="/admin/salonlar" element={<SuperAdminRoute><SuperAdminSalonsPage /></SuperAdminRoute>} />
+
               {/* Admin panel - all authenticated users */}
               <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
               <Route path="/musteriler" element={<AdminRoute><CustomersPage /></AdminRoute>} />
