@@ -70,12 +70,12 @@ export default function SettingsPage() {
       {(isSalonAdmin || isSuperAdmin) && <StaffPasswordManager />}
 
       {/* Salon Announcements */}
-      {(isSalonAdmin || isSuperAdmin) && currentSalonId && (
+      {(isSalonAdmin || isSuperAdmin) && currentSalonId && hasPermission('can_manage_announcements') && (
         <AnnouncementManager mode="salon_admin" salonId={currentSalonId} />
       )}
 
       {/* Salon Popup Announcements */}
-      {(isSalonAdmin || isSuperAdmin) && currentSalonId && (
+      {(isSalonAdmin || isSuperAdmin) && currentSalonId && hasPermission('can_manage_popups') && (
         <PopupManager mode="salon_admin" salonId={currentSalonId} />
       )}
 
