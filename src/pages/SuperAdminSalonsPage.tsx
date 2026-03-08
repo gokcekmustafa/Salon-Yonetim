@@ -407,6 +407,36 @@ export default function SuperAdminSalonsPage() {
             {/* Salon Info */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Salon Bilgileri</h3>
+              {/* Logo Upload */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Salon Logosu</Label>
+                <div className="flex items-center gap-3">
+                  <div className="relative group">
+                    <div className="h-16 w-16 rounded-xl border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden">
+                      {(logoPreview || editingLogoUrl) ? (
+                        <img src={logoPreview || editingLogoUrl!} alt="Logo" className="h-full w-full object-cover rounded-xl" />
+                      ) : (
+                        <Building2 className="h-6 w-6 text-muted-foreground/40" />
+                      )}
+                    </div>
+                    <button onClick={() => logoFileRef.current?.click()} className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                      <Camera className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    <Button variant="outline" size="sm" onClick={() => logoFileRef.current?.click()} className="gap-1.5 text-xs h-7">
+                      <Upload className="h-3 w-3" /> Yükle
+                    </Button>
+                    {(logoPreview || editingLogoUrl) && (
+                      <Button variant="ghost" size="sm" onClick={() => { setLogoPreview(null); setLogoFile(null); setEditingLogoUrl(null); }} className="gap-1.5 text-xs h-7 text-destructive hover:text-destructive">
+                        <X className="h-3 w-3" /> Kaldır
+                      </Button>
+                    )}
+                    <p className="text-[10px] text-muted-foreground">PNG, JPG. Maks 2MB</p>
+                  </div>
+                </div>
+                <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
+              </div>
               <div className="space-y-2">
                 <Label className="text-xs font-semibold">Salon Adı *</Label>
                 <Input value={formName} onChange={e => handleNameChange(e.target.value)} placeholder="Güzellik Salonu" className="h-10" />
