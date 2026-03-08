@@ -1286,6 +1286,112 @@ export type Database = {
           },
         ]
       }
+      staff_payments: {
+        Row: {
+          amount: number
+          cash_box_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          payment_date: string
+          payment_method: string
+          payment_type: string
+          salon_id: string
+          staff_id: string
+        }
+        Insert: {
+          amount: number
+          cash_box_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          payment_date?: string
+          payment_method?: string
+          payment_type?: string
+          salon_id: string
+          staff_id: string
+        }
+        Update: {
+          amount?: number
+          cash_box_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          payment_date?: string
+          payment_method?: string
+          payment_type?: string
+          salon_id?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_payments_cash_box_id_fkey"
+            columns: ["cash_box_id"]
+            isOneToOne: false
+            referencedRelation: "cash_boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_payments_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_payments_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_salaries: {
+        Row: {
+          created_at: string
+          id: string
+          monthly_salary: number
+          salon_id: string
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          monthly_salary?: number
+          salon_id: string
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          monthly_salary?: number
+          salon_id?: string
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_salaries_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_salaries_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: true
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_online_status: {
         Row: {
           id: string
