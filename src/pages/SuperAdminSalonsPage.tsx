@@ -76,6 +76,9 @@ export default function SuperAdminSalonsPage() {
   const [editingLogoUrl, setEditingLogoUrl] = useState<string | null>(null);
   const logoFileRef = useRef<HTMLInputElement>(null);
 
+  // Permission manager state
+  const [permDialogOpen, setPermDialogOpen] = useState(false);
+  const [permSalon, setPermSalon] = useState<{ id: string; name: string } | null>(null);
   const fetchSalons = async () => {
     setLoading(true);
     const { data, error } = await supabase.from('salons').select('*').order('created_at', { ascending: false });
