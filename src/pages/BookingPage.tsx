@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 
 type BookingStep = 'branch' | 'service' | 'staff' | 'datetime' | 'info';
 
-interface SalonInfo { id: string; name: string; slug: string; phone: string | null; address: string | null; }
+interface SalonInfo { id: string; name: string; slug: string; phone: string | null; address: string | null; online_booking_active: boolean; }
 interface BranchInfo { id: string; name: string; address: string | null; phone: string | null; is_active: boolean; }
 interface ServiceInfo { id: string; name: string; duration: number; price: number; is_active: boolean; }
 interface StaffInfo { id: string; name: string; is_active: boolean; branch_id: string | null; }
