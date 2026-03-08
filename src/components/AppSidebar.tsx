@@ -54,6 +54,7 @@ const mainMenu: MenuItem[] = [
   { title: 'Personel', url: '/personel', icon: UserCheck, permissionKey: 'can_manage_staff' },
   { title: 'Şubeler', url: '/subeler', icon: Building2, permissionKey: 'can_add_branches' },
   { title: 'Aday Müşteriler', url: '/adaylar', icon: Users, permissionKey: 'can_manage_leads' },
+  { title: 'Seanslar', url: '/seanslar', icon: DoorOpen, permissionKey: 'can_manage_appointments' },
 ];
 
 const financeMenu: MenuItem[] = [
