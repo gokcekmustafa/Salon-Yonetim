@@ -12,6 +12,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import SuperAdminDashboard from './SuperAdminDashboard';
+import { SubscriptionAlert } from '@/components/notifications/SubscriptionAlert';
 
 export default function Dashboard() {
   const { isSuperAdmin, currentSalonId } = useAuth();
