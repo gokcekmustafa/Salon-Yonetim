@@ -19,6 +19,7 @@ import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
 import AuthPage from "./pages/AuthPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
+import SuperAdminDataPage from "./pages/SuperAdminDataPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
