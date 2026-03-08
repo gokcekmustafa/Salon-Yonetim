@@ -14,14 +14,7 @@ import { toast } from 'sonner';
 import type { NotificationSettings } from '@/types/salon';
 
 export default function SettingsPage() {
-  const { salon } = useSalon();
-
-  const [notifSettings, setNotifSettings] = useState<NotificationSettings>({
-    whatsappEnabled: true,
-    smsEnabled: false,
-    reminderHoursBefore: 24,
-    messageTemplate: 'Merhaba {müşteri_adı}, {tarih} tarihinde saat {saat}\'de {hizmet} randevunuz bulunmaktadır. {salon_adı}',
-  });
+  const { salon, notificationSettings, updateNotificationSettings } = useSalon();
 
   const handleSaveNotifications = () => {
     toast.success('Bildirim ayarları kaydedildi.');
