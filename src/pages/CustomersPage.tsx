@@ -151,6 +151,7 @@ export default function CustomersPage() {
                 <TableHead className="hidden lg:table-cell font-semibold">TC Kimlik</TableHead>
                 <TableHead className="hidden xl:table-cell font-semibold">Adres</TableHead>
                 <TableHead className="hidden lg:table-cell font-semibold">Notlar</TableHead>
+                <TableHead className="hidden xl:table-cell font-semibold">Kaynak</TableHead>
                 <TableHead className="text-right font-semibold">İşlem</TableHead>
               </TableRow>
             </TableHeader>
