@@ -85,7 +85,7 @@ export default function SuperAdminSalonsPage() {
   useEffect(() => { if (isSuperAdmin) fetchSalons(); }, [isSuperAdmin]);
 
   const openCreate = () => {
-    setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress(''); setFormPlan('free'); setFormActive(true);
+    setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress(''); setFormPlan('free'); setFormActive(true); setFormExpiry('');
     setDialogOpen(true);
   };
 
