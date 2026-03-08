@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Customer, Service, Staff, Appointment, Payment, Branch } from '@/types/salon';
+import { Customer, Service, Staff, Appointment, Payment, Branch, NotificationSettings, AppointmentReminder } from '@/types/salon';
 
 interface SalonInfo {
   name: string;
