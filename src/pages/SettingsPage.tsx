@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, MessageSquare, Phone, Clock, Send, AlertTriangle, Loader2 } from 'lucide-react';
+import { Bell, MessageSquare, Phone, Clock, Send, AlertTriangle, Loader2, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { ChangeOwnPassword } from '@/components/password/ChangeOwnPassword';
 import { StaffPasswordManager } from '@/components/password/StaffPasswordManager';
