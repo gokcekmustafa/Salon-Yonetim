@@ -38,6 +38,7 @@ export type DbSalon = {
   id: string; name: string; slug: string; phone: string | null;
   address: string | null; is_active: boolean; logo_url: string | null;
   subscription_plan: string; subscription_expires_at: string | null;
+  online_booking_active: boolean;
 };
 
 export function useSalonData() {
