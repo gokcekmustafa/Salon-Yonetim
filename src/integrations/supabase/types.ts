@@ -285,6 +285,7 @@ export type Database = {
       }
       customers: {
         Row: {
+          address: string | null
           birth_date: string | null
           created_at: string
           id: string
@@ -292,9 +293,12 @@ export type Database = {
           notes: string | null
           phone: string | null
           salon_id: string
+          secondary_phone: string | null
+          tc_kimlik_no: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
           birth_date?: string | null
           created_at?: string
           id?: string
@@ -302,9 +306,12 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           salon_id: string
+          secondary_phone?: string | null
+          tc_kimlik_no?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
           birth_date?: string | null
           created_at?: string
           id?: string
@@ -312,6 +319,8 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           salon_id?: string
+          secondary_phone?: string | null
+          tc_kimlik_no?: string | null
           updated_at?: string
         }
         Relationships: [
