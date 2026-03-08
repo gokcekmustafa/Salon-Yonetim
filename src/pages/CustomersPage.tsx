@@ -154,6 +154,7 @@ export default function CustomersPage() {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="font-semibold">Ad Soyad</TableHead>
+                <TableHead className="font-semibold">Tür</TableHead>
                 <TableHead className="font-semibold">Telefon</TableHead>
                 <TableHead className="hidden lg:table-cell font-semibold">TC Kimlik</TableHead>
                 <TableHead className="hidden xl:table-cell font-semibold">Adres</TableHead>
