@@ -199,13 +199,13 @@ export default function CashPage() {
           <h1 className="page-title">Kasa Yönetimi</h1>
           <p className="page-subtitle">Gelir, gider ve kasa takibi</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setBoxDialogOpen(true)} className="gap-1.5">
-            <Building2 className="h-4 w-4" /> Kasa Ekle
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => setBoxDialogOpen(true)} className="gap-1.5 flex-1 sm:flex-initial">
+            <Building2 className="h-4 w-4" /> <span className="hidden xs:inline">Kasa</span> Ekle
           </Button>
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button className="btn-gradient gap-2"><Plus className="h-4 w-4" />İşlem Ekle</Button>
+              <Button className="btn-gradient gap-2 flex-1 sm:flex-initial"><Plus className="h-4 w-4" />İşlem Ekle</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>{editingTx ? 'İşlem Düzenle' : 'Yeni İşlem'}</DialogTitle></DialogHeader>
