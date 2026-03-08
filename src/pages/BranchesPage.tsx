@@ -11,6 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
+
+const BRANCH_COLUMNS: ColumnMapping[] = [
+  { excelHeader: 'Şube Adı', dbKey: 'name', required: true },
+  { excelHeader: 'Adres', dbKey: 'address' },
+  { excelHeader: 'Telefon', dbKey: 'phone' },
+  { excelHeader: 'Aktif', dbKey: 'is_active' },
+];
 
 export default function BranchesPage() {
   const { hasPermission } = usePermissions();
