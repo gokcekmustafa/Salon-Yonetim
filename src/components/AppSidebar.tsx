@@ -67,6 +67,7 @@ const financeMenu: MenuItem[] = [
   { title: 'Taksitler', url: '/taksitler', icon: CreditCard, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
   { title: 'Raporlar', url: '/raporlar', icon: BarChart3, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
   { title: 'Performans', url: '/performans', icon: TrendingUp, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_staff' },
+  { title: 'Maaş & Ödeme', url: '/maas', icon: Wallet, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_staff' },
 ];
 
 const otherMenu: MenuItem[] = [
