@@ -240,7 +240,7 @@ export default function PaymentsPage() {
         {/* Per cash box tabs */}
         {boxSummaries.map(box => (
           <TabsContent key={box.id} value={box.id}>
-            <Card className="shadow-soft border-border/60 overflow-hidden">
+            <Card className="shadow-soft border-border/60 overflow-hidden overflow-x-auto">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">{box.name} — İşlem Geçmişi</CardTitle>
               </CardHeader>
