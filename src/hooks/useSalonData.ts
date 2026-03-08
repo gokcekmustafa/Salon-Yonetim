@@ -197,6 +197,17 @@ export function useSalonData() {
     });
   };
 
+  // Light refetch that only updates salon data without resetting loading state
+  const refetchSalon = useCallback(async () => {
+    if (!salonId) return;
+    const { data } = await supabase
+      .from('salons')
+      .select('id, name, slug, phone, address, is_active, logo_url')
+      .eq('id', salonId)
+      .single();
+    if (data) setSalon(data);
+  }, [salonId]);
+
   return {
     loading, salon, branches, customers, services, staff, appointments, payments, notificationSettings,
     addBranch, updateBranch, deleteBranch,
@@ -207,5 +218,6 @@ export function useSalonData() {
     addPayment, hasConflict,
     updateNotificationSettings,
     refetch: fetchAll,
+    refetchSalon,
   };
 }

@@ -17,7 +17,7 @@ import { SalonProfileSettings } from '@/components/salon/SalonProfileSettings';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
-  const { salon, notificationSettings, updateNotificationSettings, loading, refetch } = useSalonData();
+  const { salon, notificationSettings, updateNotificationSettings, loading, refetchSalon } = useSalonData();
   const { isSalonAdmin, isSuperAdmin, currentSalonId } = useAuth();
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -42,7 +42,7 @@ export default function SettingsPage() {
           salonId={currentSalonId}
           salonName={salon.name}
           logoUrl={salon.logo_url ?? null}
-          onUpdated={refetch}
+          onUpdated={refetchSalon}
         />
       )}
 
