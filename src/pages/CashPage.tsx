@@ -326,7 +326,7 @@ export default function CashPage() {
           <div key={tx.id} className="card-interactive p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {tx.type === 'income' ? <ArrowUpCircle className="h-5 w-5 text-green-600 shrink-0" /> : <ArrowDownCircle className="h-5 w-5 text-red-500 shrink-0" />}
+                {tx.type === 'income' ? <ArrowUpCircle className="h-5 w-5 text-success shrink-0" /> : <ArrowDownCircle className="h-5 w-5 text-destructive shrink-0" />}
                 <div className="space-y-0.5">
                   <p className="font-semibold text-sm">{tx.description || (tx.type === 'income' ? 'Gelir' : 'Gider')}</p>
                   <p className="text-xs text-muted-foreground">
