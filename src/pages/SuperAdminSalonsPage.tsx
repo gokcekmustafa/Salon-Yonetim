@@ -106,6 +106,7 @@ export default function SuperAdminSalonsPage() {
     setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress('');
     setFormPlan('free'); setFormActive(true); setFormExpiry('');
     setOwnerEmail(''); setOwnerPassword(''); setOwnerName(''); setShowOwnerPassword(false);
+    setLogoPreview(null); setLogoFile(null); setEditingLogoUrl(null);
     setDialogOpen(true);
   };
 
