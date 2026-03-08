@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Key, Loader2, Eye, EyeOff, Search, ShieldCheck, Plus, UserPlus, Trash2 } from 'lucide-react';
+import { Users, Key, Loader2, Eye, EyeOff, Search, ShieldCheck, Plus, UserPlus, Trash2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -39,6 +39,12 @@ export function SuperAdminUserManager() {
   const [newPassword, setNewPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Email update dialog
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailUser, setEmailUser] = useState<EnrichedUser | null>(null);
+  const [newEmail, setNewEmail] = useState('');
+  const [savingEmail, setSavingEmail] = useState(false);
 
   // Create user dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -94,11 +100,7 @@ export function SuperAdminUserManager() {
     setSaving(true);
     try {
       const res = await supabase.functions.invoke('manage-passwords', {
-        body: {
-          action: 'admin_reset_password',
-          target_user_id: selectedUser.id,
-          new_password: newPassword,
-        },
+        body: { action: 'admin_reset_password', target_user_id: selectedUser.id, new_password: newPassword },
       });
       if (res.error || res.data?.error) {
         toast.error(res.data?.error || 'Şifre sıfırlama başarısız');
@@ -112,16 +114,45 @@ export function SuperAdminUserManager() {
     setSaving(false);
   };
 
+  // Email update
+  const openEmailUpdate = (user: EnrichedUser) => {
+    setEmailUser(user);
+    setNewEmail(user.email || '');
+    setEmailDialogOpen(true);
+  };
+
+  const handleEmailUpdate = async () => {
+    if (!emailUser || !newEmail.trim()) {
+      toast.error('E-posta gerekli');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim())) {
+      toast.error('Geçerli bir e-posta adresi girin');
+      return;
+    }
+    setSavingEmail(true);
+    try {
+      const res = await supabase.functions.invoke('manage-passwords', {
+        body: { action: 'update_user_email', target_user_id: emailUser.id, new_email: newEmail.trim() },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || 'E-posta güncellenemedi');
+      } else {
+        toast.success(`${emailUser.full_name || 'Kullanıcı'} e-postası güncellendi`);
+        setEmailDialogOpen(false);
+        fetchUsers();
+      }
+    } catch {
+      toast.error('E-posta güncellenemedi');
+    }
+    setSavingEmail(false);
+  };
+
   // Create user
   const openCreate = () => {
-    setCreateEmail('');
-    setCreateFullName('');
-    setCreatePassword('');
-    setCreateRole('salon_admin');
-    setCreateSalonId('');
-    setCreateSalonRole('salon_admin');
-    setShowCreatePassword(false);
-    setCreateDialogOpen(true);
+    setCreateEmail(''); setCreateFullName(''); setCreatePassword('');
+    setCreateRole('salon_admin'); setCreateSalonId(''); setCreateSalonRole('salon_admin');
+    setShowCreatePassword(false); setCreateDialogOpen(true);
   };
 
   const handleCreate = async () => {
@@ -129,8 +160,6 @@ export function SuperAdminUserManager() {
       toast.error('E-posta ve şifre (min 6 karakter) zorunludur');
       return;
     }
-
-    // Basic email validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createEmail.trim())) {
       toast.error('Geçerli bir e-posta adresi girin');
       return;
@@ -139,20 +168,16 @@ export function SuperAdminUserManager() {
     setCreating(true);
     try {
       const body: Record<string, string> = {
-        action: 'create_user',
-        email: createEmail.trim(),
-        password: createPassword,
-        full_name: createFullName.trim() || createEmail.trim(),
+        action: 'create_user', email: createEmail.trim(),
+        password: createPassword, full_name: createFullName.trim() || createEmail.trim(),
         role: createRole,
       };
-
       if (createSalonId && createRole !== 'super_admin') {
         body.salon_id = createSalonId;
         body.salon_role = createSalonRole;
       }
 
       const res = await supabase.functions.invoke('manage-passwords', { body });
-
       if (res.error || res.data?.error) {
         toast.error(res.data?.error || 'Kullanıcı oluşturulamadı');
       } else {
@@ -232,12 +257,7 @@ export function SuperAdminUserManager() {
         <CardContent className="space-y-4">
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Kullanıcı ara..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-10 h-10"
-            />
+            <Input placeholder="Kullanıcı ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-10" />
           </div>
 
           {loading ? (
@@ -258,7 +278,7 @@ export function SuperAdminUserManager() {
                     <TableHead className="font-semibold hidden md:table-cell">E-posta</TableHead>
                     <TableHead className="font-semibold">Roller</TableHead>
                     <TableHead className="font-semibold hidden lg:table-cell">Salonlar</TableHead>
-                    <TableHead className="w-24"></TableHead>
+                    <TableHead className="w-32"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -306,22 +326,13 @@ export function SuperAdminUserManager() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openReset(user)}
-                            className="h-8 w-8"
-                            title="Şifre sıfırla"
-                          >
+                          <Button variant="ghost" size="icon" onClick={() => openEmailUpdate(user)} className="h-8 w-8" title="E-posta güncelle">
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => openReset(user)} className="h-8 w-8" title="Şifre sıfırla">
                             <Key className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(user)}
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            title="Kullanıcıyı sil"
-                          >
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(user)} className="h-8 w-8 text-destructive hover:text-destructive" title="Kullanıcıyı sil">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -379,6 +390,41 @@ export function SuperAdminUserManager() {
         </DialogContent>
       </Dialog>
 
+      {/* Email Update Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>E-posta Güncelle</DialogTitle>
+            <DialogDescription>
+              {emailUser?.full_name || emailUser?.email || 'Kullanıcı'} için yeni e-posta belirleyin
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg bg-muted/50 border border-border text-sm">
+              <p className="font-medium">{emailUser?.full_name || '—'}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Mevcut: {emailUser?.email}</p>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Yeni E-posta</Label>
+              <Input
+                type="email"
+                value={newEmail}
+                onChange={e => setNewEmail(e.target.value)}
+                placeholder="yeni@email.com"
+                className="h-10"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>İptal</Button>
+            <Button onClick={handleEmailUpdate} disabled={savingEmail || !newEmail.trim()} className="btn-gradient">
+              {savingEmail && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              E-postayı Güncelle
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Create User Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="max-w-md">
@@ -395,22 +441,11 @@ export function SuperAdminUserManager() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2 col-span-2">
                 <Label className="text-xs font-semibold">Ad Soyad</Label>
-                <Input
-                  value={createFullName}
-                  onChange={e => setCreateFullName(e.target.value)}
-                  placeholder="Ahmet Yılmaz"
-                  className="h-10"
-                />
+                <Input value={createFullName} onChange={e => setCreateFullName(e.target.value)} placeholder="Ahmet Yılmaz" className="h-10" />
               </div>
               <div className="space-y-2 col-span-2">
                 <Label className="text-xs font-semibold">E-posta *</Label>
-                <Input
-                  type="email"
-                  value={createEmail}
-                  onChange={e => setCreateEmail(e.target.value)}
-                  placeholder="kullanici@ornek.com"
-                  className="h-10"
-                />
+                <Input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="kullanici@ornek.com" className="h-10" />
               </div>
               <div className="space-y-2 col-span-2">
                 <Label className="text-xs font-semibold">Şifre *</Label>
