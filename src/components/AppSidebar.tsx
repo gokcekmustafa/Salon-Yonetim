@@ -121,15 +121,19 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4 pb-2">
         <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-lg flex items-center justify-center shadow-sm btn-gradient">
-            <Sparkles className="h-4.5 w-4.5 text-primary-foreground" />
-          </div>
+          {branding.logo_url ? (
+            <img src={branding.logo_url} alt="" className="h-9 w-9 rounded-lg object-contain shadow-sm" />
+          ) : (
+            <div className="h-9 w-9 rounded-lg flex items-center justify-center shadow-sm btn-gradient">
+              <Sparkles className="h-4.5 w-4.5 text-primary-foreground" />
+            </div>
+          )}
           {!collapsed && (
             <div>
               <span className="text-base font-bold text-sidebar-accent-foreground font-display tracking-tight">
-                SalonYönetim
+                {branding.company_name}
               </span>
-              <p className="text-[10px] text-sidebar-foreground/50 leading-none mt-0.5">SaaS Platform</p>
+              <p className="text-[10px] text-sidebar-foreground/50 leading-none mt-0.5">{branding.app_name}</p>
             </div>
           )}
         </div>
