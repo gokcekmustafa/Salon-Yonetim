@@ -265,7 +265,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Pipeline Stats */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
         {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
           <button
             key={key}
