@@ -12,6 +12,7 @@ export interface SalonPermissions {
   can_manage_popups: boolean;
   can_add_branches: boolean;
   can_manage_services: boolean;
+  can_manage_leads: boolean;
 }
 
 const ALL_GRANTED: SalonPermissions = {
@@ -24,6 +25,7 @@ const ALL_GRANTED: SalonPermissions = {
   can_manage_popups: true,
   can_add_branches: true,
   can_manage_services: true,
+  can_manage_leads: true,
 };
 
 export const PERMISSION_LABELS: Record<keyof SalonPermissions, string> = {
@@ -36,6 +38,7 @@ export const PERMISSION_LABELS: Record<keyof SalonPermissions, string> = {
   can_manage_popups: 'Popup Yönetimi',
   can_add_branches: 'Şube Ekleme',
   can_manage_services: 'Hizmet Yönetimi',
+  can_manage_leads: 'Aday Müşteri Yönetimi',
 };
 
 export const PERMISSION_ICONS: Record<keyof SalonPermissions, string> = {
