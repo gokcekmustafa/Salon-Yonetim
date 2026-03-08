@@ -192,15 +192,38 @@ export default function AppointmentsPage() {
     setDetailOpen(true);
   };
 
+  const openCompleteDialog = () => {
+    setSelectedPaymentMethod('cash');
+    setCompleteDialogOpen(true);
+  };
+
   const handleComplete = async () => {
-    if (!detailApt) return;
+    if (!detailApt || !user) return;
     await updateAppointment(detailApt.id, { status: 'tamamlandi' });
     await supabase.from('appointments').update({ session_status: 'completed' }).eq('id', detailApt.id);
     const service = services.find(s => s.id === detailApt.service_id);
     if (service) {
-      await addPayment({ appointment_id: detailApt.id, amount: service.price, payment_type: 'nakit' });
+      // Create payment record
+      const paymentTypeMap: Record<string, string> = { cash: 'nakit', credit_card: 'kart', eft: 'havale' };
+      await addPayment({ appointment_id: detailApt.id, amount: service.price, payment_type: paymentTypeMap[selectedPaymentMethod] || 'nakit' });
+
+      // Route to correct cash box in cash_transactions
+      const targetBox = cashBoxes.find(b => b.payment_method === selectedPaymentMethod);
+      if (targetBox && currentSalonId) {
+        await supabase.from('cash_transactions').insert({
+          salon_id: currentSalonId,
+          created_by: user.id,
+          type: 'income',
+          amount: service.price,
+          description: `Randevu: ${customers.find(c => c.id === detailApt.customer_id)?.name || ''} — ${service.name}`,
+          transaction_date: new Date().toISOString(),
+          payment_method: selectedPaymentMethod,
+          cash_box_id: targetBox.id,
+        });
+      }
     }
-    toast.success('Randevu tamamlandı, ödeme kaydedildi.');
+    toast.success('Randevu tamamlandı, ödeme kasaya kaydedildi.');
+    setCompleteDialogOpen(false);
     setDetailOpen(false);
     setDetailApt(null);
     refetch();
