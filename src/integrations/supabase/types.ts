@@ -460,6 +460,7 @@ export type Database = {
           address: string | null
           birth_date: string | null
           created_at: string
+          customer_type: string
           id: string
           name: string
           notes: string | null
@@ -475,6 +476,7 @@ export type Database = {
           address?: string | null
           birth_date?: string | null
           created_at?: string
+          customer_type?: string
           id?: string
           name: string
           notes?: string | null
@@ -490,6 +492,7 @@ export type Database = {
           address?: string | null
           birth_date?: string | null
           created_at?: string
+          customer_type?: string
           id?: string
           name?: string
           notes?: string | null

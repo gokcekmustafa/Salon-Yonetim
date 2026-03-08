@@ -1,0 +1,1 @@
+ALTER TABLE public.customers ADD COLUMN customer_type TEXT NOT NULL DEFAULT 'installment';
