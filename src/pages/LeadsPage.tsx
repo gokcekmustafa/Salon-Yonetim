@@ -441,7 +441,7 @@ export default function LeadsPage() {
                 {/* Status */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold">Durum</Label>
-                  <Select value={selectedLead.status} onValueChange={v => handleStatusChange(selectedLead, v)}>
+                  <Select value={selectedLead.status} onValueChange={v => handleStatusChange(selectedLead, v as LeadStatus)}>
                     <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(STATUS_CONFIG).map(([k, v]) => (
