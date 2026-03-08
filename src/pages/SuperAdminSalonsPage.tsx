@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Plus, Search, Building2, Users, Calendar, Eye, Loader2, Crown,
-  MoreHorizontal, Edit, Trash2, LogIn, EyeOff, UserPlus, Upload, X, Camera,
+  MoreHorizontal, Edit, Trash2, LogIn, EyeOff, UserPlus, Upload, X, Camera, Shield,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -24,6 +24,7 @@ import { SuperAdminUserManager } from '@/components/password/SuperAdminUserManag
 import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
 import { SubscriptionAlertSettings } from '@/components/notifications/SubscriptionAlertSettings';
 import { PopupManager } from '@/components/popup/PopupManager';
+import { PermissionManager } from '@/components/permissions/PermissionManager';
 
 type Salon = {
   id: string; name: string; slug: string; phone: string | null; address: string | null;
