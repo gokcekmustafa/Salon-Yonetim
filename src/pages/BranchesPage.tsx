@@ -11,6 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
+
+const BRANCH_COLUMNS: ColumnMapping[] = [
+  { excelHeader: 'Şube Adı', dbKey: 'name', required: true },
+  { excelHeader: 'Adres', dbKey: 'address' },
+  { excelHeader: 'Telefon', dbKey: 'phone' },
+  { excelHeader: 'Aktif', dbKey: 'is_active' },
+];
 
 export default function BranchesPage() {
   const { hasPermission } = usePermissions();
@@ -52,8 +60,40 @@ export default function BranchesPage() {
   return (
     <div className="page-container animate-in">
       <div className="page-header">
-        <div><h1 className="page-title">Şubeler</h1><p className="page-subtitle">{branches.filter(b => b.is_active).length} aktif şube</p></div>
-        <Button onClick={openAdd} size="sm" className="h-10 btn-gradient gap-1.5 rounded-xl px-4"><Plus className="h-4 w-4" /> Yeni Şube</Button>
+        <div>
+          <h1 className="page-title">Şubeler</h1>
+          <p className="page-subtitle">{branches.filter(b => b.is_active).length} aktif şube</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <DataExportImport
+            title="Şube Listesi"
+            filePrefix="subeler"
+            columns={BRANCH_COLUMNS}
+            data={branches}
+            toExportRow={(b) => ({
+              'Şube Adı': b.name,
+              'Adres': b.address || '',
+              'Telefon': b.phone || '',
+              'Aktif': b.is_active ? 'Evet' : 'Hayır',
+            })}
+            fromImportRow={(row) => ({
+              name: row['Şube Adı'],
+              address: row['Adres'] || '',
+              phone: row['Telefon'] || '',
+              is_active: (row['Aktif'] || 'Evet').toLowerCase() !== 'hayır',
+            })}
+            onImport={async (rows) => {
+              let success = 0, errors = 0;
+              for (const row of rows) {
+                const err = await addBranch(row as any);
+                if (err) errors++; else success++;
+              }
+              return { success, errors };
+            }}
+            summaryLines={[`Toplam: ${branches.length} şube`]}
+          />
+          <Button onClick={openAdd} size="sm" className="h-10 btn-gradient gap-1.5 rounded-xl px-4"><Plus className="h-4 w-4" /> Yeni Şube</Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2, Banknote, CreditCard } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2, Banknote, CreditCard, FileSpreadsheet, FileText } from 'lucide-react';
+import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { format, addMinutes, addDays, subDays, addWeeks, subWeeks } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -304,7 +305,33 @@ export default function AppointmentsPage() {
             <h1 className="page-title">Randevular</h1>
             <p className="page-subtitle">{format(currentDate, 'd MMMM yyyy', { locale: tr })}</p>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs" onClick={() => {
+              const headers = ['Tarih', 'Müşteri', 'Personel', 'Hizmet', 'Durum'];
+              const rows = appointments.map(a => ({
+                'Tarih': format(new Date(a.start_time), 'd MMM yyyy HH:mm', { locale: tr }),
+                'Müşteri': customers.find(c => c.id === a.customer_id)?.name || '-',
+                'Personel': staff.find(s => s.id === a.staff_id)?.name || '-',
+                'Hizmet': services.find(s => s.id === a.service_id)?.name || '-',
+                'Durum': a.status === 'tamamlandi' ? 'Tamamlandı' : a.status === 'iptal' ? 'İptal' : 'Bekliyor',
+              }));
+              exportToExcel(rows, headers, 'randevular');
+            }}>
+              <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+            </Button>
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs" onClick={() => {
+              const headers = ['Tarih', 'Müşteri', 'Personel', 'Hizmet', 'Durum'];
+              const rows = appointments.map(a => [
+                format(new Date(a.start_time), 'd MMM yyyy HH:mm', { locale: tr }),
+                customers.find(c => c.id === a.customer_id)?.name || '-',
+                staff.find(s => s.id === a.staff_id)?.name || '-',
+                services.find(s => s.id === a.service_id)?.name || '-',
+                a.status === 'tamamlandi' ? 'Tamamlandı' : a.status === 'iptal' ? 'İptal' : 'Bekliyor',
+              ]);
+              exportToPDF(rows, headers, 'Randevu Listesi', 'randevular', [`Toplam: ${appointments.length} randevu`]);
+            }}>
+              <FileText className="h-3.5 w-3.5" /> PDF
+            </Button>
             <Button variant="outline" size="sm" className="h-9 gap-1.5 flex-1 sm:flex-initial" onClick={() => setShowRoomManager(!showRoomManager)}>
               <DoorOpen className="h-4 w-4" /> <span className="hidden xs:inline">Odalar</span>
             </Button>

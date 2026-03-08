@@ -10,6 +10,13 @@ import { Plus, Pencil, Trash2, Clock, Scissors, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
+
+const SERVICE_COLUMNS: ColumnMapping[] = [
+  { excelHeader: 'Hizmet Adı', dbKey: 'name', required: true },
+  { excelHeader: 'Süre (dk)', dbKey: 'duration', required: true },
+  { excelHeader: 'Fiyat (₺)', dbKey: 'price', required: true },
+];
 
 export default function ServicesPage() {
   const { hasPermission } = usePermissions();
@@ -45,8 +52,38 @@ export default function ServicesPage() {
   return (
     <div className="page-container animate-in">
       <div className="page-header">
-        <div><h1 className="page-title">Hizmetler</h1><p className="page-subtitle">{services.length} hizmet tanımlı</p></div>
-        <Button onClick={openAdd} size="sm" className="h-10 btn-gradient gap-1.5 rounded-xl px-4"><Plus className="h-4 w-4" /> Ekle</Button>
+        <div>
+          <h1 className="page-title">Hizmetler</h1>
+          <p className="page-subtitle">{services.length} hizmet tanımlı</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <DataExportImport
+            title="Hizmet Listesi"
+            filePrefix="hizmetler"
+            columns={SERVICE_COLUMNS}
+            data={services}
+            toExportRow={(s) => ({
+              'Hizmet Adı': s.name,
+              'Süre (dk)': s.duration,
+              'Fiyat (₺)': s.price,
+            })}
+            fromImportRow={(row) => ({
+              name: row['Hizmet Adı'],
+              duration: Number(row['Süre (dk)']) || 60,
+              price: Number(row['Fiyat (₺)']) || 0,
+            })}
+            onImport={async (rows) => {
+              let success = 0, errors = 0;
+              for (const row of rows) {
+                const err = await addService(row as any);
+                if (err) errors++; else success++;
+              }
+              return { success, errors };
+            }}
+            summaryLines={[`Toplam: ${services.length} hizmet`]}
+          />
+          <Button onClick={openAdd} size="sm" className="h-10 btn-gradient gap-1.5 rounded-xl px-4"><Plus className="h-4 w-4" /> Ekle</Button>
+        </div>
       </div>
 
       {/* Mobile Cards */}
