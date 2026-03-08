@@ -29,8 +29,11 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold">Ayarlar</h1>
+    <div className="page-container animate-in">
+      <div>
+        <h1 className="page-title">Ayarlar</h1>
+        <p className="page-subtitle">Salon ve bildirim ayarlarını yönetin</p>
+      </div>
 
       {/* Salon Info */}
       <Card>
