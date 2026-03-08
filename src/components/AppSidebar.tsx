@@ -36,6 +36,7 @@ import {
   Activity,
   BadgeDollarSign,
   CreditCard,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
