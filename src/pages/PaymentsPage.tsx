@@ -202,12 +202,14 @@ export default function PaymentsPage() {
 
       {/* Tabs: Toplu + Per-box */}
       <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">Tümü</TabsTrigger>
-          {cashBoxes.map(box => (
-            <TabsTrigger key={box.id} value={box.id}>{box.name}</TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="w-max">
+            <TabsTrigger value="all">Tümü</TabsTrigger>
+            {cashBoxes.map(box => (
+              <TabsTrigger key={box.id} value={box.id}>{box.name}</TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         {/* All payments tab */}
         <TabsContent value="all">
