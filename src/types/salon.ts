@@ -23,6 +23,16 @@ export interface Staff {
 
 export type AppointmentStatus = 'bekliyor' | 'tamamlandi' | 'iptal';
 
+export type ReminderChannel = 'whatsapp' | 'sms';
+export type ReminderStatus = 'bekliyor' | 'gonderildi' | 'basarisiz';
+
+export interface AppointmentReminder {
+  channel: ReminderChannel;
+  status: ReminderStatus;
+  scheduledAt: string;
+  sentAt?: string;
+}
+
 export interface Appointment {
   id: string;
   customerId: string;
@@ -31,6 +41,14 @@ export interface Appointment {
   startTime: string;
   endTime: string;
   status: AppointmentStatus;
+  reminders?: AppointmentReminder[];
+}
+
+export interface NotificationSettings {
+  whatsappEnabled: boolean;
+  smsEnabled: boolean;
+  reminderHoursBefore: number;
+  messageTemplate: string;
 }
 
 export type PaymentType = 'nakit' | 'kart';
