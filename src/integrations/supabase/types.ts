@@ -75,8 +75,10 @@ export type Database = {
           end_time: string
           id: string
           notes: string | null
+          room_id: string | null
           salon_id: string
           service_id: string
+          session_status: string
           staff_id: string
           start_time: string
           status: string
@@ -89,8 +91,10 @@ export type Database = {
           end_time: string
           id?: string
           notes?: string | null
+          room_id?: string | null
           salon_id: string
           service_id: string
+          session_status?: string
           staff_id: string
           start_time: string
           status?: string
@@ -103,8 +107,10 @@ export type Database = {
           end_time?: string
           id?: string
           notes?: string | null
+          room_id?: string | null
           salon_id?: string
           service_id?: string
+          session_status?: string
           staff_id?: string
           start_time?: string
           status?: string
@@ -123,6 +129,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
           {
@@ -716,6 +729,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          salon_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          salon_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          salon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       salon_members: {
         Row: {

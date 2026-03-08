@@ -20,6 +20,7 @@ import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
 import CashPage from "./pages/CashPage";
 import AuthPage from "./pages/AuthPage";
+import SessionsPage from "./pages/SessionsPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="/bildirimler" element={<AdminRoute><NotificationsPage /></AdminRoute>} />
               <Route path="/izleme" element={<FinanceRoute><AuditPage /></FinanceRoute>} />
               <Route path="/adaylar" element={<AdminRoute><LeadsPage /></AdminRoute>} />
+              <Route path="/seanslar" element={<AdminRoute><SessionsPage /></AdminRoute>} />
 
               {/* Finance - admin only */}
               <Route path="/kasa" element={<FinanceRoute><PaymentsPage /></FinanceRoute>} />
