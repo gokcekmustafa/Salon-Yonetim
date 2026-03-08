@@ -12,8 +12,6 @@ import { NoPermission } from '@/components/permissions/NoPermission';
 
 export default function PaymentsPage() {
   const { hasPermission } = usePermissions();
-  if (!hasPermission('can_manage_payments')) return <NoPermission feature="Kasa / Ödemeler" />;
-
   const { payments, appointments, customers, services, loading } = useSalonData();
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
 

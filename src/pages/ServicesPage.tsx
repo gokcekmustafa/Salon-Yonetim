@@ -13,13 +13,13 @@ import { NoPermission } from '@/components/permissions/NoPermission';
 
 export default function ServicesPage() {
   const { hasPermission } = usePermissions();
-  if (!hasPermission('can_manage_services')) return <NoPermission feature="Hizmet Yönetimi" />;
-
   const { services, addService, updateService, deleteService, loading } = useSalonData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DbService | null>(null);
   const [form, setForm] = useState({ name: '', duration: '', price: '' });
   const [saving, setSaving] = useState(false);
+
+  if (!hasPermission('can_manage_services')) return <NoPermission feature="Hizmet Yönetimi" />;
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">

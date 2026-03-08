@@ -14,13 +14,13 @@ import { NoPermission } from '@/components/permissions/NoPermission';
 
 export default function BranchesPage() {
   const { hasPermission } = usePermissions();
-  if (!hasPermission('can_add_branches')) return <NoPermission feature="Şube Yönetimi" />;
-
   const { branches, addBranch, updateBranch, deleteBranch, staff, loading } = useSalonData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DbBranch | null>(null);
   const [form, setForm] = useState({ name: '', address: '', phone: '', is_active: true });
   const [saving, setSaving] = useState(false);
+
+  if (!hasPermission('can_add_branches')) return <NoPermission feature="Şube Yönetimi" />;
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">

@@ -17,8 +17,6 @@ import { NoPermission } from '@/components/permissions/NoPermission';
 
 export default function CustomersPage() {
   const { hasPermission } = usePermissions();
-  if (!hasPermission('can_manage_customers')) return <NoPermission feature="Müşteri Yönetimi" />;
-
   const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, loading } = useSalonData();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
