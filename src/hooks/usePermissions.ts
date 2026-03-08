@@ -13,6 +13,7 @@ export interface SalonPermissions {
   can_add_branches: boolean;
   can_manage_services: boolean;
   can_manage_leads: boolean;
+  can_manage_online_booking: boolean;
 }
 
 const ALL_GRANTED: SalonPermissions = {
