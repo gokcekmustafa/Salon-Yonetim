@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useSalonData, DbCustomer } from '@/hooks/useSalonData';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +17,17 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
+
+const CUSTOMER_COLUMNS: ColumnMapping[] = [
+  { excelHeader: 'Ad Soyad', dbKey: 'name', required: true },
+  { excelHeader: 'Telefon', dbKey: 'phone', required: true },
+  { excelHeader: 'TC Kimlik No', dbKey: 'tc_kimlik_no' },
+  { excelHeader: 'Doğum Tarihi', dbKey: 'birth_date' },
+  { excelHeader: 'Adres', dbKey: 'address' },
+  { excelHeader: '2. Telefon', dbKey: 'secondary_phone' },
+  { excelHeader: 'Notlar', dbKey: 'notes' },
+];
 
 const SOURCE_OPTIONS = [
   { value: 'advertisement', label: 'Reklam' },
