@@ -87,6 +87,16 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [staff, setStaff] = useState<Staff[]>(demoStaff);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+    whatsappEnabled: true,
+    smsEnabled: false,
+    reminderHoursBefore: 24,
+    messageTemplate: 'Merhaba {müşteri_adı}, {tarih} tarihinde saat {saat}\'de {hizmet} randevunuz bulunmaktadır. {salon_adı}',
+  });
+
+  const updateNotificationSettings = useCallback((s: Partial<NotificationSettings>) => {
+    setNotificationSettings(prev => ({ ...prev, ...s }));
+  }, []);
 
   const addBranch = useCallback((b: Omit<Branch, 'id'>) => {
     setBranches(prev => [...prev, { ...b, id: genId() }]);
