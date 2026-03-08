@@ -377,7 +377,7 @@ export default function LeadsPage() {
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-semibold">Durum</Label>
-                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v as LeadStatus })}>
                   <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_CONFIG).map(([k, v]) => (
