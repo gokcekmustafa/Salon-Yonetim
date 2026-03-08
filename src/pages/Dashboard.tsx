@@ -2,8 +2,8 @@ import { useSalon } from '@/contexts/SalonContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Users, Wallet, Clock, TrendingUp, Building2 } from 'lucide-react';
-import { format, isToday, isFuture, parseISO, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
+import { Calendar, Users, Wallet, TrendingUp, Building2, ArrowUpRight, Clock } from 'lucide-react';
+import { format, isToday, isFuture, parseISO, subDays, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useState } from 'react';
 import {
@@ -17,11 +17,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 export default function Dashboard() {
   const { appointments, customers, payments, staff, services, branches } = useSalon();
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
-
-  // Filter data by branch
-  const branchStaffIds = selectedBranchId
-    ? staff.filter(s => s.branchId === selectedBranchId).map(s => s.id)
-    : staff.map(s => s.id);
 
   const filteredAppointments = appointments.filter(a =>
     selectedBranchId ? a.branchId === selectedBranchId : true
@@ -60,7 +55,6 @@ export default function Dashboard() {
     return 'secondary';
   };
 
-  // Charts
   const now = new Date();
   const last7Days = eachDayOfInterval({ start: subDays(now, 6), end: now });
   const dailyRevenueData = last7Days.map(day => ({
@@ -83,36 +77,32 @@ export default function Dashboard() {
       .map(([id, count]) => ({ name: getCustomerName(id), ziyaret: count }));
   })();
 
-  const topServices = (() => {
-    const map: Record<string, number> = {};
-    filteredAppointments.filter(a => a.status === 'tamamlandi').forEach(a => {
-      map[a.serviceId] = (map[a.serviceId] || 0) + 1;
-    });
-    return Object.entries(map).sort(([, a], [, b]) => b - a).slice(0, 5)
-      .map(([id, count]) => ({ name: getServiceName(id), adet: count }));
-  })();
-
   const dailyChartConfig: ChartConfig = { gelir: { label: 'Gelir (₺)', color: 'hsl(var(--primary))' } };
   const customerChartConfig: ChartConfig = { ziyaret: { label: 'Ziyaret', color: 'hsl(var(--primary))' } };
-  const serviceChartConfig: ChartConfig = { adet: { label: 'Adet', color: 'hsl(var(--accent))' } };
 
   const hasAnalyticsData = filteredPayments.length > 0 || filteredAppointments.some(a => a.status === 'tamamlandi');
 
+  const kpis = [
+    { label: 'Bugünün Randevuları', value: todayAppointments.length, icon: Calendar, color: 'text-primary bg-primary/8' },
+    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, color: 'text-success bg-success/8' },
+    { label: 'Aylık Gelir', value: `₺${monthlyTotal.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-info bg-info/8' },
+    { label: 'Toplam Müşteri', value: customers.length, icon: Users, color: 'text-warning bg-warning/8' },
+  ];
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="page-container animate-in">
+      {/* Header */}
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold">Panel</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="page-title">Panel</h1>
+          <p className="page-subtitle">
             {format(new Date(), "d MMMM yyyy, EEEE", { locale: tr })}
           </p>
         </div>
-
-        {/* Branch filter */}
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <Select value={selectedBranchId || 'all'} onValueChange={v => setSelectedBranchId(v === 'all' ? null : v)}>
-            <SelectTrigger className="w-48 h-9">
+            <SelectTrigger className="w-48 h-9 text-sm">
               <SelectValue placeholder="Tüm Şubeler" />
             </SelectTrigger>
             <SelectContent>
@@ -127,45 +117,35 @@ export default function Dashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Bugünün Randevuları</CardTitle>
-            <Calendar className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent><div className="text-3xl font-bold">{todayAppointments.length}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Günlük Gelir</CardTitle>
-            <Wallet className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent><div className="text-3xl font-bold">₺{dailyRevenue.toLocaleString('tr-TR')}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Aylık Gelir</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent><div className="text-3xl font-bold">₺{monthlyTotal.toLocaleString('tr-TR')}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Toplam Müşteri</CardTitle>
-            <Users className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent><div className="text-3xl font-bold">{customers.length}</div></CardContent>
-        </Card>
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="stat-card p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{kpi.label}</p>
+                <p className="text-2xl font-bold tracking-tight">{kpi.value}</p>
+              </div>
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${kpi.color}`}>
+                <kpi.icon className="h-5 w-5" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Charts */}
       {hasAnalyticsData ? (
         <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Son 7 Gün Gelir</CardTitle></CardHeader>
+          <Card className="shadow-card border-border/60">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <ArrowUpRight className="h-4 w-4 text-primary" />
+                Son 7 Gün Gelir
+              </CardTitle>
+            </CardHeader>
             <CardContent>
-              <ChartContainer config={dailyChartConfig} className="h-[250px] w-full">
+              <ChartContainer config={dailyChartConfig} className="h-[240px] w-full">
                 <BarChart data={dailyRevenueData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                   <XAxis dataKey="day" className="text-xs" />
                   <YAxis className="text-xs" />
                   <ChartTooltip content={<ChartTooltipContent />} />
@@ -175,15 +155,23 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader><CardTitle className="text-base">En Çok Gelen Müşteriler</CardTitle></CardHeader>
+          <Card className="shadow-card border-border/60">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                En Çok Gelen Müşteriler
+              </CardTitle>
+            </CardHeader>
             <CardContent>
               {topCustomers.length === 0 ? (
-                <p className="text-muted-foreground text-sm py-8 text-center">Henüz tamamlanmış randevu yok.</p>
+                <div className="empty-state">
+                  <Users className="empty-state-icon" />
+                  <p className="empty-state-title">Henüz tamamlanmış randevu yok</p>
+                </div>
               ) : (
-                <ChartContainer config={customerChartConfig} className="h-[250px] w-full">
+                <ChartContainer config={customerChartConfig} className="h-[240px] w-full">
                   <BarChart data={topCustomers} layout="vertical" margin={{ top: 5, right: 10, left: 80, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                     <XAxis type="number" className="text-xs" />
                     <YAxis dataKey="name" type="category" className="text-xs" width={75} />
                     <ChartTooltip content={<ChartTooltipContent />} />
@@ -195,34 +183,44 @@ export default function Dashboard() {
           </Card>
         </div>
       ) : (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground text-sm">Randevu tamamlayıp ödeme aldığınızda grafikler burada görünecek.</p>
+        <Card className="shadow-card border-border/60">
+          <CardContent className="empty-state">
+            <TrendingUp className="empty-state-icon" />
+            <p className="empty-state-title">Henüz veri yok</p>
+            <p className="empty-state-description">Randevu tamamlayıp ödeme aldığınızda grafikler burada görünecek.</p>
           </CardContent>
         </Card>
       )}
 
       {/* Upcoming Appointments */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">Yaklaşan Randevular</CardTitle></CardHeader>
+      <Card className="shadow-card border-border/60">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            Yaklaşan Randevular
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           {upcomingAppointments.length === 0 ? (
-            <p className="text-muted-foreground text-sm py-4 text-center">Yaklaşan randevu bulunmamaktadır.</p>
+            <div className="empty-state py-8">
+              <Calendar className="empty-state-icon !h-8 !w-8" />
+              <p className="empty-state-title">Yaklaşan randevu yok</p>
+              <p className="empty-state-description">Yeni randevu oluşturduğunuzda burada görünecek.</p>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {upcomingAppointments.map(apt => (
-                <div key={apt.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="space-y-1">
+                <div key={apt.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
+                  <div className="space-y-0.5">
                     <p className="font-medium text-sm">{getCustomerName(apt.customerId)}</p>
                     <p className="text-xs text-muted-foreground">
-                      {getServiceName(apt.serviceId)} • {getStaffName(apt.staffId)}
-                      {apt.branchId && ` • ${getBranchName(apt.branchId)}`}
+                      {getServiceName(apt.serviceId)} · {getStaffName(apt.staffId)}
+                      {apt.branchId && ` · ${getBranchName(apt.branchId)}`}
                     </p>
                   </div>
-                  <div className="text-right space-y-1">
-                    <p className="text-sm font-medium">{format(parseISO(apt.startTime), 'HH:mm', { locale: tr })}</p>
-                    <Badge variant={statusVariant(apt.status)}>{statusMap[apt.status]}</Badge>
+                  <div className="text-right space-y-0.5">
+                    <p className="text-sm font-semibold tabular-nums">{format(parseISO(apt.startTime), 'HH:mm')}</p>
+                    <Badge variant={statusVariant(apt.status)} className="text-[10px]">{statusMap[apt.status]}</Badge>
                   </div>
                 </div>
               ))}
