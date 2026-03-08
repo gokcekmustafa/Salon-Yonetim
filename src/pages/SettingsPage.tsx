@@ -126,12 +126,12 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={notifSettings.smsEnabled ? 'default' : 'secondary'} className="text-xs">
-                  {notifSettings.smsEnabled ? 'Aktif' : 'Pasif'}
+                <Badge variant={notificationSettings.smsEnabled ? 'default' : 'secondary'} className="text-xs">
+                  {notificationSettings.smsEnabled ? 'Aktif' : 'Pasif'}
                 </Badge>
                 <Switch
-                  checked={notifSettings.smsEnabled}
-                  onCheckedChange={v => setNotifSettings(s => ({ ...s, smsEnabled: v }))}
+                  checked={notificationSettings.smsEnabled}
+                  onCheckedChange={v => updateNotificationSettings({ smsEnabled: v })}
                 />
               </div>
             </div>
