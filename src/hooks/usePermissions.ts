@@ -92,6 +92,7 @@ export function usePermissions() {
         can_manage_popups: data.can_manage_popups,
         can_add_branches: data.can_add_branches,
         can_manage_services: data.can_manage_services,
+        can_manage_leads: (data as any).can_manage_leads ?? true,
       });
     }
     setLoading(false);
