@@ -12,8 +12,11 @@ import { format, parseISO } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/usePermissions';
+import { NoPermission } from '@/components/permissions/NoPermission';
 
 export default function CustomersPage() {
+  const { hasPermission } = usePermissions();
   const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, loading } = useSalonData();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -23,6 +26,7 @@ export default function CustomersPage() {
   const [form, setForm] = useState({ name: '', phone: '', birth_date: '', notes: '' });
   const [saving, setSaving] = useState(false);
 
+  if (!hasPermission('can_manage_customers')) return <NoPermission feature="Müşteri Yönetimi" />;
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="flex flex-col items-center gap-3"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="text-sm text-muted-foreground">Yükleniyor...</p></div>

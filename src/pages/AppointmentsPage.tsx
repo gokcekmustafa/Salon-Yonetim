@@ -12,10 +12,13 @@ import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import DayCalendarView from '@/components/calendar/DayCalendarView';
 import WeekCalendarView from '@/components/calendar/WeekCalendarView';
+import { usePermissions } from '@/hooks/usePermissions';
+import { NoPermission } from '@/components/permissions/NoPermission';
 
 type ViewMode = 'day' | 'week';
 
 export default function AppointmentsPage() {
+  const { hasPermission } = usePermissions();
   const {
     appointments, customers, staff, services, branches,
     addAppointment, updateAppointment, addPayment, hasConflict,
@@ -142,6 +145,8 @@ export default function AppointmentsPage() {
     s === 'tamamlandi' ? 'default' : s === 'iptal' ? 'destructive' : 'secondary';
 
   const currentDetailApt = detailApt ? (appointments.find(a => a.id === detailApt.id) || detailApt) : null;
+
+  if (!hasPermission('can_manage_appointments')) return <NoPermission feature="Randevu Yönetimi" />;
 
   return (
     <div className="page-container animate-in">

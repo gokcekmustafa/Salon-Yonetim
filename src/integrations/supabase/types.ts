@@ -545,6 +545,62 @@ export type Database = {
           },
         ]
       }
+      salon_permissions: {
+        Row: {
+          can_add_branches: boolean
+          can_manage_announcements: boolean
+          can_manage_appointments: boolean
+          can_manage_customers: boolean
+          can_manage_payments: boolean
+          can_manage_popups: boolean
+          can_manage_services: boolean
+          can_manage_staff: boolean
+          can_view_dashboard: boolean
+          created_at: string
+          id: string
+          salon_id: string
+          updated_at: string
+        }
+        Insert: {
+          can_add_branches?: boolean
+          can_manage_announcements?: boolean
+          can_manage_appointments?: boolean
+          can_manage_customers?: boolean
+          can_manage_payments?: boolean
+          can_manage_popups?: boolean
+          can_manage_services?: boolean
+          can_manage_staff?: boolean
+          can_view_dashboard?: boolean
+          created_at?: string
+          id?: string
+          salon_id: string
+          updated_at?: string
+        }
+        Update: {
+          can_add_branches?: boolean
+          can_manage_announcements?: boolean
+          can_manage_appointments?: boolean
+          can_manage_customers?: boolean
+          can_manage_payments?: boolean
+          can_manage_popups?: boolean
+          can_manage_services?: boolean
+          can_manage_staff?: boolean
+          can_view_dashboard?: boolean
+          created_at?: string
+          id?: string
+          salon_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_permissions_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: true
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salons: {
         Row: {
           address: string | null
@@ -705,6 +761,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_salon_permission: {
+        Args: { _permission: string; _salon_id: string }
+        Returns: boolean
+      }
       get_user_salon_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {

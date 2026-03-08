@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Plus, Search, Building2, Users, Calendar, Eye, Loader2, Crown,
-  MoreHorizontal, Edit, Trash2, LogIn, EyeOff, UserPlus, Upload, X, Camera,
+  MoreHorizontal, Edit, Trash2, LogIn, EyeOff, UserPlus, Upload, X, Camera, Shield,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -24,6 +24,7 @@ import { SuperAdminUserManager } from '@/components/password/SuperAdminUserManag
 import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
 import { SubscriptionAlertSettings } from '@/components/notifications/SubscriptionAlertSettings';
 import { PopupManager } from '@/components/popup/PopupManager';
+import { PermissionManager } from '@/components/permissions/PermissionManager';
 
 type Salon = {
   id: string; name: string; slug: string; phone: string | null; address: string | null;
@@ -75,6 +76,9 @@ export default function SuperAdminSalonsPage() {
   const [editingLogoUrl, setEditingLogoUrl] = useState<string | null>(null);
   const logoFileRef = useRef<HTMLInputElement>(null);
 
+  // Permission manager state
+  const [permDialogOpen, setPermDialogOpen] = useState(false);
+  const [permSalon, setPermSalon] = useState<{ id: string; name: string } | null>(null);
   const fetchSalons = async () => {
     setLoading(true);
     const { data, error } = await supabase.from('salons').select('*').order('created_at', { ascending: false });
@@ -367,6 +371,7 @@ export default function SuperAdminSalonsPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => manageSalon(salon)}><LogIn className="h-4 w-4 mr-2" /> Yönet</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEdit(salon)}><Edit className="h-4 w-4 mr-2" /> Düzenle</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => { setPermSalon({ id: salon.id, name: salon.name }); setPermDialogOpen(true); }}><Shield className="h-4 w-4 mr-2" /> İzinler</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDelete(salon)} className="text-destructive focus:text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Sil</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -535,6 +540,16 @@ export default function SuperAdminSalonsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Permission Manager Dialog */}
+      {permSalon && (
+        <PermissionManager
+          salonId={permSalon.id}
+          salonName={permSalon.name}
+          open={permDialogOpen}
+          onOpenChange={setPermDialogOpen}
+        />
+      )}
     </div>
   );
 }
