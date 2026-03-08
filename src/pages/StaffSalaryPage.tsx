@@ -84,7 +84,7 @@ export default function StaffSalaryPage() {
   const [payType, setPayType] = useState('salary');
   const [payAmount, setPayAmount] = useState('');
   const [payMethod, setPayMethod] = useState('cash');
-  const [payCashBoxId, setPayCashBoxId] = useState('');
+  const [payCashBoxId, setPayCashBoxId] = useState('none');
   const [payDesc, setPayDesc] = useState('');
 
   const { data: salaries = [], isLoading: loadingSal } = useQuery({
