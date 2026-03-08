@@ -10,6 +10,7 @@ import AppLayout from "@/components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import CustomersPage from "./pages/CustomersPage";
 import AppointmentsPage from "./pages/AppointmentsPage";
+import LeadsPage from "./pages/LeadsPage";
 import ServicesPage from "./pages/ServicesPage";
 import StaffPage from "./pages/StaffPage";
 import BranchesPage from "./pages/BranchesPage";
