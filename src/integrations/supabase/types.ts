@@ -495,11 +495,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_salon_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_salon_admin: {
+        Args: { _salon_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_salon_member: {
+        Args: { _salon_id: string; _user_id: string }
         Returns: boolean
       }
     }
