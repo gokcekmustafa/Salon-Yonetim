@@ -288,8 +288,8 @@ export default function CashPage() {
       {/* KPIs */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         {[
-          { label: 'Aylık Gelir', value: `₺${totalIncome.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-green-600 bg-green-500/10' },
-          { label: 'Aylık Gider', value: `₺${totalExpense.toLocaleString('tr-TR')}`, icon: TrendingDown, color: 'text-red-500 bg-red-500/10' },
+          { label: 'Aylık Gelir', value: `₺${totalIncome.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-success bg-success/10' },
+          { label: 'Aylık Gider', value: `₺${totalExpense.toLocaleString('tr-TR')}`, icon: TrendingDown, color: 'text-destructive bg-destructive/10' },
           { label: 'Bakiye', value: `₺${balance.toLocaleString('tr-TR')}`, icon: Wallet, color: balance >= 0 ? 'text-primary bg-primary/10' : 'text-destructive bg-destructive/10' },
         ].map(kpi => (
           <div key={kpi.label} className="stat-card p-5">
