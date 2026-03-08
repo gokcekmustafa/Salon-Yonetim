@@ -15,6 +15,7 @@ import { AnnouncementManager } from '@/components/notifications/AnnouncementMana
 import { PopupManager } from '@/components/popup/PopupManager';
 import { SalonProfileSettings } from '@/components/salon/SalonProfileSettings';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function SettingsPage() {
   const { salon, notificationSettings, updateNotificationSettings, loading, refetchSalon } = useSalonData();
