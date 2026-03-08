@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useSalonData } from '@/hooks/useSalonData';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
@@ -7,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, MessageSquare, Phone, Clock, Send, AlertTriangle, Loader2 } from 'lucide-react';
+import { Bell, MessageSquare, Phone, Clock, Send, AlertTriangle, Loader2, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { ChangeOwnPassword } from '@/components/password/ChangeOwnPassword';
 import { StaffPasswordManager } from '@/components/password/StaffPasswordManager';
@@ -158,5 +160,45 @@ export default function SettingsPage() {
 
       <Card><CardHeader><CardTitle>Hakkında</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">SalonYönetim v2.0 — Multi-salon SaaS yönetim platformu.</p></CardContent></Card>
     </div>
+  );
+}
+
+function OnlineBookingToggle({ salonId, initialActive, salonSlug }: { salonId: string; initialActive: boolean; salonSlug: string }) {
+  const [active, setActive] = useState(initialActive);
+  const [saving, setSaving] = useState(false);
+
+  const toggle = async (val: boolean) => {
+    setSaving(true);
+    const { error } = await supabase.from('salons').update({ online_booking_active: val } as any).eq('id', salonId);
+    if (error) {
+      toast.error('Güncelenemedi: ' + error.message);
+    } else {
+      setActive(val);
+      toast.success(val ? 'Online randevu aktif edildi' : 'Online randevu kapatıldı');
+    }
+    setSaving(false);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Globe className="h-5 w-5 text-primary" />
+          <div><CardTitle>Online Randevu</CardTitle><CardDescription>Müşterilerin online randevu almasını yönetin</CardDescription></div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between p-3 rounded-lg border">
+          <div>
+            <p className="font-medium text-sm">Online Randevu Durumu</p>
+            <p className="text-xs text-muted-foreground">Aktif olduğunda müşteriler /book/{salonSlug} adresinden randevu alabilir</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={active ? 'default' : 'secondary'} className="text-xs">{active ? 'Aktif' : 'Pasif'}</Badge>
+            <Switch checked={active} onCheckedChange={toggle} disabled={saving} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 
 type BookingStep = 'branch' | 'service' | 'staff' | 'datetime' | 'info';
 
-interface SalonInfo { id: string; name: string; slug: string; phone: string | null; address: string | null; }
+interface SalonInfo { id: string; name: string; slug: string; phone: string | null; address: string | null; online_booking_active: boolean; }
 interface BranchInfo { id: string; name: string; address: string | null; phone: string | null; is_active: boolean; }
 interface ServiceInfo { id: string; name: string; duration: number; price: number; is_active: boolean; }
 interface StaffInfo { id: string; name: string; is_active: boolean; branch_id: string | null; }
@@ -42,7 +42,7 @@ export default function BookingPage() {
   useEffect(() => {
     if (!salonSlug) { setLoading(false); return; }
     (async () => {
-      const { data: s } = await supabase.from('salons').select('id, name, slug, phone, address').eq('slug', salonSlug).eq('is_active', true).single();
+      const { data: s } = await supabase.from('salons').select('id, name, slug, phone, address, online_booking_active').eq('slug', salonSlug).eq('is_active', true).single();
       if (!s) { setLoading(false); return; }
       setSalon(s);
       const [br, sv, st, ap] = await Promise.all([
@@ -114,6 +114,20 @@ export default function BookingPage() {
             <Scissors className="h-12 w-12 mx-auto text-muted-foreground/40" />
             <h2 className="text-xl font-bold">Salon Bulunamadı</h2>
             <p className="text-muted-foreground text-sm">Bu adrese ait bir salon kayıtlı değil.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!(salon as any).online_booking_active) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-8 pb-8 space-y-3">
+            <Scissors className="h-12 w-12 mx-auto text-muted-foreground/40" />
+            <h2 className="text-xl font-bold">Online Randevu Kapalı</h2>
+            <p className="text-muted-foreground text-sm">{salon.name} şu anda online randevu kabul etmemektedir.</p>
           </CardContent>
         </Card>
       </div>

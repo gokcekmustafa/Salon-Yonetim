@@ -1,0 +1,2 @@
+ALTER TABLE public.salons ADD COLUMN IF NOT EXISTS online_booking_active boolean NOT NULL DEFAULT false;
+ALTER TABLE public.salon_permissions ADD COLUMN IF NOT EXISTS can_manage_online_booking boolean NOT NULL DEFAULT true;

@@ -13,6 +13,7 @@ export interface SalonPermissions {
   can_add_branches: boolean;
   can_manage_services: boolean;
   can_manage_leads: boolean;
+  can_manage_online_booking: boolean;
 }
 
 const ALL_GRANTED: SalonPermissions = {
@@ -26,6 +27,7 @@ const ALL_GRANTED: SalonPermissions = {
   can_add_branches: true,
   can_manage_services: true,
   can_manage_leads: true,
+  can_manage_online_booking: true,
 };
 
 export const PERMISSION_LABELS: Record<keyof SalonPermissions, string> = {
@@ -39,6 +41,7 @@ export const PERMISSION_LABELS: Record<keyof SalonPermissions, string> = {
   can_add_branches: 'Şube Ekleme',
   can_manage_services: 'Hizmet Yönetimi',
   can_manage_leads: 'Aday Müşteri Yönetimi',
+  can_manage_online_booking: 'Online Randevu Yönetimi',
 };
 
 export const PERMISSION_ICONS: Record<keyof SalonPermissions, string> = {
@@ -52,6 +55,7 @@ export const PERMISSION_ICONS: Record<keyof SalonPermissions, string> = {
   can_add_branches: 'Building2',
   can_manage_services: 'Scissors',
   can_manage_leads: 'UserPlus',
+  can_manage_online_booking: 'Globe',
 };
 
 export function usePermissions() {
@@ -93,6 +97,7 @@ export function usePermissions() {
         can_add_branches: data.can_add_branches,
         can_manage_services: data.can_manage_services,
         can_manage_leads: (data as any).can_manage_leads ?? true,
+        can_manage_online_booking: (data as any).can_manage_online_booking ?? true,
       });
     }
     setLoading(false);
