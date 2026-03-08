@@ -60,6 +60,7 @@ export default function CashPage() {
   const [txDescription, setTxDescription] = useState('');
   const [txDate, setTxDate] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [txSourceBox, setTxSourceBox] = useState<string>(''); // for expenses: which box to deduct from
+  const [txIncomeMethod, setTxIncomeMethod] = useState<string>('cash'); // for income: payment method selection
 
   // Transfer form
   const [transferFromBox, setTransferFromBox] = useState('');
