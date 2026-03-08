@@ -26,6 +26,7 @@ export default function CustomersPage() {
   const [form, setForm] = useState({ name: '', phone: '', birth_date: '', notes: '' });
   const [saving, setSaving] = useState(false);
 
+  if (!hasPermission('can_manage_customers')) return <NoPermission feature="Müşteri Yönetimi" />;
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="flex flex-col items-center gap-3"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="text-sm text-muted-foreground">Yükleniyor...</p></div>

@@ -25,6 +25,7 @@ export default function PaymentsPage() {
     payments.filter(p => { try { return isSameMonth(parseISO(p.payment_date), parseISO(month + '-01')); } catch { return false; } })
       .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()), [payments, month]);
 
+  if (!hasPermission('can_manage_payments')) return <NoPermission feature="Kasa / Ödemeler" />;
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="flex flex-col items-center gap-3"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="text-sm text-muted-foreground">Yükleniyor...</p></div>
