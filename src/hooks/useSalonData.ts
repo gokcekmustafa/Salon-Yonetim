@@ -10,6 +10,7 @@ export type DbBranch = {
 export type DbCustomer = {
   id: string; salon_id: string; name: string; phone: string | null;
   birth_date: string | null; notes: string | null; created_at: string; updated_at: string;
+  tc_kimlik_no: string | null; address: string | null; secondary_phone: string | null;
 };
 export type DbService = {
   id: string; salon_id: string; name: string; duration: number;
