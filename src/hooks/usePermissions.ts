@@ -51,6 +51,7 @@ export const PERMISSION_ICONS: Record<keyof SalonPermissions, string> = {
   can_manage_popups: 'MessageSquare',
   can_add_branches: 'Building2',
   can_manage_services: 'Scissors',
+  can_manage_leads: 'UserPlus',
 };
 
 export function usePermissions() {
