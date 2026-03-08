@@ -174,6 +174,11 @@ export default function CustomersPage() {
                       <span className="font-medium">{c.name}</span>
                     </div>
                   </TableCell>
+                  <TableCell>
+                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : 'default'} className="text-[10px]">
+                      {c.customer_type === 'single_session' ? 'Tek Seans' : 'Taksitli'}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     <div>{c.phone}</div>
                     {c.secondary_phone && <div className="text-xs text-muted-foreground/70">2. {c.secondary_phone}</div>}
