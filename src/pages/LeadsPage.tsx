@@ -109,6 +109,8 @@ export default function LeadsPage() {
 
   useEffect(() => { fetchLeads(); }, [salonId, isSuperAdmin]);
 
+  if (!hasPermission('can_manage_leads')) return <NoPermission feature="Aday Müşteri Yönetimi" />;
+
   const openCreate = () => {
     setEditing(null);
     setForm({ name: '', email: '', phone: '', source: '', status: 'new' });
