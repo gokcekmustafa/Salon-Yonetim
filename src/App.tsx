@@ -22,6 +22,7 @@ import CashPage from "./pages/CashPage";
 import AuthPage from "./pages/AuthPage";
 import InstallmentsPage from "./pages/InstallmentsPage";
 import SessionsPage from "./pages/SessionsPage";
+import ContractsPage from "./pages/ContractsPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -76,6 +77,7 @@ const App = () => (
               <Route path="/izleme" element={<FinanceRoute><AuditPage /></FinanceRoute>} />
               <Route path="/adaylar" element={<AdminRoute><LeadsPage /></AdminRoute>} />
               <Route path="/seanslar" element={<AdminRoute><SessionsPage /></AdminRoute>} />
+              <Route path="/sozlesmeler" element={<AdminRoute><ContractsPage /></AdminRoute>} />
 
               {/* Finance - admin only */}
               <Route path="/kasa" element={<FinanceRoute><PaymentsPage /></FinanceRoute>} />

@@ -29,6 +29,7 @@ import {
   BarChart3,
   Globe,
   DoorOpen,
+  FileText,
   ChevronRight,
   Shield,
   Bell,
@@ -56,6 +57,7 @@ const mainMenu: MenuItem[] = [
   { title: 'Şubeler', url: '/subeler', icon: Building2, permissionKey: 'can_add_branches' },
   { title: 'Aday Müşteriler', url: '/adaylar', icon: Users, permissionKey: 'can_manage_leads' },
   { title: 'Seanslar', url: '/seanslar', icon: DoorOpen, permissionKey: 'can_manage_appointments' },
+  { title: 'Sözleşmeler', url: '/sozlesmeler', icon: FileText, permissionKey: 'can_manage_customers' },
 ];
 
 const financeMenu: MenuItem[] = [
