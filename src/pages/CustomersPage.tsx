@@ -182,6 +182,11 @@ export default function CustomersPage() {
                   </div>
                   <p className="text-xs text-muted-foreground">{c.phone}</p>
                   {c.secondary_phone && <p className="text-xs text-muted-foreground">2. Tel: {c.secondary_phone}</p>}
+                  {c.source_type && (
+                    <p className="text-xs text-muted-foreground/70">
+                      {getSourceLabel(c.source_type)}{c.source_detail ? ` — ${c.source_detail}` : ''}
+                    </p>
+                  )}
                   {c.notes && <p className="text-xs text-muted-foreground/70 truncate max-w-[180px]">{c.notes}</p>}
                 </div>
               </div>
