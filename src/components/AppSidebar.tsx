@@ -5,6 +5,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -21,15 +22,27 @@ import {
   Wallet,
   Settings,
   Sparkles,
+  Building2,
+  BarChart3,
+  Globe,
 } from 'lucide-react';
 
-const menuItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+const mainMenu = [
+  { title: 'Panel', url: '/', icon: LayoutDashboard },
   { title: 'Müşteriler', url: '/musteriler', icon: Users },
   { title: 'Randevular', url: '/randevular', icon: Calendar },
   { title: 'Hizmetler', url: '/hizmetler', icon: Scissors },
   { title: 'Personel', url: '/personel', icon: UserCheck },
+  { title: 'Şubeler', url: '/subeler', icon: Building2 },
+];
+
+const financeMenu = [
   { title: 'Kasa', url: '/kasa', icon: Wallet },
+  { title: 'Raporlar', url: '/raporlar', icon: BarChart3 },
+];
+
+const otherMenu = [
+  { title: 'Online Randevu', url: '/online-randevu', icon: Globe },
   { title: 'Ayarlar', url: '/ayarlar', icon: Settings },
 ];
 
@@ -37,6 +50,30 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
+
+  const renderMenu = (items: typeof mainMenu) => (
+    <SidebarMenu>
+      {items.map((item) => (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton
+            asChild
+            isActive={location.pathname === item.url}
+            tooltip={item.title}
+          >
+            <NavLink
+              to={item.url}
+              end={item.url === '/'}
+              className="hover:bg-sidebar-accent/50"
+              activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+            >
+              <item.icon className="h-4 w-4" />
+              {!collapsed && <span>{item.title}</span>}
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  );
 
   return (
     <Sidebar collapsible="icon">
@@ -55,29 +92,18 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === item.url}
-                    tooltip={item.title}
-                  >
-                    <NavLink
-                      to={item.url}
-                      end={item.url === '/'}
-                      className="hover:bg-sidebar-accent/50"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          {!collapsed && <SidebarGroupLabel>Yönetim</SidebarGroupLabel>}
+          <SidebarGroupContent>{renderMenu(mainMenu)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          {!collapsed && <SidebarGroupLabel>Finans</SidebarGroupLabel>}
+          <SidebarGroupContent>{renderMenu(financeMenu)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          {!collapsed && <SidebarGroupLabel>Diğer</SidebarGroupLabel>}
+          <SidebarGroupContent>{renderMenu(otherMenu)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 

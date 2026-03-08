@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Customer, Service, Staff, Appointment, Payment, AppointmentStatus, PaymentType } from '@/types/salon';
+import { Customer, Service, Staff, Appointment, Payment, Branch } from '@/types/salon';
 
 interface SalonInfo {
   name: string;
@@ -10,11 +10,15 @@ interface SalonInfo {
 
 interface SalonContextType {
   salon: SalonInfo;
+  branches: Branch[];
   customers: Customer[];
   services: Service[];
   staff: Staff[];
   appointments: Appointment[];
   payments: Payment[];
+  addBranch: (b: Omit<Branch, 'id'>) => void;
+  updateBranch: (id: string, b: Partial<Branch>) => void;
+  deleteBranch: (id: string) => void;
   addCustomer: (c: Omit<Customer, 'id' | 'createdAt'>) => void;
   updateCustomer: (id: string, c: Partial<Customer>) => void;
   deleteCustomer: (id: string) => void;
@@ -39,7 +43,12 @@ export const useSalon = () => {
 
 const genId = () => crypto.randomUUID();
 
-// Demo data
+// Demo branches
+const demoBranches: Branch[] = [
+  { id: genId(), name: 'Kadıköy Şubesi', address: 'Kadıköy, İstanbul', phone: '0212 555 1234', active: true },
+  { id: genId(), name: 'Beşiktaş Şubesi', address: 'Beşiktaş, İstanbul', phone: '0212 555 5678', active: true },
+];
+
 const demoCustomers: Customer[] = [
   { id: genId(), name: 'Ayşe Yılmaz', phone: '0532 111 2233', birthDate: '1990-03-15', notes: 'Düzenli müşteri', createdAt: '2024-01-10' },
   { id: genId(), name: 'Fatma Demir', phone: '0533 222 3344', birthDate: '1985-07-22', notes: '', createdAt: '2024-02-14' },
@@ -55,25 +64,38 @@ const demoServices: Service[] = [
 ];
 
 const demoStaff: Staff[] = [
-  { id: genId(), name: 'Elif Arslan', phone: '0535 444 5566', active: true },
-  { id: genId(), name: 'Merve Çelik', phone: '0536 555 6677', active: true },
-  { id: genId(), name: 'Selin Öztürk', phone: '0537 666 7788', active: false },
+  { id: genId(), name: 'Elif Arslan', phone: '0535 444 5566', active: true, branchId: demoBranches[0].id },
+  { id: genId(), name: 'Merve Çelik', phone: '0536 555 6677', active: true, branchId: demoBranches[0].id },
+  { id: genId(), name: 'Selin Öztürk', phone: '0537 666 7788', active: false, branchId: demoBranches[1].id },
 ];
 
 const defaultSalon: SalonInfo = {
   name: 'Güzellik Salonu',
   slug: 'guzellik-salonu',
   phone: '0212 555 1234',
-  address: 'İstanbul, Kadıköy',
+  address: 'İstanbul',
 };
 
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [salon] = useState<SalonInfo>(defaultSalon);
+  const [branches, setBranches] = useState<Branch[]>(demoBranches);
   const [customers, setCustomers] = useState<Customer[]>(demoCustomers);
   const [services, setServices] = useState<Service[]>(demoServices);
   const [staff, setStaff] = useState<Staff[]>(demoStaff);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+
+  const addBranch = useCallback((b: Omit<Branch, 'id'>) => {
+    setBranches(prev => [...prev, { ...b, id: genId() }]);
+  }, []);
+
+  const updateBranch = useCallback((id: string, b: Partial<Branch>) => {
+    setBranches(prev => prev.map(x => x.id === id ? { ...x, ...b } : x));
+  }, []);
+
+  const deleteBranch = useCallback((id: string) => {
+    setBranches(prev => prev.filter(x => x.id !== id));
+  }, []);
 
   const addCustomer = useCallback((c: Omit<Customer, 'id' | 'createdAt'>) => {
     setCustomers(prev => [...prev, { ...c, id: genId(), createdAt: new Date().toISOString().split('T')[0] }]);
@@ -128,7 +150,8 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <SalonContext.Provider value={{
-      salon, customers, services, staff, appointments, payments,
+      salon, branches, customers, services, staff, appointments, payments,
+      addBranch, updateBranch, deleteBranch,
       addCustomer, updateCustomer, deleteCustomer,
       addService, updateService, deleteService,
       addStaff, updateStaff,

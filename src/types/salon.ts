@@ -7,6 +7,14 @@ export interface Customer {
   createdAt: string;
 }
 
+export interface Branch {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  active: boolean;
+}
+
 export interface Service {
   id: string;
   name: string;
@@ -19,6 +27,7 @@ export interface Staff {
   name: string;
   phone: string;
   active: boolean;
+  branchId: string;
 }
 
 export type AppointmentStatus = 'bekliyor' | 'tamamlandi' | 'iptal';
@@ -38,17 +47,11 @@ export interface Appointment {
   customerId: string;
   staffId: string;
   serviceId: string;
+  branchId: string;
   startTime: string;
   endTime: string;
   status: AppointmentStatus;
   reminders?: AppointmentReminder[];
-}
-
-export interface NotificationSettings {
-  whatsappEnabled: boolean;
-  smsEnabled: boolean;
-  reminderHoursBefore: number;
-  messageTemplate: string;
 }
 
 export type PaymentType = 'nakit' | 'kart';
@@ -59,4 +62,11 @@ export interface Payment {
   amount: number;
   type: PaymentType;
   date: string;
+}
+
+export interface NotificationSettings {
+  whatsappEnabled: boolean;
+  smsEnabled: boolean;
+  reminderHoursBefore: number;
+  messageTemplate: string;
 }
