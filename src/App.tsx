@@ -33,6 +33,10 @@ const FinanceRoute = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute anyRole={['super_admin', 'salon_admin']}>
     <AppLayout>{children}</AppLayout>
   </ProtectedRoute>
+const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute requiredRole="super_admin">
+    <AppLayout>{children}</AppLayout>
+  </ProtectedRoute>
 );
 
 const App = () => (
