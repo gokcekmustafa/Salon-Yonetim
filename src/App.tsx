@@ -10,6 +10,7 @@ import CustomersPage from "./pages/CustomersPage";
 import AppointmentsPage from "./pages/AppointmentsPage";
 import ServicesPage from "./pages/ServicesPage";
 import StaffPage from "./pages/StaffPage";
+import BranchesPage from "./pages/BranchesPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import SettingsPage from "./pages/SettingsPage";
 import BookingPage from "./pages/BookingPage";
@@ -25,7 +26,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public booking page - outside AppLayout */}
+            {/* Public booking page */}
             <Route path="/book/:salonSlug" element={<BookingPage />} />
 
             {/* Admin panel */}
@@ -37,7 +38,10 @@ const App = () => (
                   <Route path="/randevular" element={<AppointmentsPage />} />
                   <Route path="/hizmetler" element={<ServicesPage />} />
                   <Route path="/personel" element={<StaffPage />} />
+                  <Route path="/subeler" element={<BranchesPage />} />
                   <Route path="/kasa" element={<PaymentsPage />} />
+                  <Route path="/raporlar" element={<Dashboard />} />
+                  <Route path="/online-randevu" element={<BookingPage />} />
                   <Route path="/ayarlar" element={<SettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
