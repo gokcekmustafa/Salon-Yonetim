@@ -225,7 +225,7 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
                         {style.height > 52 && (
                           <p className="text-[10px] opacity-60">
                             {format(parseISO(apt.start_time), 'HH:mm')} - {format(parseISO(apt.end_time), 'HH:mm')}
-                            {(apt as any).room_id && getRoomName((apt as any).room_id) ? ` · ${getRoomName((apt as any).room_id)}` : ''}
+                            {apt.room_id && getRoomName(apt.room_id) ? ` · ${getRoomName(apt.room_id)}` : ''}
                           </p>
                         )}
                       </div>

@@ -120,7 +120,8 @@ export default function AppointmentsPage() {
     if (selectedService) {
       setForm(f => ({ ...f, duration: String(selectedService.duration) }));
     }
-  }, [form.serviceId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedService?.id]);
 
   const handleSave = async () => {
     if (!form.customerId || !form.staffId || !form.serviceId) {
@@ -139,7 +140,7 @@ export default function AppointmentsPage() {
     // Check room conflict
     if (form.roomId !== 'none') {
       const roomConflict = appointments.some(a => {
-        if ((a as any).room_id !== form.roomId || a.status === 'iptal') return false;
+        if (a.room_id !== form.roomId || a.status === 'iptal') return false;
         return new Date(start) < new Date(a.end_time) && new Date(end) > new Date(a.start_time);
       });
       if (roomConflict) {
@@ -157,27 +158,12 @@ export default function AppointmentsPage() {
       start_time: start.toISOString(),
       end_time: end.toISOString(),
       status: 'bekliyor',
+      room_id: form.roomId !== 'none' ? form.roomId : null,
     });
 
     if (error) {
       toast.error('Randevu oluşturulamadı: ' + error.message);
     } else {
-      // Update room_id separately since addAppointment doesn't support it
-      if (form.roomId !== 'none') {
-        // Get the latest appointment for this slot
-        const { data: latest } = await supabase
-          .from('appointments')
-          .select('id')
-          .eq('salon_id', currentSalonId!)
-          .eq('customer_id', form.customerId)
-          .eq('start_time', start.toISOString())
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        if (latest) {
-          await supabase.from('appointments').update({ room_id: form.roomId } as any).eq('id', latest.id);
-        }
-      }
       toast.success('Randevu oluşturuldu.');
       setDialogOpen(false);
       refetch();
@@ -193,7 +179,7 @@ export default function AppointmentsPage() {
   const handleComplete = async () => {
     if (!detailApt) return;
     await updateAppointment(detailApt.id, { status: 'tamamlandi' });
-    await supabase.from('appointments').update({ session_status: 'completed' } as any).eq('id', detailApt.id);
+    await supabase.from('appointments').update({ session_status: 'completed' }).eq('id', detailApt.id);
     const service = services.find(s => s.id === detailApt.service_id);
     if (service) {
       await addPayment({ appointment_id: detailApt.id, amount: service.price, payment_type: 'nakit' });
@@ -213,19 +199,18 @@ export default function AppointmentsPage() {
   };
 
   const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
-    await supabase.from('appointments').update({ session_status: sessionStatus } as any).eq('id', aptId);
+    await supabase.from('appointments').update({ session_status: sessionStatus }).eq('id', aptId);
     if (sessionStatus === 'completed') {
       await updateAppointment(aptId, { status: 'tamamlandi' });
     }
     toast.success('Durum güncellendi.');
     refetch();
-    // Refresh detail
     const updated = appointments.find(a => a.id === aptId);
-    if (updated) setDetailApt({ ...updated, session_status: sessionStatus } as any);
+    if (updated) setDetailApt({ ...updated, session_status: sessionStatus });
   };
 
   const updateRoomAssignment = async (aptId: string, roomId: string) => {
-    await supabase.from('appointments').update({ room_id: roomId === 'none' ? null : roomId } as any).eq('id', aptId);
+    await supabase.from('appointments').update({ room_id: roomId === 'none' ? null : roomId }).eq('id', aptId);
     toast.success('Oda güncellendi.');
     refetch();
   };
@@ -250,10 +235,10 @@ export default function AppointmentsPage() {
     if (!roomName.trim() || !currentSalonId) return;
     setSavingRoom(true);
     if (editingRoom) {
-      await supabase.from('rooms').update({ name: roomName.trim() } as any).eq('id', editingRoom.id);
+      await supabase.from('rooms').update({ name: roomName.trim() }).eq('id', editingRoom.id);
       toast.success('Oda güncellendi');
     } else {
-      await supabase.from('rooms').insert({ name: roomName.trim(), salon_id: currentSalonId } as any);
+      await supabase.from('rooms').insert({ name: roomName.trim(), salon_id: currentSalonId });
       toast.success('Oda eklendi');
     }
     setSavingRoom(false);
@@ -534,7 +519,7 @@ export default function AppointmentsPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase">Oda</Label>
                 <Select
-                  value={(currentDetailApt as any).room_id || 'none'}
+                  value={currentDetailApt.room_id || 'none'}
                   onValueChange={v => updateRoomAssignment(currentDetailApt.id, v)}
                 >
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
@@ -553,7 +538,7 @@ export default function AppointmentsPage() {
                     <Button
                       key={s.value}
                       size="sm"
-                      variant={((currentDetailApt as any).session_status || 'waiting') === s.value ? 'default' : 'outline'}
+                      variant={(currentDetailApt.session_status || 'waiting') === s.value ? 'default' : 'outline'}
                       className="text-xs flex-1"
                       onClick={() => updateSessionStatus(currentDetailApt.id, s.value)}
                     >
