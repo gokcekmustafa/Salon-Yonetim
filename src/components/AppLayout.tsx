@@ -83,9 +83,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
             <div className="flex items-center gap-1.5">
               <ThemeToggle />
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground relative">
-                <Bell className="h-4 w-4" />
-              </Button>
+              <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="h-9 w-9 rounded-full btn-gradient flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
