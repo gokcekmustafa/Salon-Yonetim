@@ -30,6 +30,7 @@ type Lead = {
   phone: string | null; status: LeadStatus; source: string | null;
   notes_summary: string | null; created_by: string;
   converted_customer_id: string | null;
+  assigned_staff_id: string | null;
   created_at: string; updated_at: string;
 };
 
@@ -64,18 +65,20 @@ const NOTE_TYPE_COLORS: Record<string, string> = {
 export default function LeadsPage() {
   const { hasPermission } = usePermissions();
   const { user, currentSalonId, isSuperAdmin } = useAuth();
-  const { addCustomer } = useSalonData();
+  const { addCustomer, staff: salonStaff } = useSalonData();
 
+  const activeStaff = salonStaff.filter(s => s.is_active);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [notes, setNotes] = useState<LeadNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [staffFilter, setStaffFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Create/Edit lead dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Lead | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', source: '', status: 'new' as LeadStatus });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', source: '', status: 'new' as LeadStatus, assigned_staff_id: '' });
   const [saving, setSaving] = useState(false);
 
   // Detail sheet
@@ -113,7 +116,7 @@ export default function LeadsPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', email: '', phone: '', source: '', status: 'new' });
+    setForm({ name: '', email: '', phone: '', source: '', status: 'new', assigned_staff_id: '' });
     setDialogOpen(true);
   };
 
@@ -125,6 +128,7 @@ export default function LeadsPage() {
       phone: lead.phone || '',
       source: lead.source || '',
       status: lead.status,
+      assigned_staff_id: lead.assigned_staff_id || '',
     });
     setDialogOpen(true);
   };
@@ -148,6 +152,7 @@ export default function LeadsPage() {
       phone: form.phone.trim() || null,
       source: form.source.trim() || null,
       status: form.status,
+      assigned_staff_id: form.assigned_staff_id || null,
       salon_id: salonId,
       created_by: user.id,
     };
@@ -230,7 +235,8 @@ export default function LeadsPage() {
       (l.phone || '').includes(search) ||
       (l.email || '').toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || l.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesStaff = staffFilter === 'all' || l.assigned_staff_id === staffFilter;
+    return matchesSearch && matchesStatus && matchesStaff;
   });
 
   // Pipeline stats
@@ -275,9 +281,20 @@ export default function LeadsPage() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Aday ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-10" />
+      <div className="flex gap-2 items-center max-w-lg">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Aday ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-10" />
+        </div>
+        {activeStaff.length > 0 && (
+          <Select value={staffFilter} onValueChange={setStaffFilter}>
+            <SelectTrigger className="h-10 w-48"><SelectValue placeholder="Personele göre" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Personel</SelectItem>
+              {activeStaff.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* Table */}
@@ -295,6 +312,7 @@ export default function LeadsPage() {
                 <TableHead className="font-semibold">Aday</TableHead>
                 <TableHead className="hidden md:table-cell font-semibold">İletişim</TableHead>
                 <TableHead className="font-semibold">Durum</TableHead>
+                <TableHead className="hidden lg:table-cell font-semibold">Personel</TableHead>
                 <TableHead className="hidden lg:table-cell font-semibold">Kaynak</TableHead>
                 <TableHead className="hidden md:table-cell font-semibold">Tarih</TableHead>
                 <TableHead className="w-10"></TableHead>
@@ -328,6 +346,9 @@ export default function LeadsPage() {
                       <Badge variant="outline" className={`text-[10px] font-semibold gap-1 ${sc.color}`}>
                         {sc.icon} {sc.label}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <span className="text-xs text-muted-foreground">{lead.assigned_staff_id ? (activeStaff.find(s => s.id === lead.assigned_staff_id)?.name || '—') : '—'}</span>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       <span className="text-xs text-muted-foreground">{lead.source || '—'}</span>
@@ -387,6 +408,17 @@ export default function LeadsPage() {
                 </Select>
               </div>
             </div>
+            {activeStaff.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Görüşen Personel</Label>
+                <Select value={form.assigned_staff_id} onValueChange={v => setForm({ ...form, assigned_staff_id: v })}>
+                  <SelectTrigger className="h-10"><SelectValue placeholder="Personel seçin" /></SelectTrigger>
+                  <SelectContent>
+                    {activeStaff.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
@@ -436,6 +468,12 @@ export default function LeadsPage() {
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>{format(parseISO(selectedLead.created_at), 'd MMMM yyyy HH:mm', { locale: tr })}</span>
                   </div>
+                  {selectedLead.assigned_staff_id && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <UserPlus className="h-4 w-4 text-muted-foreground" />
+                      <span>Personel: {activeStaff.find(s => s.id === selectedLead.assigned_staff_id)?.name || '—'}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Status */}
@@ -450,6 +488,30 @@ export default function LeadsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Staff Assignment */}
+                {activeStaff.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Görüşen Personel</Label>
+                    <Select
+                      value={selectedLead.assigned_staff_id || ''}
+                      onValueChange={async v => {
+                        const staffId = v || null;
+                        const { error } = await supabase.from('leads').update({ assigned_staff_id: staffId } as any).eq('id', selectedLead.id);
+                        if (!error) {
+                          setSelectedLead({ ...selectedLead, assigned_staff_id: staffId });
+                          fetchLeads();
+                          toast.success('Personel atandı');
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-10"><SelectValue placeholder="Personel seçin" /></SelectTrigger>
+                      <SelectContent>
+                        {activeStaff.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex gap-2">

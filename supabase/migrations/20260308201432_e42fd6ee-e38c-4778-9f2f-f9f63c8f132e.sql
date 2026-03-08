@@ -1,0 +1,1 @@
+ALTER TABLE public.leads ADD COLUMN assigned_staff_id UUID REFERENCES public.staff(id) ON DELETE SET NULL;

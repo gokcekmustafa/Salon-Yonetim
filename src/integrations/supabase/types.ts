@@ -669,6 +669,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          assigned_staff_id: string | null
           converted_customer_id: string | null
           created_at: string
           created_by: string
@@ -683,6 +684,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_staff_id?: string | null
           converted_customer_id?: string | null
           created_at?: string
           created_by: string
@@ -697,6 +699,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_staff_id?: string | null
           converted_customer_id?: string | null
           created_at?: string
           created_by?: string
@@ -711,6 +714,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_assigned_staff_id_fkey"
+            columns: ["assigned_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leads_converted_customer_id_fkey"
             columns: ["converted_customer_id"]
