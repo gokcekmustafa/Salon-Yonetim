@@ -10,10 +10,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Plus, Search, Building2, Users, Calendar, Eye, Loader2, Crown,
-  MoreHorizontal, Edit, Trash2, LogIn,
+  MoreHorizontal, Edit, Trash2, LogIn, EyeOff, UserPlus,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -49,6 +50,7 @@ export default function SuperAdminSalonsPage() {
   const [editing, setEditing] = useState<Salon | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Salon fields
   const [formName, setFormName] = useState('');
   const [formSlug, setFormSlug] = useState('');
   const [formPhone, setFormPhone] = useState('');
@@ -56,6 +58,12 @@ export default function SuperAdminSalonsPage() {
   const [formPlan, setFormPlan] = useState<string>('free');
   const [formActive, setFormActive] = useState(true);
   const [formExpiry, setFormExpiry] = useState('');
+
+  // Owner fields (only for new salon creation)
+  const [ownerEmail, setOwnerEmail] = useState('');
+  const [ownerPassword, setOwnerPassword] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [showOwnerPassword, setShowOwnerPassword] = useState(false);
 
   const fetchSalons = async () => {
     setLoading(true);
@@ -85,7 +93,9 @@ export default function SuperAdminSalonsPage() {
   useEffect(() => { if (isSuperAdmin) fetchSalons(); }, [isSuperAdmin]);
 
   const openCreate = () => {
-    setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress(''); setFormPlan('free'); setFormActive(true); setFormExpiry('');
+    setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress('');
+    setFormPlan('free'); setFormActive(true); setFormExpiry('');
+    setOwnerEmail(''); setOwnerPassword(''); setOwnerName(''); setShowOwnerPassword(false);
     setDialogOpen(true);
   };
 
@@ -110,6 +120,49 @@ export default function SuperAdminSalonsPage() {
 
   const handleSave = async () => {
     if (!formName.trim() || !formSlug.trim()) { toast.error('Salon adı ve slug zorunludur'); return; }
+
+    // For new salon with owner, use the edge function
+    if (!editing && ownerEmail.trim()) {
+      if (!ownerPassword || ownerPassword.length < 6) {
+        toast.error('Sahip şifresi en az 6 karakter olmalıdır');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail.trim())) {
+        toast.error('Geçerli bir e-posta adresi girin');
+        return;
+      }
+
+      setSaving(true);
+      try {
+        const res = await supabase.functions.invoke('manage-passwords', {
+          body: {
+            action: 'create_salon_with_owner',
+            salon_name: formName.trim(),
+            slug: formSlug.trim(),
+            phone: formPhone.trim() || null,
+            address: formAddress.trim() || null,
+            subscription_plan: formPlan,
+            owner_email: ownerEmail.trim(),
+            owner_password: ownerPassword,
+            owner_full_name: ownerName.trim() || ownerEmail.trim(),
+          },
+        });
+
+        if (res.error || res.data?.error) {
+          toast.error(res.data?.error || 'Salon oluşturulamadı');
+        } else {
+          toast.success(res.data?.message || 'Salon ve sahip hesabı oluşturuldu');
+          setDialogOpen(false);
+          fetchSalons();
+        }
+      } catch {
+        toast.error('Salon oluşturulamadı');
+      }
+      setSaving(false);
+      return;
+    }
+
+    // Standard create/edit without owner
     setSaving(true);
     const payload = {
       name: formName.trim(), slug: formSlug.trim(),
@@ -278,59 +331,116 @@ export default function SuperAdminSalonsPage() {
       {/* User Management */}
       <SuperAdminUserManager />
 
-      {/* Dialog */}
+      {/* Create/Edit Salon Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Salon Düzenle' : 'Yeni Salon Oluştur'}</DialogTitle>
-            <DialogDescription>{editing ? 'Salon bilgilerini güncelleyin' : 'Yeni bir salon ekleyin'}</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              {editing ? <Edit className="h-5 w-5 text-primary" /> : <UserPlus className="h-5 w-5 text-primary" />}
+              {editing ? 'Salon Düzenle' : 'Yeni Salon ve Sahip Hesabı Oluştur'}
+            </DialogTitle>
+            <DialogDescription>
+              {editing ? 'Salon bilgilerini güncelleyin' : 'Yeni salon oluşturun ve salon sahibi hesabını ayarlayın'}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Salon Adı</Label>
-              <Input value={formName} onChange={e => handleNameChange(e.target.value)} placeholder="Güzellik Salonu" className="h-10" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">URL Slug</Label>
-              <Input value={formSlug} onChange={e => setFormSlug(e.target.value)} placeholder="guzellik-salonu" className="h-10" />
-              <p className="text-xs text-muted-foreground">Online randevu linki: /book/{formSlug || 'slug'}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+            {/* Salon Info */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Salon Bilgileri</h3>
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Telefon</Label>
-                <Input type="tel" value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="0212 555 1234" className="h-10" />
+                <Label className="text-xs font-semibold">Salon Adı *</Label>
+                <Input value={formName} onChange={e => handleNameChange(e.target.value)} placeholder="Güzellik Salonu" className="h-10" />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Abonelik</Label>
-                <Select value={formPlan} onValueChange={setFormPlan}>
-                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Ücretsiz</SelectItem>
-                    <SelectItem value="starter">Başlangıç</SelectItem>
-                    <SelectItem value="professional">Profesyonel</SelectItem>
-                    <SelectItem value="enterprise">Kurumsal</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs font-semibold">URL Slug</Label>
+                <Input value={formSlug} onChange={e => setFormSlug(e.target.value)} placeholder="guzellik-salonu" className="h-10" />
+                <p className="text-xs text-muted-foreground">Online randevu linki: /book/{formSlug || 'slug'}</p>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Telefon</Label>
+                  <Input type="tel" value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="0212 555 1234" className="h-10" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Abonelik</Label>
+                  <Select value={formPlan} onValueChange={setFormPlan}>
+                    <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="free">Ücretsiz</SelectItem>
+                      <SelectItem value="starter">Başlangıç</SelectItem>
+                      <SelectItem value="professional">Profesyonel</SelectItem>
+                      <SelectItem value="enterprise">Kurumsal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {editing && (
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Abonelik Bitiş Tarihi</Label>
+                  <Input type="date" value={formExpiry} onChange={e => setFormExpiry(e.target.value)} className="h-10" />
+                  <p className="text-xs text-muted-foreground">Boş bırakılırsa süresiz olur</p>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Adres</Label>
+                <Input value={formAddress} onChange={e => setFormAddress(e.target.value)} placeholder="İstanbul, Türkiye" className="h-10" />
+              </div>
+              {editing && (
+                <div className="flex items-center justify-between py-1">
+                  <Label className="text-xs font-semibold">Aktif</Label>
+                  <Switch checked={formActive} onCheckedChange={setFormActive} />
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Abonelik Bitiş Tarihi</Label>
-              <Input type="date" value={formExpiry} onChange={e => setFormExpiry(e.target.value)} className="h-10" />
-              <p className="text-xs text-muted-foreground">Boş bırakılırsa süresiz olur</p>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Adres</Label>
-              <Input value={formAddress} onChange={e => setFormAddress(e.target.value)} placeholder="İstanbul, Türkiye" className="h-10" />
-            </div>
-            <div className="flex items-center justify-between py-1">
-              <Label className="text-xs font-semibold">Aktif</Label>
-              <Switch checked={formActive} onCheckedChange={setFormActive} />
-            </div>
+
+            {/* Owner Account (only for new salon) */}
+            {!editing && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Salon Sahibi Hesabı</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Salon sahibi için bir giriş hesabı oluşturun. Salon sahibi ilk girişte şifresini değiştirebilir.
+                  </p>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Sahip Adı</Label>
+                    <Input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Ahmet Yılmaz" className="h-10" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">E-posta *</Label>
+                    <Input type="email" value={ownerEmail} onChange={e => setOwnerEmail(e.target.value)} placeholder="sahip@salon.com" className="h-10" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Şifre *</Label>
+                    <div className="relative">
+                      <Input
+                        type={showOwnerPassword ? 'text' : 'password'}
+                        value={ownerPassword}
+                        onChange={e => setOwnerPassword(e.target.value)}
+                        placeholder="En az 6 karakter"
+                        className="h-10 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOwnerPassword(!showOwnerPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showOwnerPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Giriş bilgilerini salon sahibine güvenli bir şekilde iletmeniz gerekecektir.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
             <Button onClick={handleSave} disabled={saving} className="btn-gradient">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}{editing ? 'Güncelle' : 'Oluştur'}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {editing ? 'Güncelle' : 'Salon Oluştur'}
             </Button>
           </DialogFooter>
         </DialogContent>

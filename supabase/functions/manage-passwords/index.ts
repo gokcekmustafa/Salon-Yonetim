@@ -18,7 +18,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Client for the calling user
     const supabaseUser = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY')!,
@@ -32,7 +31,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Admin client for privileged operations
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -40,7 +38,6 @@ Deno.serve(async (req) => {
 
     const { action, ...params } = await req.json()
 
-    // Check caller's role
     const { data: callerRoles } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -48,130 +45,61 @@ Deno.serve(async (req) => {
 
     const isSuperAdmin = callerRoles?.some(r => r.role === 'super_admin') ?? false
 
-    // Check salon admin membership
     const { data: callerMemberships } = await supabaseAdmin
       .from('salon_members')
       .select('salon_id, role')
       .eq('user_id', user.id)
 
-    const isSalonAdmin = (salonId: string) =>
+    const isSalonAdminOf = (salonId: string) =>
       callerMemberships?.some(m => m.salon_id === salonId && m.role === 'salon_admin') ?? false
+
+    const json = (data: unknown, status = 200) =>
+      new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
     switch (action) {
       // ─── Change own password ───
       case 'change_own_password': {
         const { new_password } = params
-        if (!new_password || new_password.length < 6) {
-          return new Response(JSON.stringify({ error: 'Şifre en az 6 karakter olmalıdır' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
+        if (!new_password || new_password.length < 6) return json({ error: 'Şifre en az 6 karakter olmalıdır' }, 400)
 
-        const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
-          password: new_password,
-        })
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        return new Response(JSON.stringify({ success: true, message: 'Şifre başarıyla değiştirildi' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: new_password })
+        if (error) return json({ error: error.message }, 400)
+        return json({ success: true, message: 'Şifre başarıyla değiştirildi' })
       }
 
       // ─── Super admin resets any user's password ───
       case 'admin_reset_password': {
-        if (!isSuperAdmin) {
-          return new Response(JSON.stringify({ error: 'Yetkiniz yok' }), {
-            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
+        if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
         const { target_user_id, new_password } = params
-        if (!target_user_id || !new_password || new_password.length < 6) {
-          return new Response(JSON.stringify({ error: 'Geçersiz parametreler' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
+        if (!target_user_id || !new_password || new_password.length < 6) return json({ error: 'Geçersiz parametreler' }, 400)
 
-        const { error } = await supabaseAdmin.auth.admin.updateUserById(target_user_id, {
-          password: new_password,
-        })
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        return new Response(JSON.stringify({ success: true, message: 'Şifre sıfırlandı' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(target_user_id, { password: new_password })
+        if (error) return json({ error: error.message }, 400)
+        return json({ success: true, message: 'Şifre sıfırlandı' })
       }
 
       // ─── Salon admin resets staff password ───
       case 'salon_admin_reset_staff_password': {
         const { staff_user_id, salon_id, new_password } = params
-        if (!staff_user_id || !salon_id || !new_password || new_password.length < 6) {
-          return new Response(JSON.stringify({ error: 'Geçersiz parametreler' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
+        if (!staff_user_id || !salon_id || !new_password || new_password.length < 6) return json({ error: 'Geçersiz parametreler' }, 400)
+        if (!isSuperAdmin && !isSalonAdminOf(salon_id)) return json({ error: 'Bu salona yetkiniz yok' }, 403)
 
-        if (!isSuperAdmin && !isSalonAdmin(salon_id)) {
-          return new Response(JSON.stringify({ error: 'Bu salona yetkiniz yok' }), {
-            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        // Verify the target user is actually a member of this salon
         const { data: targetMembership } = await supabaseAdmin
-          .from('salon_members')
-          .select('id')
-          .eq('user_id', staff_user_id)
-          .eq('salon_id', salon_id)
-          .single()
+          .from('salon_members').select('id').eq('user_id', staff_user_id).eq('salon_id', salon_id).single()
+        if (!targetMembership) return json({ error: 'Bu kullanıcı bu salona ait değil' }, 403)
 
-        if (!targetMembership) {
-          return new Response(JSON.stringify({ error: 'Bu kullanıcı bu salona ait değil' }), {
-            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        const { error } = await supabaseAdmin.auth.admin.updateUserById(staff_user_id, {
-          password: new_password,
-        })
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        return new Response(JSON.stringify({ success: true, message: 'Personel şifresi sıfırlandı' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(staff_user_id, { password: new_password })
+        if (error) return json({ error: error.message }, 400)
+        return json({ success: true, message: 'Personel şifresi sıfırlandı' })
       }
 
-      // ─── Super admin lists all users with their roles and salon memberships ───
+      // ─── List all users ───
       case 'list_users': {
-        if (!isSuperAdmin) {
-          return new Response(JSON.stringify({ error: 'Yetkiniz yok' }), {
-            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
+        if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
 
         const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers()
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
+        if (error) return json({ error: error.message }, 400)
 
-        // Get roles and memberships
         const { data: allRoles } = await supabaseAdmin.from('user_roles').select('*')
         const { data: allMembers } = await supabaseAdmin.from('salon_members').select('*, salons(name)')
         const { data: allProfiles } = await supabaseAdmin.from('profiles').select('*')
@@ -181,171 +109,143 @@ Deno.serve(async (req) => {
           const memberships = allMembers?.filter(m => m.user_id === u.id) ?? []
           const profile = allProfiles?.find(p => p.user_id === u.id)
           return {
-            id: u.id,
-            email: u.email,
-            created_at: u.created_at,
-            last_sign_in_at: u.last_sign_in_at,
+            id: u.id, email: u.email, created_at: u.created_at, last_sign_in_at: u.last_sign_in_at,
             full_name: profile?.full_name || u.user_metadata?.full_name || null,
-            phone: profile?.phone || null,
-            roles,
+            phone: profile?.phone || null, roles,
             memberships: memberships.map(m => ({
-              salon_id: m.salon_id,
-              salon_name: (m as any).salons?.name || '',
-              role: m.role,
-              branch_id: m.branch_id,
+              salon_id: m.salon_id, salon_name: (m as any).salons?.name || '',
+              role: m.role, branch_id: m.branch_id,
             })),
           }
         })
 
-        return new Response(JSON.stringify({ users: enrichedUsers }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+        return json({ users: enrichedUsers })
       }
 
-      // ─── Super admin creates a new user ───
+      // ─── Create user ───
       case 'create_user': {
-        if (!isSuperAdmin) {
-          return new Response(JSON.stringify({ error: 'Yetkiniz yok' }), {
-            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
+        if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
 
         const { email, password, full_name, role, salon_id: assignSalonId, salon_role } = params
-        if (!email || !password || password.length < 6) {
-          return new Response(JSON.stringify({ error: 'Email ve şifre (min 6 karakter) gerekli' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
+        if (!email || !password || password.length < 6) return json({ error: 'Email ve şifre (min 6 karakter) gerekli' }, 400)
 
-        // Create user
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
+          email, password, email_confirm: true,
           user_metadata: { full_name: full_name || email },
         })
+        if (createError) return json({ error: createError.message }, 400)
 
-        if (createError) {
-          return new Response(JSON.stringify({ error: createError.message }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        // Assign role if specified
-        if (role) {
-          await supabaseAdmin.from('user_roles').insert({ user_id: newUser.user.id, role })
-        }
-
-        // Assign to salon if specified
+        if (role) await supabaseAdmin.from('user_roles').insert({ user_id: newUser.user.id, role })
         if (assignSalonId) {
           await supabaseAdmin.from('salon_members').insert({
-            user_id: newUser.user.id,
-            salon_id: assignSalonId,
-            role: salon_role || 'staff',
+            user_id: newUser.user.id, salon_id: assignSalonId, role: salon_role || 'staff',
           })
         }
 
-        return new Response(JSON.stringify({ 
-          success: true, 
-          user_id: newUser.user.id,
-          message: 'Kullanıcı başarıyla oluşturuldu' 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        return json({ success: true, user_id: newUser.user.id, message: 'Kullanıcı başarıyla oluşturuldu' })
+      }
+
+      // ─── Create salon with owner account ───
+      case 'create_salon_with_owner': {
+        if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
+
+        const { salon_name, slug, phone, address, subscription_plan, owner_email, owner_password, owner_full_name } = params
+        if (!salon_name || !slug) return json({ error: 'Salon adı ve slug gerekli' }, 400)
+        if (!owner_email || !owner_password || owner_password.length < 6) return json({ error: 'Sahip email ve şifre (min 6 karakter) gerekli' }, 400)
+
+        // Create salon first
+        const { data: salon, error: salonError } = await supabaseAdmin.from('salons').insert({
+          name: salon_name, slug, phone: phone || null, address: address || null,
+          subscription_plan: subscription_plan || 'free', is_active: true,
+        }).select().single()
+
+        if (salonError) return json({ error: salonError.message }, 400)
+
+        // Create owner user
+        const { data: ownerUser, error: ownerError } = await supabaseAdmin.auth.admin.createUser({
+          email: owner_email, password: owner_password, email_confirm: true,
+          user_metadata: { full_name: owner_full_name || owner_email },
+        })
+
+        if (ownerError) {
+          // Rollback salon
+          await supabaseAdmin.from('salons').delete().eq('id', salon.id)
+          return json({ error: ownerError.message }, 400)
+        }
+
+        // Set owner on salon
+        await supabaseAdmin.from('salons').update({ owner_user_id: ownerUser.user.id }).eq('id', salon.id)
+
+        // Assign salon_admin role
+        await supabaseAdmin.from('user_roles').insert({ user_id: ownerUser.user.id, role: 'salon_admin' })
+
+        // Add as salon member
+        await supabaseAdmin.from('salon_members').insert({
+          user_id: ownerUser.user.id, salon_id: salon.id, role: 'salon_admin',
+        })
+
+        return json({
+          success: true, salon_id: salon.id, user_id: ownerUser.user.id,
+          message: `${salon_name} salonu ve ${owner_email} hesabı oluşturuldu`,
         })
       }
 
-      // ─── Super admin deletes a user ───
+      // ─── Delete user ───
       case 'delete_user': {
-        if (!isSuperAdmin) {
-          return new Response(JSON.stringify({ error: 'Yetkiniz yok' }), {
-            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
+        if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
         const { target_user_id: deleteUserId } = params
-        if (!deleteUserId) {
-          return new Response(JSON.stringify({ error: 'target_user_id gerekli' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
+        if (!deleteUserId) return json({ error: 'target_user_id gerekli' }, 400)
+        if (deleteUserId === user.id) return json({ error: 'Kendinizi silemezsiniz' }, 400)
 
-        // Prevent self-deletion
-        if (deleteUserId === user.id) {
-          return new Response(JSON.stringify({ error: 'Kendinizi silemezsiniz' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        // Clean up related data first
         await supabaseAdmin.from('user_roles').delete().eq('user_id', deleteUserId)
         await supabaseAdmin.from('salon_members').delete().eq('user_id', deleteUserId)
         await supabaseAdmin.from('profiles').delete().eq('user_id', deleteUserId)
 
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(deleteUserId)
-        if (deleteError) {
-          return new Response(JSON.stringify({ error: deleteError.message }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        return new Response(JSON.stringify({ success: true, message: 'Kullanıcı silindi' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+        if (deleteError) return json({ error: deleteError.message }, 400)
+        return json({ success: true, message: 'Kullanıcı silindi' })
       }
 
-      // ─── Salon admin lists staff with user accounts in their salon ───
+      // ─── Update user email ───
+      case 'update_user_email': {
+        if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
+        const { target_user_id, new_email } = params
+        if (!target_user_id || !new_email) return json({ error: 'Geçersiz parametreler' }, 400)
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(new_email)) return json({ error: 'Geçersiz e-posta' }, 400)
+
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(target_user_id, { email: new_email })
+        if (error) return json({ error: error.message }, 400)
+        return json({ success: true, message: 'E-posta güncellendi' })
+      }
+
+      // ─── List salon staff users ───
       case 'list_salon_staff_users': {
         const { salon_id } = params
-        if (!salon_id) {
-          return new Response(JSON.stringify({ error: 'salon_id gerekli' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
+        if (!salon_id) return json({ error: 'salon_id gerekli' }, 400)
+        if (!isSuperAdmin && !isSalonAdminOf(salon_id)) return json({ error: 'Yetkiniz yok' }, 403)
 
-        if (!isSuperAdmin && !isSalonAdmin(salon_id)) {
-          return new Response(JSON.stringify({ error: 'Yetkiniz yok' }), {
-            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        // Get staff with user accounts
         const { data: staffMembers } = await supabaseAdmin
-          .from('salon_members')
-          .select('user_id, role, branch_id')
-          .eq('salon_id', salon_id)
+          .from('salon_members').select('user_id, role, branch_id').eq('salon_id', salon_id)
 
-        if (!staffMembers || staffMembers.length === 0) {
-          return new Response(JSON.stringify({ staff_users: [] }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
+        if (!staffMembers || staffMembers.length === 0) return json({ staff_users: [] })
 
         const userIds = staffMembers.map(m => m.user_id)
         const { data: profiles } = await supabaseAdmin
-          .from('profiles')
-          .select('user_id, full_name, phone')
-          .in('user_id', userIds)
+          .from('profiles').select('user_id, full_name, phone').in('user_id', userIds)
 
         const staffUsers = staffMembers.map(m => {
           const profile = profiles?.find(p => p.user_id === m.user_id)
           return {
-            user_id: m.user_id,
-            full_name: profile?.full_name || null,
-            phone: profile?.phone || null,
-            role: m.role,
-            branch_id: m.branch_id,
+            user_id: m.user_id, full_name: profile?.full_name || null,
+            phone: profile?.phone || null, role: m.role, branch_id: m.branch_id,
           }
         })
 
-        return new Response(JSON.stringify({ staff_users: staffUsers }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+        return json({ staff_users: staffUsers })
       }
 
       default:
-        return new Response(JSON.stringify({ error: 'Geçersiz işlem' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+        return json({ error: 'Geçersiz işlem' }, 400)
     }
   } catch (err) {
     return new Response(JSON.stringify({ error: (err as Error).message }), {
