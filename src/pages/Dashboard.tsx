@@ -1,19 +1,44 @@
 import { useSalonData } from '@/hooks/useSalonData';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Users, Wallet, TrendingUp, Building2, ArrowUpRight, Clock, Loader2 } from 'lucide-react';
+import { Calendar, Users, Wallet, TrendingUp, Building2, ArrowUpRight, Clock, Loader2, Shield } from 'lucide-react';
 import { format, isToday, isFuture, parseISO, subDays, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useState } from 'react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { appointments, customers, payments, staff, services, branches, loading } = useSalonData();
+  const { isSuperAdmin, currentSalonId } = useAuth();
+  const { appointments, customers, payments, staff, services, branches, loading, salon } = useSalonData();
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  // Super admin without salon selected
+  if (isSuperAdmin && !currentSalonId) {
+    return (
+      <div className="page-container animate-in">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <Shield className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="text-xl font-bold mb-2">Hoşgeldiniz, Super Admin!</h2>
+          <p className="text-muted-foreground text-sm mb-6 max-w-md">
+            Dashboard'u görüntülemek için önce Platform Yönetimi sayfasından bir salon oluşturun veya mevcut bir salonu yönetmeye başlayın.
+          </p>
+          <Button onClick={() => navigate('/admin/salonlar')} className="gap-2">
+            <Building2 className="h-4 w-4" /> Platform Yönetimine Git
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const filteredAppointments = appointments.filter(a => selectedBranchId ? a.branch_id === selectedBranchId : true);
   const filteredPayments = payments.filter(p => {
@@ -64,7 +89,7 @@ export default function Dashboard() {
     <div className="page-container animate-in">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Panel</h1>
+          <h1 className="page-title">{salon?.name || 'Panel'}</h1>
           <p className="page-subtitle">{format(new Date(), "d MMMM yyyy, EEEE", { locale: tr })}</p>
         </div>
         <div className="flex items-center gap-2">
