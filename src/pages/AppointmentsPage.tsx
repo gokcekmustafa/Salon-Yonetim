@@ -519,7 +519,7 @@ export default function AppointmentsPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase">Oda</Label>
                 <Select
-                  value={(currentDetailApt as any).room_id || 'none'}
+                  value={currentDetailApt.room_id || 'none'}
                   onValueChange={v => updateRoomAssignment(currentDetailApt.id, v)}
                 >
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
