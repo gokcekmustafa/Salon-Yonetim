@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Pencil, Trash2, History } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, History, Users } from 'lucide-react';
 import { Customer } from '@/types/salon';
 import { format, parseISO } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -21,7 +21,6 @@ export default function CustomersPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [editing, setEditing] = useState<Customer | null>(null);
-
   const [form, setForm] = useState({ name: '', phone: '', birthDate: '', notes: '' });
 
   const filtered = customers.filter(c =>
@@ -75,35 +74,49 @@ export default function CustomersPage() {
   const getStaffName = (id: string) => staff.find(s => s.id === id)?.name ?? '-';
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Müşteriler</h1>
+    <div className="page-container animate-in">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Müşteriler</h1>
+          <p className="page-subtitle">{customers.length} kayıtlı müşteri</p>
+        </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-initial">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Müşteri ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-full sm:w-64" />
+            <Input placeholder="Müşteri ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-full sm:w-64 h-9" />
           </div>
-          <Button onClick={openAdd}><Plus className="h-4 w-4 mr-1" /> Ekle</Button>
+          <Button onClick={openAdd} size="sm" className="h-9"><Plus className="h-4 w-4 mr-1.5" /> Ekle</Button>
         </div>
       </div>
 
       {/* Mobile card view */}
       <div className="block md:hidden space-y-3">
         {filtered.length === 0 ? (
-          <p className="text-center py-8 text-muted-foreground text-sm">Müşteri bulunamadı.</p>
+          <Card className="shadow-card border-border/60">
+            <CardContent className="empty-state">
+              <Users className="empty-state-icon" />
+              <p className="empty-state-title">Müşteri bulunamadı</p>
+              <p className="empty-state-description">Arama kriterlerinize uygun müşteri yok.</p>
+            </CardContent>
+          </Card>
         ) : filtered.map(c => (
-          <Card key={c.id}>
+          <Card key={c.id} className="shadow-soft border-border/60 hover:shadow-card transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="font-medium">{c.name}</p>
-                  <p className="text-sm text-muted-foreground">{c.phone}</p>
-                  {c.notes && <p className="text-xs text-muted-foreground truncate max-w-[200px]">{c.notes}</p>}
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/8 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-semibold text-primary">{c.name.charAt(0)}</span>
+                  </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="font-medium text-sm">{c.name}</p>
+                    <p className="text-xs text-muted-foreground">{c.phone}</p>
+                    {c.notes && <p className="text-xs text-muted-foreground/70 truncate max-w-[180px]">{c.notes}</p>}
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openHistory(c)}><History className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(c)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                <div className="flex gap-0.5">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openHistory(c)}><History className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               </div>
             </CardContent>
@@ -112,33 +125,40 @@ export default function CustomersPage() {
       </div>
 
       {/* Desktop table view */}
-      <Card className="hidden md:block">
+      <Card className="hidden md:block shadow-card border-border/60">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Ad Soyad</TableHead>
-                <TableHead>Telefon</TableHead>
-                <TableHead className="hidden lg:table-cell">Doğum Tarihi</TableHead>
-                <TableHead className="hidden lg:table-cell">Notlar</TableHead>
-                <TableHead className="text-right">İşlem</TableHead>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="font-semibold">Ad Soyad</TableHead>
+                <TableHead className="font-semibold">Telefon</TableHead>
+                <TableHead className="hidden lg:table-cell font-semibold">Doğum Tarihi</TableHead>
+                <TableHead className="hidden lg:table-cell font-semibold">Notlar</TableHead>
+                <TableHead className="text-right font-semibold">İşlem</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Müşteri bulunamadı.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground text-sm">Müşteri bulunamadı.</TableCell></TableRow>
               ) : (
                 filtered.map(c => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell>{c.phone}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{c.birthDate || '-'}</TableCell>
-                    <TableCell className="hidden lg:table-cell max-w-[200px] truncate">{c.notes || '-'}</TableCell>
+                  <TableRow key={c.id} className="group">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-primary/8 flex items-center justify-center shrink-0">
+                          <span className="text-xs font-semibold text-primary">{c.name.charAt(0)}</span>
+                        </div>
+                        <span className="font-medium">{c.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{c.phone}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-muted-foreground">{c.birthDate || '-'}</TableCell>
+                    <TableCell className="hidden lg:table-cell max-w-[200px] truncate text-muted-foreground">{c.notes || '-'}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openHistory(c)}><History className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(c)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openHistory(c)}><History className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={() => handleDelete(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -155,11 +175,11 @@ export default function CustomersPage() {
           <DialogHeader>
             <DialogTitle>{editing ? 'Müşteri Düzenle' : 'Yeni Müşteri'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5"><Label>Ad Soyad</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ad Soyad" /></div>
-            <div className="space-y-1.5"><Label>Telefon</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0500 000 0000" /></div>
-            <div className="space-y-1.5"><Label>Doğum Tarihi</Label><Input type="date" value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} /></div>
-            <div className="space-y-1.5"><Label>Notlar</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Müşteri notları..." /></div>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5"><Label className="text-xs font-medium">Ad Soyad</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ad Soyad" /></div>
+            <div className="space-y-1.5"><Label className="text-xs font-medium">Telefon</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0500 000 0000" type="tel" /></div>
+            <div className="space-y-1.5"><Label className="text-xs font-medium">Doğum Tarihi</Label><Input type="date" value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} /></div>
+            <div className="space-y-1.5"><Label className="text-xs font-medium">Notlar</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Müşteri notları..." rows={3} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
@@ -172,21 +192,24 @@ export default function CustomersPage() {
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{selectedCustomer?.name} — Geçmiş Randevular</DialogTitle>
+            <DialogTitle>{selectedCustomer?.name} — Geçmiş</DialogTitle>
           </DialogHeader>
           {customerAppointments.length === 0 ? (
-            <p className="text-muted-foreground text-sm py-4 text-center">Geçmiş randevu bulunamadı.</p>
+            <div className="empty-state py-8">
+              <History className="empty-state-icon !h-8 !w-8" />
+              <p className="empty-state-title">Geçmiş randevu yok</p>
+            </div>
           ) : (
             <div className="space-y-2 max-h-72 overflow-auto">
               {customerAppointments.map(a => (
-                <div key={a.id} className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+                <div key={a.id} className="flex justify-between items-center p-3 rounded-xl bg-muted/40">
                   <div>
                     <p className="text-sm font-medium">{getServiceName(a.serviceId)}</p>
                     <p className="text-xs text-muted-foreground">{getStaffName(a.staffId)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs">{format(parseISO(a.startTime), 'd MMM yyyy HH:mm', { locale: tr })}</p>
-                    <Badge variant={a.status === 'tamamlandi' ? 'default' : a.status === 'iptal' ? 'destructive' : 'secondary'}>
+                    <p className="text-xs text-muted-foreground">{format(parseISO(a.startTime), 'd MMM yyyy HH:mm', { locale: tr })}</p>
+                    <Badge variant={a.status === 'tamamlandi' ? 'default' : a.status === 'iptal' ? 'destructive' : 'secondary'} className="text-[10px]">
                       {a.status === 'tamamlandi' ? 'Tamamlandı' : a.status === 'iptal' ? 'İptal' : 'Bekliyor'}
                     </Badge>
                   </div>

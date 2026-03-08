@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { format, parseISO, isToday, isSameMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { Wallet, TrendingUp } from 'lucide-react';
+import { Wallet, TrendingUp, Receipt } from 'lucide-react';
 
 export default function PaymentsPage() {
   const { payments, appointments, customers, services } = useSalon();
@@ -36,47 +36,62 @@ export default function PaymentsPage() {
     return services.find(s => s.id === apt.serviceId)?.name ?? '-';
   };
 
+  const kpis = [
+    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, color: 'text-success bg-success/8' },
+    { label: 'Aylık Gelir', value: `₺${monthlyRevenue.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-primary bg-primary/8' },
+  ];
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold">Kasa</h1>
+    <div className="page-container animate-in">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Kasa</h1>
+          <p className="page-subtitle">Ödeme geçmişi ve gelir takibi</p>
+        </div>
+      </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Günlük Gelir</CardTitle>
-            <Wallet className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent><div className="text-3xl font-bold">₺{dailyRevenue.toLocaleString('tr-TR')}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Aylık Gelir</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent><div className="text-3xl font-bold">₺{monthlyRevenue.toLocaleString('tr-TR')}</div></CardContent>
-        </Card>
+        {kpis.map(kpi => (
+          <div key={kpi.label} className="stat-card p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{kpi.label}</p>
+                <p className="text-2xl font-bold tracking-tight">{kpi.value}</p>
+              </div>
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${kpi.color}`}>
+                <kpi.icon className="h-5 w-5" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="flex items-center gap-2">
-        <Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-48" />
+        <Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-48 h-9" />
       </div>
 
       {/* Mobile card view */}
       <div className="block md:hidden space-y-3">
         {monthPayments.length === 0 ? (
-          <p className="text-center py-8 text-muted-foreground text-sm">Bu ay ödeme bulunmamaktadır.</p>
+          <Card className="shadow-card border-border/60">
+            <CardContent className="empty-state">
+              <Receipt className="empty-state-icon" />
+              <p className="empty-state-title">Bu ay ödeme yok</p>
+              <p className="empty-state-description">Randevular tamamlandığında ödemeler burada görünecek.</p>
+            </CardContent>
+          </Card>
         ) : monthPayments.map(p => (
-          <Card key={p.id}>
+          <Card key={p.id} className="shadow-soft border-border/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <p className="font-medium text-sm">{getCustomerName(p.appointmentId)}</p>
                   <p className="text-xs text-muted-foreground">{getServiceName(p.appointmentId)}</p>
                   <p className="text-xs text-muted-foreground">{format(parseISO(p.date), 'd MMM yyyy HH:mm', { locale: tr })}</p>
                 </div>
                 <div className="text-right space-y-1">
                   <p className="font-bold">₺{p.amount.toLocaleString('tr-TR')}</p>
-                  <Badge variant="secondary">{p.type === 'nakit' ? 'Nakit' : 'Kart'}</Badge>
+                  <Badge variant="secondary" className="text-[10px]">{p.type === 'nakit' ? 'Nakit' : 'Kart'}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -85,28 +100,28 @@ export default function PaymentsPage() {
       </div>
 
       {/* Desktop table */}
-      <Card className="hidden md:block">
+      <Card className="hidden md:block shadow-card border-border/60">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Tarih</TableHead>
-                <TableHead>Müşteri</TableHead>
-                <TableHead>Hizmet</TableHead>
-                <TableHead>Ödeme Türü</TableHead>
-                <TableHead className="text-right">Tutar</TableHead>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="font-semibold">Tarih</TableHead>
+                <TableHead className="font-semibold">Müşteri</TableHead>
+                <TableHead className="font-semibold">Hizmet</TableHead>
+                <TableHead className="font-semibold">Ödeme Türü</TableHead>
+                <TableHead className="text-right font-semibold">Tutar</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {monthPayments.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Bu ay ödeme bulunmamaktadır.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground text-sm">Bu ay ödeme bulunmamaktadır.</TableCell></TableRow>
               ) : monthPayments.map(p => (
                 <TableRow key={p.id}>
-                  <TableCell>{format(parseISO(p.date), 'd MMM yyyy HH:mm', { locale: tr })}</TableCell>
-                  <TableCell>{getCustomerName(p.appointmentId)}</TableCell>
-                  <TableCell>{getServiceName(p.appointmentId)}</TableCell>
-                  <TableCell><Badge variant="secondary">{p.type === 'nakit' ? 'Nakit' : 'Kart'}</Badge></TableCell>
-                  <TableCell className="text-right font-medium">₺{p.amount.toLocaleString('tr-TR')}</TableCell>
+                  <TableCell className="text-muted-foreground">{format(parseISO(p.date), 'd MMM yyyy HH:mm', { locale: tr })}</TableCell>
+                  <TableCell className="font-medium">{getCustomerName(p.appointmentId)}</TableCell>
+                  <TableCell className="text-muted-foreground">{getServiceName(p.appointmentId)}</TableCell>
+                  <TableCell><Badge variant="secondary" className="text-[10px]">{p.type === 'nakit' ? 'Nakit' : 'Kart'}</Badge></TableCell>
+                  <TableCell className="text-right font-semibold">₺{p.amount.toLocaleString('tr-TR')}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

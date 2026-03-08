@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil, User } from 'lucide-react';
+import { Plus, Pencil, User, UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Staff } from '@/types/salon';
 import { toast } from 'sonner';
@@ -51,36 +51,45 @@ export default function StaffPage() {
   const getBranchName = (id: string) => branches.find(b => b.id === id)?.name ?? '-';
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Personel</h1>
-        <Button onClick={openAdd}><Plus className="h-4 w-4 mr-1" /> Ekle</Button>
+    <div className="page-container animate-in">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Personel</h1>
+          <p className="page-subtitle">{staff.filter(s => s.active).length} aktif personel</p>
+        </div>
+        <Button onClick={openAdd} size="sm" className="h-9"><Plus className="h-4 w-4 mr-1.5" /> Ekle</Button>
       </div>
 
       {/* Mobile card view */}
       <div className="block md:hidden space-y-3">
         {staff.length === 0 ? (
-          <p className="text-center py-8 text-muted-foreground text-sm">Personel bulunamadı.</p>
+          <Card className="shadow-card border-border/60">
+            <CardContent className="empty-state">
+              <UserCheck className="empty-state-icon" />
+              <p className="empty-state-title">Personel bulunamadı</p>
+              <p className="empty-state-description">İlk personelinizi ekleyerek başlayın.</p>
+            </CardContent>
+          </Card>
         ) : staff.map(s => (
-          <Card key={s.id} className={!s.active ? 'opacity-60' : ''}>
+          <Card key={s.id} className={`shadow-soft border-border/60 hover:shadow-card transition-shadow ${!s.active ? 'opacity-50' : ''}`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-5 w-5 text-primary" />
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center ${s.active ? 'bg-primary/8' : 'bg-muted'}`}>
+                    <User className={`h-4.5 w-4.5 ${s.active ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="font-medium">{s.name}</p>
+                    <p className="font-medium text-sm">{s.name}</p>
                     <p className="text-xs text-muted-foreground">{s.phone}</p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-muted-foreground">{getBranchName(s.branchId)}</span>
-                      <Badge variant={s.active ? 'default' : 'secondary'} className="text-[10px]">
+                      <Badge variant={s.active ? 'default' : 'secondary'} className="text-[10px] px-1.5">
                         {s.active ? 'Aktif' : 'Pasif'}
                       </Badge>
                     </div>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(s)}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => openEdit(s)}>
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -90,33 +99,40 @@ export default function StaffPage() {
       </div>
 
       {/* Desktop table view */}
-      <Card className="hidden md:block">
+      <Card className="hidden md:block shadow-card border-border/60">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Ad Soyad</TableHead>
-                <TableHead>Telefon</TableHead>
-                <TableHead>Şube</TableHead>
-                <TableHead>Durum</TableHead>
-                <TableHead className="text-right">İşlem</TableHead>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="font-semibold">Ad Soyad</TableHead>
+                <TableHead className="font-semibold">Telefon</TableHead>
+                <TableHead className="font-semibold">Şube</TableHead>
+                <TableHead className="font-semibold">Durum</TableHead>
+                <TableHead className="text-right font-semibold">İşlem</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {staff.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Personel bulunamadı.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground text-sm">Personel bulunamadı.</TableCell></TableRow>
               ) : staff.map(s => (
-                <TableRow key={s.id} className={!s.active ? 'opacity-60' : ''}>
-                  <TableCell className="font-medium">{s.name}</TableCell>
-                  <TableCell>{s.phone}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{getBranchName(s.branchId)}</TableCell>
+                <TableRow key={s.id} className={`group ${!s.active ? 'opacity-50' : ''}`}>
                   <TableCell>
-                    <Badge variant={s.active ? 'default' : 'secondary'}>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-primary/8 flex items-center justify-center">
+                        <User className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="font-medium">{s.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{s.phone}</TableCell>
+                  <TableCell className="text-muted-foreground">{getBranchName(s.branchId)}</TableCell>
+                  <TableCell>
+                    <Badge variant={s.active ? 'default' : 'secondary'} className="text-[10px]">
                       {s.active ? 'Aktif' : 'Pasif'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => openEdit(s)}><Pencil className="h-3.5 w-3.5" /></Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -128,11 +144,11 @@ export default function StaffPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{editing ? 'Personel Düzenle' : 'Yeni Personel'}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5"><Label>Ad Soyad</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ad Soyad" /></div>
-            <div className="space-y-1.5"><Label>Telefon</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0500 000 0000" /></div>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5"><Label className="text-xs font-medium">Ad Soyad</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ad Soyad" /></div>
+            <div className="space-y-1.5"><Label className="text-xs font-medium">Telefon</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0500 000 0000" type="tel" /></div>
             <div className="space-y-1.5">
-              <Label>Şube</Label>
+              <Label className="text-xs font-medium">Şube</Label>
               <Select value={form.branchId} onValueChange={v => setForm(f => ({ ...f, branchId: v }))}>
                 <SelectTrigger><SelectValue placeholder="Şube seçin" /></SelectTrigger>
                 <SelectContent>
@@ -142,8 +158,8 @@ export default function StaffPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-3">
-              <Label>Aktif</Label>
+            <div className="flex items-center justify-between py-1">
+              <Label className="text-xs font-medium">Aktif</Label>
               <Switch checked={form.active} onCheckedChange={v => setForm(f => ({ ...f, active: v }))} />
             </div>
           </div>

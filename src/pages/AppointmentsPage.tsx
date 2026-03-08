@@ -142,13 +142,16 @@ export default function AppointmentsPage() {
   const currentDetailApt = detailApt ? (appointments.find(a => a.id === detailApt.id) || detailApt) : null;
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="page-container animate-in">
       {/* Header */}
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold">Randevular</h1>
-          <Button onClick={openAdd}>
-            <Plus className="h-4 w-4 mr-1" /> Yeni Randevu
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Randevular</h1>
+            <p className="page-subtitle">{format(currentDate, 'd MMMM yyyy', { locale: tr })}</p>
+          </div>
+          <Button onClick={openAdd} size="sm" className="h-9">
+            <Plus className="h-4 w-4 mr-1.5" /> Yeni Randevu
           </Button>
         </div>
 
