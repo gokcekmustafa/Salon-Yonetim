@@ -231,6 +231,7 @@ export default function CashPage() {
     setTxDescription(tx.description || '');
     setTxDate(format(parseISO(tx.transaction_date), "yyyy-MM-dd'T'HH:mm"));
     setTxSourceBox(tx.cash_box_id || '');
+    setTxIncomeMethod(tx.payment_method || 'cash');
     setDialogOpen(true);
   };
 
