@@ -37,8 +37,9 @@ const FinanceRoute = ({ children }: { children: React.ReactNode }) => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
+  <AuthProvider>
+    <SalonProvider>
+      <Toaster />
         <Sonner />
         <BrowserRouter>
           <Routes>
