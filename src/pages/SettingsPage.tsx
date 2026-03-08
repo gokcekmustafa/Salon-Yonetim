@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useSalon } from '@/contexts/SalonContext';
 import { useSalon } from '@/contexts/SalonContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
