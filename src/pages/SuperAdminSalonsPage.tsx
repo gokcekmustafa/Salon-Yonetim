@@ -371,6 +371,7 @@ export default function SuperAdminSalonsPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => manageSalon(salon)}><LogIn className="h-4 w-4 mr-2" /> Yönet</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEdit(salon)}><Edit className="h-4 w-4 mr-2" /> Düzenle</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => { setPermSalon({ id: salon.id, name: salon.name }); setPermDialogOpen(true); }}><Shield className="h-4 w-4 mr-2" /> İzinler</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDelete(salon)} className="text-destructive focus:text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Sil</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
