@@ -390,45 +390,57 @@ export type Database = {
       }
       customer_contracts: {
         Row: {
+          contract_payment_type: string
           created_at: string
           created_by: string
           customer_id: string
           filled_data: Json
           id: string
+          installment_count: number | null
+          installment_id: string | null
           notes: string | null
           salon_id: string
           signed_date: string | null
           status: string
           template_id: string | null
           template_name: string
+          total_amount: number | null
           updated_at: string
         }
         Insert: {
+          contract_payment_type?: string
           created_at?: string
           created_by: string
           customer_id: string
           filled_data?: Json
           id?: string
+          installment_count?: number | null
+          installment_id?: string | null
           notes?: string | null
           salon_id: string
           signed_date?: string | null
           status?: string
           template_id?: string | null
           template_name: string
+          total_amount?: number | null
           updated_at?: string
         }
         Update: {
+          contract_payment_type?: string
           created_at?: string
           created_by?: string
           customer_id?: string
           filled_data?: Json
           id?: string
+          installment_count?: number | null
+          installment_id?: string | null
           notes?: string | null
           salon_id?: string
           signed_date?: string | null
           status?: string
           template_id?: string | null
           template_name?: string
+          total_amount?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -437,6 +449,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_contracts_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
             referencedColumns: ["id"]
           },
           {
