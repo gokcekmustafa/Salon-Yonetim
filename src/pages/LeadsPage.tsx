@@ -116,7 +116,7 @@ export default function LeadsPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', email: '', phone: '', source: '', status: 'new' });
+    setForm({ name: '', email: '', phone: '', source: '', status: 'new', assigned_staff_id: '' });
     setDialogOpen(true);
   };
 
