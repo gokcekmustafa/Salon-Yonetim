@@ -89,10 +89,6 @@ export default function LeadsPage() {
 
   const salonId = currentSalonId;
 
-  if (!hasPermission('can_manage_leads')) return <NoPermission feature="Aday Müşteri Yönetimi" />;
-
-  const salonId = currentSalonId;
-
   const fetchLeads = async () => {
     setLoading(true);
     let query = supabase.from('leads').select('*').order('created_at', { ascending: false });
