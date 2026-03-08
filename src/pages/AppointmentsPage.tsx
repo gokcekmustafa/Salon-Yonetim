@@ -120,7 +120,8 @@ export default function AppointmentsPage() {
     if (selectedService) {
       setForm(f => ({ ...f, duration: String(selectedService.duration) }));
     }
-  }, [form.serviceId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedService?.id]);
 
   const handleSave = async () => {
     if (!form.customerId || !form.staffId || !form.serviceId) {
