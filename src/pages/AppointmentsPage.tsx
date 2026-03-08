@@ -158,27 +158,12 @@ export default function AppointmentsPage() {
       start_time: start.toISOString(),
       end_time: end.toISOString(),
       status: 'bekliyor',
+      room_id: form.roomId !== 'none' ? form.roomId : null,
     });
 
     if (error) {
       toast.error('Randevu oluşturulamadı: ' + error.message);
     } else {
-      // Update room_id separately since addAppointment doesn't support it
-      if (form.roomId !== 'none') {
-        // Get the latest appointment for this slot
-        const { data: latest } = await supabase
-          .from('appointments')
-          .select('id')
-          .eq('salon_id', currentSalonId!)
-          .eq('customer_id', form.customerId)
-          .eq('start_time', start.toISOString())
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        if (latest) {
-          await supabase.from('appointments').update({ room_id: form.roomId } as any).eq('id', latest.id);
-        }
-      }
       toast.success('Randevu oluşturuldu.');
       setDialogOpen(false);
       refetch();
