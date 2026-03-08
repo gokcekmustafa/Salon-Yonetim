@@ -1,18 +1,18 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSalon } from '@/contexts/SalonContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Scissors, Clock, User, CalendarDays, CheckCircle2, ChevronLeft, Phone, MapPin } from 'lucide-react';
-import { format, addMinutes, addDays, isSameDay, parseISO, isBefore, startOfDay } from 'date-fns';
+import { format, addMinutes, addDays, isBefore, startOfDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 
-type BookingStep = 'service' | 'staff' | 'datetime' | 'info' | 'confirm';
+type BookingStep = 'service' | 'staff' | 'datetime' | 'info';
 
 export default function BookingPage() {
   const { salonSlug } = useParams<{ salonSlug: string }>();
@@ -26,6 +26,38 @@ export default function BookingPage() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [booked, setBooked] = useState(false);
+
+  const activeStaff = staff.filter(s => s.active);
+  const selectedService = services.find(s => s.id === selectedServiceId);
+  const selectedStaff = staff.find(s => s.id === selectedStaffId);
+
+  const availableDates = useMemo(() => {
+    const dates: Date[] = [];
+    const today = startOfDay(new Date());
+    for (let i = 0; i < 14; i++) {
+      dates.push(addDays(today, i));
+    }
+    return dates;
+  }, []);
+
+  const timeSlots = useMemo(() => {
+    if (!selectedStaffId || !selectedDate || !selectedService) return [];
+    const slots: string[] = [];
+    const date = new Date(selectedDate);
+    for (let h = 9; h <= 20; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const start = new Date(date);
+        start.setHours(h, m, 0, 0);
+        const end = addMinutes(start, selectedService.duration);
+        if (isBefore(start, new Date())) continue;
+        if (end.getHours() > 21 || (end.getHours() === 21 && end.getMinutes() > 0)) continue;
+        if (!hasConflict(selectedStaffId, start.toISOString(), end.toISOString())) {
+          slots.push(format(start, 'HH:mm'));
+        }
+      }
+    }
+    return slots;
+  }, [selectedStaffId, selectedDate, selectedService, hasConflict]);
 
   // Validate salon slug
   if (salonSlug !== salon.slug) {
@@ -42,55 +74,17 @@ export default function BookingPage() {
     );
   }
 
-  const activeStaff = staff.filter(s => s.active);
-  const selectedService = services.find(s => s.id === selectedServiceId);
-  const selectedStaff = staff.find(s => s.id === selectedStaffId);
-
-  // Generate next 14 days
-  const availableDates = useMemo(() => {
-    const dates: Date[] = [];
-    const today = startOfDay(new Date());
-    for (let i = 0; i < 14; i++) {
-      dates.push(addDays(today, i));
-    }
-    return dates;
-  }, []);
-
-  // Generate available time slots for selected staff and date
-  const timeSlots = useMemo(() => {
-    if (!selectedStaffId || !selectedDate || !selectedService) return [];
-    const slots: string[] = [];
-    const date = new Date(selectedDate);
-    for (let h = 9; h <= 20; h++) {
-      for (let m = 0; m < 60; m += 30) {
-        const start = new Date(date);
-        start.setHours(h, m, 0, 0);
-        const end = addMinutes(start, selectedService.duration);
-        // Don't show past times
-        if (isBefore(start, new Date())) continue;
-        // Don't exceed working hours (21:00)
-        if (end.getHours() > 21 || (end.getHours() === 21 && end.getMinutes() > 0)) continue;
-        // Check conflict
-        if (!hasConflict(selectedStaffId, start.toISOString(), end.toISOString())) {
-          slots.push(format(start, 'HH:mm'));
-        }
-      }
-    }
-    return slots;
-  }, [selectedStaffId, selectedDate, selectedService, hasConflict]);
-
   const handleBook = () => {
     if (!selectedService || !selectedStaffId || !selectedDate || !selectedTime || !customerName || !customerPhone) {
       toast.error('Lütfen tüm bilgileri doldurun.');
       return;
     }
 
-    // Find or create customer
-    let customer = customers.find(c => c.phone === customerPhone.trim());
-    if (!customer) {
+    const existing = customers.find(c => c.phone === customerPhone.trim());
+    const customerId = existing?.id || crypto.randomUUID();
+
+    if (!existing) {
       addCustomer({ name: customerName.trim(), phone: customerPhone.trim() });
-      // Get the newly created customer (last one)
-      customer = { id: crypto.randomUUID(), name: customerName.trim(), phone: customerPhone.trim(), createdAt: new Date().toISOString() };
     }
 
     const start = new Date(`${selectedDate}T${selectedTime}`);
@@ -102,7 +96,7 @@ export default function BookingPage() {
     }
 
     addAppointment({
-      customerId: customer.id,
+      customerId,
       staffId: selectedStaffId,
       serviceId: selectedServiceId,
       startTime: start.toISOString(),
@@ -119,13 +113,24 @@ export default function BookingPage() {
     if (idx > 0) setStep(steps[idx - 1]);
   };
 
+  const resetBooking = () => {
+    setBooked(false);
+    setStep('service');
+    setSelectedServiceId('');
+    setSelectedStaffId('');
+    setSelectedDate('');
+    setSelectedTime('');
+    setCustomerName('');
+    setCustomerPhone('');
+  };
+
   if (booked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="max-w-md w-full text-center">
           <CardContent className="pt-10 pb-10 space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <CheckCircle2 className="h-8 w-8 text-primary" />
             </div>
             <h2 className="text-2xl font-bold">Randevunuz Oluşturuldu!</h2>
             <div className="text-sm text-muted-foreground space-y-1">
@@ -137,16 +142,7 @@ export default function BookingPage() {
             <p className="text-xs text-muted-foreground">
               {salon.name} • {salon.phone}
             </p>
-            <Button variant="outline" onClick={() => {
-              setBooked(false);
-              setStep('service');
-              setSelectedServiceId('');
-              setSelectedStaffId('');
-              setSelectedDate('');
-              setSelectedTime('');
-              setCustomerName('');
-              setCustomerPhone('');
-            }}>
+            <Button variant="outline" onClick={resetBooking}>
               Yeni Randevu Al
             </Button>
           </CardContent>
@@ -279,8 +275,6 @@ export default function BookingPage() {
         {step === 'datetime' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Tarih & Saat Seçin</h2>
-
-            {/* Date selector */}
             <div>
               <Label className="text-sm font-medium mb-2 block">Tarih</Label>
               <div className="flex gap-2 overflow-x-auto pb-2">
@@ -306,7 +300,6 @@ export default function BookingPage() {
               </div>
             </div>
 
-            {/* Time slots */}
             {selectedDate && (
               <div>
                 <Label className="text-sm font-medium mb-2 block">Saat</Label>
@@ -346,8 +339,6 @@ export default function BookingPage() {
         {step === 'info' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Bilgileriniz</h2>
-
-            {/* Summary */}
             <Card>
               <CardContent className="p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
