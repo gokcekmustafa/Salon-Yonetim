@@ -122,7 +122,7 @@ export default function CashPage() {
         description: txDescription || null,
         transaction_date: new Date(txDate).toISOString(),
         payment_method: txPaymentMethod,
-        cash_box_id: txCashBoxId || null,
+        cash_box_id: txCashBoxId === 'none' ? null : txCashBoxId,
       };
 
       if (editingTx) {
