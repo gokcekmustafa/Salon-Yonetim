@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,11 +17,11 @@ export function BrandingSettings() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Sync state when branding loads
-  useState(() => {
+  // Sync local state when branding data loads/changes
+  useEffect(() => {
     setCompanyName(branding.company_name);
     setAppName(branding.app_name);
-  });
+  }, [branding.company_name, branding.app_name]);
 
   const handleSaveNames = async () => {
     setSaving(true);
