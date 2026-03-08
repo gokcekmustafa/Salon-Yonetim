@@ -24,16 +24,6 @@ export default function PaymentsPage() {
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
-  const dailyRevenue = useMemo(() =>
-    payments.filter(p => { try { return isToday(parseISO(p.payment_date)); } catch { return false; } }).reduce((s, p) => s + Number(p.amount), 0), [payments]);
-
-  const monthlyRevenue = useMemo(() =>
-    payments.filter(p => { try { return isSameMonth(parseISO(p.payment_date), parseISO(month + '-01')); } catch { return false; } }).reduce((s, p) => s + Number(p.amount), 0), [payments, month]);
-
-  const monthPayments = useMemo(() =>
-    payments.filter(p => { try { return isSameMonth(parseISO(p.payment_date), parseISO(month + '-01')); } catch { return false; } })
-      .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()), [payments, month]);
-
   const getCustomerName = (aptId: string | null) => {
     if (!aptId) return '-';
     const apt = appointments.find(a => a.id === aptId);
