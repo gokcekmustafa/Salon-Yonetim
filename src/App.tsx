@@ -18,6 +18,7 @@ import SettingsPage from "./pages/SettingsPage";
 import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
 import AuthPage from "./pages/AuthPage";
+import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,12 @@ const FinanceRoute = ({ children }: { children: React.ReactNode }) => (
   </ProtectedRoute>
 );
 
+const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute requiredRole="super_admin">
+    <AppLayout>{children}</AppLayout>
+  </ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -46,6 +53,9 @@ const App = () => (
               {/* Public */}
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/book/:salonSlug" element={<BookingPage />} />
+
+              {/* Super Admin */}
+              <Route path="/admin/salonlar" element={<SuperAdminRoute><SuperAdminSalonsPage /></SuperAdminRoute>} />
 
               {/* Admin panel - all authenticated users */}
               <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
