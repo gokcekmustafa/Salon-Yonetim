@@ -32,6 +32,7 @@ import {
   Shield,
   Bell,
   Activity,
+  BadgeDollarSign,
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
