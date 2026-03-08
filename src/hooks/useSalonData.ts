@@ -25,6 +25,7 @@ export type DbAppointment = {
   id: string; salon_id: string; branch_id: string | null; customer_id: string;
   staff_id: string; service_id: string; start_time: string; end_time: string;
   status: string; notes: string | null; created_at: string; updated_at: string;
+  room_id: string | null; session_status: string;
 };
 export type DbPayment = {
   id: string; salon_id: string; appointment_id: string | null; amount: number;
