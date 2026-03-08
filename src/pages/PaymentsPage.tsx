@@ -22,7 +22,11 @@ export default function PaymentsPage() {
     payments.filter(p => { try { return isSameMonth(parseISO(p.payment_date), parseISO(month + '-01')); } catch { return false; } })
       .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()), [payments, month]);
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center gap-3"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="text-sm text-muted-foreground">Yükleniyor...</p></div>
+    </div>
+  );
 
   const getCustomerName = (aptId: string | null) => {
     if (!aptId) return '-';
@@ -37,8 +41,8 @@ export default function PaymentsPage() {
   };
 
   const kpis = [
-    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, color: 'text-success bg-success/8' },
-    { label: 'Aylık Gelir', value: `₺${monthlyRevenue.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-primary bg-primary/8' },
+    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, color: 'text-success bg-success/10' },
+    { label: 'Aylık Gelir', value: `₺${monthlyRevenue.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-primary bg-primary/10' },
   ];
 
   return (
@@ -49,38 +53,41 @@ export default function PaymentsPage() {
         {kpis.map(kpi => (
           <div key={kpi.label} className="stat-card p-5">
             <div className="flex items-start justify-between">
-              <div className="space-y-2"><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{kpi.label}</p><p className="text-2xl font-bold tracking-tight">{kpi.value}</p></div>
-              <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${kpi.color}`}><kpi.icon className="h-5 w-5" /></div>
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{kpi.label}</p>
+                <p className="text-2xl font-bold tracking-tight tabular-nums">{kpi.value}</p>
+              </div>
+              <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${kpi.color}`}><kpi.icon className="h-5 w-5" /></div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="flex items-center gap-2"><Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-48 h-9" /></div>
+      <div className="flex items-center gap-2"><Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-48 h-10" /></div>
 
+      {/* Mobile Cards */}
       <div className="block md:hidden space-y-3">
         {monthPayments.length === 0 ? (
-          <Card className="shadow-card border-border/60"><CardContent className="empty-state"><Receipt className="empty-state-icon" /><p className="empty-state-title">Bu ay ödeme yok</p></CardContent></Card>
+          <Card className="shadow-soft border-border/60"><CardContent className="empty-state"><Receipt className="empty-state-icon" /><p className="empty-state-title">Bu ay ödeme yok</p></CardContent></Card>
         ) : monthPayments.map(p => (
-          <Card key={p.id} className="shadow-soft border-border/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <p className="font-medium text-sm">{getCustomerName(p.appointment_id)}</p>
-                  <p className="text-xs text-muted-foreground">{getServiceName(p.appointment_id)}</p>
-                  <p className="text-xs text-muted-foreground">{format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr })}</p>
-                </div>
-                <div className="text-right space-y-1">
-                  <p className="font-bold">₺{Number(p.amount).toLocaleString('tr-TR')}</p>
-                  <Badge variant="secondary" className="text-[10px]">{p.payment_type === 'nakit' ? 'Nakit' : 'Kart'}</Badge>
-                </div>
+          <div key={p.id} className="card-interactive p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <p className="font-semibold text-sm">{getCustomerName(p.appointment_id)}</p>
+                <p className="text-xs text-muted-foreground">{getServiceName(p.appointment_id)}</p>
+                <p className="text-xs text-muted-foreground">{format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr })}</p>
               </div>
-            </CardContent>
-          </Card>
+              <div className="text-right space-y-1">
+                <p className="font-bold tabular-nums">₺{Number(p.amount).toLocaleString('tr-TR')}</p>
+                <Badge variant="secondary" className="text-[10px] font-semibold">{p.payment_type === 'nakit' ? 'Nakit' : 'Kart'}</Badge>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
 
-      <Card className="hidden md:block shadow-card border-border/60">
+      {/* Desktop Table */}
+      <Card className="hidden md:block shadow-soft border-border/60 overflow-hidden">
         <CardContent className="p-0">
           <Table>
             <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="font-semibold">Tarih</TableHead><TableHead className="font-semibold">Müşteri</TableHead><TableHead className="font-semibold">Hizmet</TableHead><TableHead className="font-semibold">Ödeme Türü</TableHead><TableHead className="text-right font-semibold">Tutar</TableHead></TableRow></TableHeader>
@@ -92,8 +99,8 @@ export default function PaymentsPage() {
                   <TableCell className="text-muted-foreground">{format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr })}</TableCell>
                   <TableCell className="font-medium">{getCustomerName(p.appointment_id)}</TableCell>
                   <TableCell className="text-muted-foreground">{getServiceName(p.appointment_id)}</TableCell>
-                  <TableCell><Badge variant="secondary" className="text-[10px]">{p.payment_type === 'nakit' ? 'Nakit' : 'Kart'}</Badge></TableCell>
-                  <TableCell className="text-right font-semibold">₺{Number(p.amount).toLocaleString('tr-TR')}</TableCell>
+                  <TableCell><Badge variant="secondary" className="text-[10px] font-semibold">{p.payment_type === 'nakit' ? 'Nakit' : 'Kart'}</Badge></TableCell>
+                  <TableCell className="text-right font-bold tabular-nums">₺{Number(p.amount).toLocaleString('tr-TR')}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

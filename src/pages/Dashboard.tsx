@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Users, Wallet, TrendingUp, Building2, ArrowUpRight, Clock, Loader2, Shield } from 'lucide-react';
+import { Calendar, Users, Wallet, TrendingUp, Building2, ArrowUpRight, Clock, Loader2, Shield, Sparkles } from 'lucide-react';
 import { format, isToday, isFuture, parseISO, subDays, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useState } from 'react';
@@ -18,21 +18,27 @@ export default function Dashboard() {
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+      </div>
+    </div>
+  );
 
-  // Super admin without salon selected
   if (isSuperAdmin && !currentSalonId) {
     return (
       <div className="page-container animate-in">
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-            <Shield className="h-8 w-8 text-primary" />
+          <div className="h-20 w-20 rounded-2xl flex items-center justify-center mb-6 btn-gradient">
+            <Shield className="h-10 w-10 text-primary-foreground" />
           </div>
-          <h2 className="text-xl font-bold mb-2">Hoşgeldiniz, Super Admin!</h2>
-          <p className="text-muted-foreground text-sm mb-6 max-w-md">
+          <h2 className="text-2xl font-bold mb-2">Hoşgeldiniz, Super Admin!</h2>
+          <p className="text-muted-foreground text-sm mb-8 max-w-md leading-relaxed">
             Dashboard'u görüntülemek için önce Platform Yönetimi sayfasından bir salon oluşturun veya mevcut bir salonu yönetmeye başlayın.
           </p>
-          <Button onClick={() => navigate('/admin/salonlar')} className="gap-2">
+          <Button onClick={() => navigate('/admin/salonlar')} className="gap-2 btn-gradient h-11 px-6 rounded-xl">
             <Building2 className="h-4 w-4" /> Platform Yönetimine Git
           </Button>
         </div>
@@ -79,40 +85,49 @@ export default function Dashboard() {
   const hasAnalyticsData = filteredPayments.length > 0 || filteredAppointments.some(a => a.status === 'tamamlandi');
 
   const kpis = [
-    { label: 'Bugünün Randevuları', value: todayAppointments.length, icon: Calendar, color: 'text-primary bg-primary/8' },
-    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, color: 'text-success bg-success/8' },
-    { label: 'Aylık Gelir', value: `₺${monthlyTotal.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-info bg-info/8' },
-    { label: 'Toplam Müşteri', value: customers.length, icon: Users, color: 'text-warning bg-warning/8' },
+    { label: 'Bugünün Randevuları', value: todayAppointments.length, icon: Calendar, color: 'text-primary bg-primary/10' },
+    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, color: 'text-success bg-success/10' },
+    { label: 'Aylık Gelir', value: `₺${monthlyTotal.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-info bg-info/10' },
+    { label: 'Toplam Müşteri', value: customers.length, icon: Users, color: 'text-warning bg-warning/10' },
   ];
 
   return (
     <div className="page-container animate-in">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">{salon?.name || 'Panel'}</h1>
-          <p className="page-subtitle">{format(new Date(), "d MMMM yyyy, EEEE", { locale: tr })}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <Select value={selectedBranchId || 'all'} onValueChange={v => setSelectedBranchId(v === 'all' ? null : v)}>
-            <SelectTrigger className="w-48 h-9 text-sm"><SelectValue placeholder="Tüm Şubeler" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tüm Şubeler</SelectItem>
-              {branches.filter(b => b.is_active).map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+      {/* Hero Header */}
+      <div className="rounded-2xl p-6 lg:p-8 border border-border/40" style={{ background: 'var(--gradient-hero)' }}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl btn-gradient flex items-center justify-center">
+              <Sparkles className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">{salon?.name || 'Panel'}</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">{format(new Date(), "d MMMM yyyy, EEEE", { locale: tr })}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedBranchId || 'all'} onValueChange={v => setSelectedBranchId(v === 'all' ? null : v)}>
+              <SelectTrigger className="w-48 h-9 text-sm bg-card/80 backdrop-blur-sm"><SelectValue placeholder="Tüm Şubeler" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Şubeler</SelectItem>
+                {branches.filter(b => b.is_active).map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
+      {/* KPI Cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map(kpi => (
           <div key={kpi.label} className="stat-card p-5">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{kpi.label}</p>
-                <p className="text-2xl font-bold tracking-tight">{kpi.value}</p>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{kpi.label}</p>
+                <p className="text-2xl font-bold tracking-tight tabular-nums">{kpi.value}</p>
               </div>
-              <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${kpi.color}`}>
+              <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${kpi.color}`}>
                 <kpi.icon className="h-5 w-5" />
               </div>
             </div>
@@ -120,29 +135,46 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Charts */}
       {hasAnalyticsData ? (
         <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <Card className="shadow-card border-border/60">
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold flex items-center gap-2"><ArrowUpRight className="h-4 w-4 text-primary" />Son 7 Gün Gelir</CardTitle></CardHeader>
+          <Card className="shadow-soft border-border/60 overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center"><ArrowUpRight className="h-3.5 w-3.5 text-primary" /></div>
+                Son 7 Gün Gelir
+              </CardTitle>
+            </CardHeader>
             <CardContent>
               <ChartContainer config={dailyChartConfig} className="h-[240px] w-full">
                 <BarChart data={dailyRevenueData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" /><XAxis dataKey="day" className="text-xs" /><YAxis className="text-xs" />
-                  <ChartTooltip content={<ChartTooltipContent />} /><Bar dataKey="gelir" fill="var(--color-gelir)" radius={[6, 6, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
+                  <XAxis dataKey="day" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="gelir" fill="var(--color-gelir)" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ChartContainer>
             </CardContent>
           </Card>
-          <Card className="shadow-card border-border/60">
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold flex items-center gap-2"><Users className="h-4 w-4 text-primary" />En Çok Gelen Müşteriler</CardTitle></CardHeader>
+          <Card className="shadow-soft border-border/60 overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center"><Users className="h-3.5 w-3.5 text-primary" /></div>
+                En Çok Gelen Müşteriler
+              </CardTitle>
+            </CardHeader>
             <CardContent>
               {topCustomers.length === 0 ? (
                 <div className="empty-state"><Users className="empty-state-icon" /><p className="empty-state-title">Henüz tamamlanmış randevu yok</p></div>
               ) : (
                 <ChartContainer config={customerChartConfig} className="h-[240px] w-full">
                   <BarChart data={topCustomers} layout="vertical" margin={{ top: 5, right: 10, left: 80, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" /><XAxis type="number" className="text-xs" /><YAxis dataKey="name" type="category" className="text-xs" width={75} />
-                    <ChartTooltip content={<ChartTooltipContent />} /><Bar dataKey="ziyaret" fill="var(--color-ziyaret)" radius={[0, 6, 6, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
+                    <XAxis type="number" className="text-xs" />
+                    <YAxis dataKey="name" type="category" className="text-xs" width={75} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="ziyaret" fill="var(--color-ziyaret)" radius={[0, 8, 8, 0]} />
                   </BarChart>
                 </ChartContainer>
               )}
@@ -150,24 +182,45 @@ export default function Dashboard() {
           </Card>
         </div>
       ) : (
-        <Card className="shadow-card border-border/60"><CardContent className="empty-state"><TrendingUp className="empty-state-icon" /><p className="empty-state-title">Henüz veri yok</p><p className="empty-state-description">Randevu tamamlayıp ödeme aldığınızda grafikler burada görünecek.</p></CardContent></Card>
+        <Card className="shadow-soft border-border/60">
+          <CardContent className="empty-state">
+            <TrendingUp className="empty-state-icon" />
+            <p className="empty-state-title">Henüz veri yok</p>
+            <p className="empty-state-description">Randevu tamamlayıp ödeme aldığınızda grafikler burada görünecek.</p>
+          </CardContent>
+        </Card>
       )}
 
-      <Card className="shadow-card border-border/60">
-        <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><Clock className="h-4 w-4 text-primary" />Yaklaşan Randevular</CardTitle></CardHeader>
+      {/* Upcoming Appointments */}
+      <Card className="shadow-soft border-border/60 overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center"><Clock className="h-3.5 w-3.5 text-primary" /></div>
+            Yaklaşan Randevular
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           {upcomingAppointments.length === 0 ? (
-            <div className="empty-state py-8"><Calendar className="empty-state-icon !h-8 !w-8" /><p className="empty-state-title">Yaklaşan randevu yok</p><p className="empty-state-description">Yeni randevu oluşturduğunuzda burada görünecek.</p></div>
+            <div className="empty-state py-8">
+              <Calendar className="empty-state-icon !h-8 !w-8" />
+              <p className="empty-state-title">Yaklaşan randevu yok</p>
+              <p className="empty-state-description">Yeni randevu oluşturduğunuzda burada görünecek.</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {upcomingAppointments.map(apt => (
-                <div key={apt.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
-                  <div className="space-y-0.5">
-                    <p className="font-medium text-sm">{getName(customers, apt.customer_id)}</p>
-                    <p className="text-xs text-muted-foreground">{getName(services, apt.service_id)} · {getName(staff, apt.staff_id)}{apt.branch_id && ` · ${getName(branches, apt.branch_id)}`}</p>
+                <div key={apt.id} className="flex items-center justify-between p-3.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-transparent hover:border-border/40">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-xs font-bold text-primary">{getName(customers, apt.customer_id).charAt(0)}</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="font-medium text-sm">{getName(customers, apt.customer_id)}</p>
+                      <p className="text-xs text-muted-foreground">{getName(services, apt.service_id)} · {getName(staff, apt.staff_id)}{apt.branch_id && ` · ${getName(branches, apt.branch_id)}`}</p>
+                    </div>
                   </div>
                   <div className="text-right space-y-0.5">
-                    <p className="text-sm font-semibold tabular-nums">{format(parseISO(apt.start_time), 'HH:mm')}</p>
+                    <p className="text-sm font-bold tabular-nums">{format(parseISO(apt.start_time), 'HH:mm')}</p>
                     <Badge variant={statusVariant(apt.status)} className="text-[10px]">{statusMap[apt.status]}</Badge>
                   </div>
                 </div>
