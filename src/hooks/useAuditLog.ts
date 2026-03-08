@@ -24,7 +24,7 @@ export function useAuditLog() {
       ? 'Salon Admin'
       : 'Personel';
 
-    await supabase.from('audit_logs' as any).insert({
+    await supabase.from('audit_logs').insert({
       user_id: user.id,
       user_name: profile?.full_name || user.email || 'Bilinmiyor',
       user_role: roleName,
