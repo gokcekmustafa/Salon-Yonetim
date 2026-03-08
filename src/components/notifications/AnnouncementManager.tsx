@@ -139,15 +139,19 @@ export function AnnouncementManager({ mode, salonId }: AnnouncementManagerProps)
       let targetUserIds: string[] = [];
 
       if (announcement.target_type === 'all_salons') {
-        // Get all salon members
-        const { data } = await supabase.from('salon_members').select('user_id');
-        targetUserIds = [...new Set((data || []).map(m => m.user_id))];
+        // Get all salon members + all super admins
+        const [membersRes, rolesRes] = await Promise.all([
+          supabase.from('salon_members').select('user_id'),
+          supabase.from('user_roles').select('user_id').eq('role', 'super_admin'),
+        ]);
+        const memberIds = (membersRes.data || []).map(m => m.user_id);
+        const adminIds = (rolesRes.data || []).map(r => r.user_id);
+        targetUserIds = [...new Set([...memberIds, ...adminIds])];
       } else if (announcement.target_type === 'selected_salons') {
         const ids = announcement.target_salon_ids as string[];
         const { data } = await supabase.from('salon_members').select('user_id').in('salon_id', ids);
         targetUserIds = [...new Set((data || []).map(m => m.user_id))];
       } else if (announcement.target_type === 'salon_customers' && salonId) {
-        // For salon customers, notify salon members (customers don't have user accounts typically)
         const { data } = await supabase.from('salon_members').select('user_id').eq('salon_id', salonId);
         targetUserIds = [...new Set((data || []).map(m => m.user_id))];
       }
