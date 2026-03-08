@@ -61,6 +61,7 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
 
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.name ?? '-';
   const getServiceName = (id: string) => services.find(s => s.id === id)?.name ?? '-';
+  const getRoomName = (id: string | null) => rooms.find(r => r.id === id)?.name ?? '';
 
   const getAppointmentStyle = (apt: DbAppointment) => {
     const start = parseISO(apt.start_time);
