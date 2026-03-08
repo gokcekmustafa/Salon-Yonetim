@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import { SuperAdminUserManager } from '@/components/password/SuperAdminUserManager';
 import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
 import { SubscriptionAlertSettings } from '@/components/notifications/SubscriptionAlertSettings';
+import { PopupManager } from '@/components/popup/PopupManager';
 
 type Salon = {
   id: string; name: string; slug: string; phone: string | null; address: string | null;
@@ -335,6 +336,9 @@ export default function SuperAdminSalonsPage() {
 
       {/* Announcements */}
       <AnnouncementManager mode="super_admin" />
+
+      {/* Popup Announcements */}
+      <PopupManager mode="super_admin" />
 
       {/* User Management */}
       <SuperAdminUserManager />

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { ChangeOwnPassword } from '@/components/password/ChangeOwnPassword';
 import { StaffPasswordManager } from '@/components/password/StaffPasswordManager';
 import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
+import { PopupManager } from '@/components/popup/PopupManager';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
@@ -55,6 +56,11 @@ export default function SettingsPage() {
       {/* Salon Announcements */}
       {(isSalonAdmin || isSuperAdmin) && currentSalonId && (
         <AnnouncementManager mode="salon_admin" salonId={currentSalonId} />
+      )}
+
+      {/* Salon Popup Announcements */}
+      {(isSalonAdmin || isSuperAdmin) && currentSalonId && (
+        <PopupManager mode="salon_admin" salonId={currentSalonId} />
       )}
 
       {ns && (
