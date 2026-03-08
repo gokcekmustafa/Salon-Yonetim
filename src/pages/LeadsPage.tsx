@@ -489,6 +489,30 @@ export default function LeadsPage() {
                   </Select>
                 </div>
 
+                {/* Staff Assignment */}
+                {activeStaff.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Görüşen Personel</Label>
+                    <Select
+                      value={selectedLead.assigned_staff_id || ''}
+                      onValueChange={async v => {
+                        const staffId = v || null;
+                        const { error } = await supabase.from('leads').update({ assigned_staff_id: staffId } as any).eq('id', selectedLead.id);
+                        if (!error) {
+                          setSelectedLead({ ...selectedLead, assigned_staff_id: staffId });
+                          fetchLeads();
+                          toast.success('Personel atandı');
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-10"><SelectValue placeholder="Personel seçin" /></SelectTrigger>
+                      <SelectContent>
+                        {activeStaff.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex gap-2">
                   {!selectedLead.converted_customer_id && (
