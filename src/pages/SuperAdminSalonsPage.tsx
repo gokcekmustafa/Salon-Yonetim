@@ -22,6 +22,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { SuperAdminUserManager } from '@/components/password/SuperAdminUserManager';
 import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
+import { SubscriptionAlertSettings } from '@/components/notifications/SubscriptionAlertSettings';
 
 type Salon = {
   id: string; name: string; slug: string; phone: string | null; address: string | null;
@@ -328,6 +329,9 @@ export default function SuperAdminSalonsPage() {
           </Table>
         </Card>
       )}
+
+      {/* Subscription Alert Settings */}
+      <SubscriptionAlertSettings />
 
       {/* Announcements */}
       <AnnouncementManager mode="super_admin" />

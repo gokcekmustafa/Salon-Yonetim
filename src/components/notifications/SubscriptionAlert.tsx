@@ -3,6 +3,19 @@ import { AlertTriangle, Clock, CreditCard } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+
+interface AlertSettings {
+  message_expired: string;
+  message_expiring: string;
+  show_days_before: number;
+}
+
+const DEFAULTS: AlertSettings = {
+  message_expired: 'Aboneliğiniz {days} gün önce sona erdi. Lütfen yenileyin.',
+  message_expiring: 'Aboneliğiniz {days} gün sonra ({date}) sona erecek.',
+  show_days_before: 30,
+};
 
 interface SubscriptionAlertProps {
   expiresAt: string | null;
@@ -10,13 +23,25 @@ interface SubscriptionAlertProps {
 }
 
 export function SubscriptionAlert({ expiresAt, plan }: SubscriptionAlertProps) {
+  const [settings, setSettings] = useState<AlertSettings>(DEFAULTS);
+
+  useEffect(() => {
+    supabase
+      .from('platform_settings' as any)
+      .select('value')
+      .eq('key', 'subscription_alert')
+      .single()
+      .then(({ data }) => {
+        if (data) setSettings({ ...DEFAULTS, ...(data as any).value });
+      });
+  }, []);
+
   if (!expiresAt) return null;
 
   const expiryDate = parseISO(expiresAt);
   const daysRemaining = differenceInDays(expiryDate, new Date());
 
-  // Don't show if more than 30 days remaining
-  if (daysRemaining > 30) return null;
+  if (daysRemaining > settings.show_days_before) return null;
 
   const isExpired = daysRemaining < 0;
   const isUrgent = daysRemaining <= 7;
@@ -51,11 +76,13 @@ export function SubscriptionAlert({ expiresAt, plan }: SubscriptionAlertProps) {
             {isExpired ? 'Abonelik Süresi Doldu!' : 'Abonelik Süresi Yaklaşıyor'}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            {isExpired ? (
-              <>Aboneliğiniz <strong>{Math.abs(daysRemaining)} gün önce</strong> sona erdi. Lütfen yenileyin.</>
-            ) : (
-              <>Aboneliğiniz <strong>{daysRemaining} gün</strong> sonra ({format(expiryDate, 'd MMMM yyyy', { locale: tr })}) sona erecek.</>
-            )}
+            {isExpired
+              ? settings.message_expired
+                  .replace('{days}', String(Math.abs(daysRemaining)))
+              : settings.message_expiring
+                  .replace('{days}', String(daysRemaining))
+                  .replace('{date}', format(expiryDate, 'd MMMM yyyy', { locale: tr }))
+            }
           </p>
           <div className="flex items-center gap-4 mt-2">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
