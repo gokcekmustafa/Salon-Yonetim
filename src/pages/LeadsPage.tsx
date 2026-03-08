@@ -235,7 +235,8 @@ export default function LeadsPage() {
       (l.phone || '').includes(search) ||
       (l.email || '').toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || l.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesStaff = staffFilter === 'all' || l.assigned_staff_id === staffFilter;
+    return matchesSearch && matchesStatus && matchesStaff;
   });
 
   // Pipeline stats
