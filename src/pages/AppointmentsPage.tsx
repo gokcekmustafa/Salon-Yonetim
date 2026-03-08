@@ -597,10 +597,50 @@ export default function AppointmentsPage() {
             {currentDetailApt?.status === 'bekliyor' && (
               <>
                 <Button variant="outline" onClick={handleCancel}>İptal Et</Button>
-                <Button onClick={handleComplete}>Tamamla</Button>
+                <Button onClick={openCompleteDialog} className="btn-gradient">Tamamla & Ödeme Al</Button>
               </>
             )}
             <Button variant="ghost" onClick={() => setDetailOpen(false)}>Kapat</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Method Selection Dialog */}
+      <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Ödeme Yöntemi Seçin</DialogTitle>
+            <DialogDescription>
+              {detailApt && services.find(s => s.id === detailApt.service_id) && (
+                <>Tutar: <strong>₺{services.find(s => s.id === detailApt.service_id)!.price.toLocaleString('tr-TR')}</strong></>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-3 py-4">
+            {[
+              { value: 'cash', label: 'Nakit', icon: Banknote },
+              { value: 'eft', label: 'EFT/Havale', icon: Building2 },
+              { value: 'credit_card', label: 'Kredi Kartı', icon: CreditCard },
+            ].map(m => (
+              <button
+                key={m.value}
+                onClick={() => setSelectedPaymentMethod(m.value)}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  selectedPaymentMethod === m.value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border hover:border-primary/40 text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <m.icon className="h-6 w-6" />
+                <span className="text-xs font-semibold">{m.label}</span>
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCompleteDialogOpen(false)}>İptal</Button>
+            <Button onClick={handleComplete} className="btn-gradient gap-1.5">
+              Tamamla & Kaydet
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
