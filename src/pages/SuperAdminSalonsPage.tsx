@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { SuperAdminUserManager } from '@/components/password/SuperAdminUserManager';
+import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
 
 type Salon = {
   id: string; name: string; slug: string; phone: string | null; address: string | null;
