@@ -56,6 +56,7 @@ export default function CustomersPage() {
       name: c.name, phone: c.phone || '', birth_date: c.birth_date || '', notes: c.notes || '',
       tc_kimlik_no: c.tc_kimlik_no || '', address: c.address || '', secondary_phone: c.secondary_phone || '',
       source_type: c.source_type || '', source_detail: c.source_detail || '',
+      customer_type: c.customer_type || 'installment',
     });
     setDialogOpen(true);
   };
