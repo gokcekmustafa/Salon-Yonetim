@@ -274,7 +274,10 @@ export default function SuperAdminSalonsPage() {
       {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editing ? 'Salon Düzenle' : 'Yeni Salon Oluştur'}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Salon Düzenle' : 'Yeni Salon Oluştur'}</DialogTitle>
+            <DialogDescription>{editing ? 'Salon bilgilerini güncelleyin' : 'Yeni bir salon ekleyin'}</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Salon Adı</Label>
