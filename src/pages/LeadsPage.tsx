@@ -87,6 +87,8 @@ export default function LeadsPage() {
   const [noteType, setNoteType] = useState('general');
   const [addingNote, setAddingNote] = useState(false);
 
+  const salonId = currentSalonId;
+
   if (!hasPermission('can_manage_leads')) return <NoPermission feature="Aday Müşteri Yönetimi" />;
 
   const salonId = currentSalonId;
