@@ -52,7 +52,7 @@ export default function CashPage() {
   const [txDescription, setTxDescription] = useState('');
   const [txDate, setTxDate] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [txPaymentMethod, setTxPaymentMethod] = useState('cash');
-  const [txCashBoxId, setTxCashBoxId] = useState<string>('');
+  const [txCashBoxId, setTxCashBoxId] = useState<string>('none');
 
   // Box form
   const [boxName, setBoxName] = useState('');
