@@ -3,60 +3,64 @@ import { format, parseISO, isSameDay, setHours, setMinutes, differenceInMinutes,
 import { tr } from 'date-fns/locale';
 import { useSalon } from '@/contexts/SalonContext';
 import { Appointment } from '@/types/salon';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-const HOUR_HEIGHT = 72; // px per hour
+const HOUR_HEIGHT = 72;
 const START_HOUR = 8;
 const END_HOUR = 21;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
-// Staff color palette
-const STAFF_COLORS = [
-  'bg-primary/20 border-primary text-primary',
-  'bg-accent/20 border-accent text-accent-foreground',
-  'bg-success/20 border-success text-success-foreground',
-  'bg-destructive/20 border-destructive text-destructive-foreground',
-  'bg-secondary border-secondary-foreground/30 text-secondary-foreground',
+const STATUS_COLORS: Record<string, string> = {
+  bekliyor: 'bg-primary/15 border-primary/60 text-primary',
+  tamamlandi: 'bg-muted border-muted-foreground/30 text-muted-foreground',
+  iptal: 'bg-destructive/10 border-destructive/40 text-destructive',
+};
+
+const STAFF_ACCENTS = [
+  'border-l-primary',
+  'border-l-accent',
+  'border-l-[hsl(var(--success))]',
+  'border-l-destructive',
+  'border-l-secondary-foreground',
 ];
 
 interface DayCalendarViewProps {
   date: Date;
   filteredStaffId: string | null;
+  filteredBranchId?: string | null;
   onAppointmentClick: (apt: Appointment) => void;
 }
 
-export default function DayCalendarView({ date, filteredStaffId, onAppointmentClick }: DayCalendarViewProps) {
-  const { appointments, staff, customers, services, updateAppointment, hasConflict } = useSalon();
-  const containerRef = useRef<HTMLDivElement>(null);
+export default function DayCalendarView({ date, filteredStaffId, filteredBranchId, onAppointmentClick }: DayCalendarViewProps) {
+  const { appointments, staff, customers, services, updateAppointment, hasConflict, branches } = useSalon();
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{ top: number } | null>(null);
 
   const activeStaff = useMemo(() => {
-    const filtered = staff.filter(s => s.active);
-    if (filteredStaffId) return filtered.filter(s => s.id === filteredStaffId);
+    let filtered = staff.filter(s => s.active);
+    if (filteredBranchId) filtered = filtered.filter(s => s.branchId === filteredBranchId);
+    if (filteredStaffId) filtered = filtered.filter(s => s.id === filteredStaffId);
     return filtered;
-  }, [staff, filteredStaffId]);
+  }, [staff, filteredStaffId, filteredBranchId]);
 
   const dayAppointments = useMemo(() =>
     appointments.filter(a => {
       try {
         if (!isSameDay(parseISO(a.startTime), date)) return false;
-        if (a.status === 'iptal') return false;
         if (filteredStaffId && a.staffId !== filteredStaffId) return false;
+        if (filteredBranchId && a.branchId !== filteredBranchId) return false;
         return true;
       } catch { return false; }
-    }), [appointments, date, filteredStaffId]);
+    }), [appointments, date, filteredStaffId, filteredBranchId]);
 
-  const getStaffColor = (staffId: string) => {
+  const getStaffAccent = (staffId: string) => {
     const idx = staff.findIndex(s => s.id === staffId);
-    return STAFF_COLORS[idx % STAFF_COLORS.length];
+    return STAFF_ACCENTS[idx % STAFF_ACCENTS.length];
   };
 
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.name ?? '-';
   const getServiceName = (id: string) => services.find(s => s.id === id)?.name ?? '-';
-  const getStaffName = (id: string) => staff.find(s => s.id === id)?.name ?? '-';
 
   const getAppointmentStyle = (apt: Appointment) => {
     const start = parseISO(apt.startTime);
@@ -77,10 +81,7 @@ export default function DayCalendarView({ date, filteredStaffId, onAppointmentCl
     setDragging(aptId);
   };
 
-  const handleDragEnd = () => {
-    setDragging(null);
-    setDragPreview(null);
-  };
+  const handleDragEnd = () => { setDragging(null); setDragPreview(null); };
 
   const snapToGrid = (minutes: number) => Math.round(minutes / 15) * 15;
 
@@ -106,8 +107,10 @@ export default function DayCalendarView({ date, filteredStaffId, onAppointmentCl
       return;
     }
 
+    const targetStaff = staff.find(s => s.id === targetStaffId);
     updateAppointment(aptId, {
       staffId: targetStaffId,
+      branchId: targetStaff?.branchId || apt.branchId,
       startTime: newStart.toISOString(),
       endTime: newEnd.toISOString(),
     });
@@ -131,100 +134,120 @@ export default function DayCalendarView({ date, filteredStaffId, onAppointmentCl
 
   const totalHeight = HOURS.length * HOUR_HEIGHT;
 
+  // Current time indicator
+  const now = new Date();
+  const isToday = isSameDay(date, now);
+  const currentTimeTop = isToday
+    ? ((now.getHours() * 60 + now.getMinutes() - START_HOUR * 60) / 60) * HOUR_HEIGHT
+    : -1;
+
   return (
-    <div className="border rounded-lg bg-card overflow-hidden">
+    <div className="border rounded-lg bg-card overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="border-b bg-muted/30 px-4 py-3">
-        <h3 className="font-semibold">
-          {format(date, 'd MMMM yyyy, EEEE', { locale: tr })}
-        </h3>
-        <p className="text-xs text-muted-foreground">{dayAppointments.length} randevu</p>
+      <div className="border-b bg-muted/30 px-4 py-3 flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold">{format(date, 'd MMMM yyyy, EEEE', { locale: tr })}</h3>
+          <p className="text-xs text-muted-foreground">{dayAppointments.length} randevu • {activeStaff.length} personel</p>
+        </div>
+        {/* Status legend */}
+        <div className="hidden sm:flex items-center gap-3 text-xs">
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-primary/40" /> Bekliyor</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-muted-foreground/30" /> Tamamlandı</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-destructive/30" /> İptal</span>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
         <div className="flex min-w-[600px]">
           {/* Time gutter */}
-          <div className="w-16 flex-shrink-0 border-r bg-muted/20">
+          <div className="w-16 flex-shrink-0 border-r bg-muted/10">
             {HOURS.map(hour => (
-              <div
-                key={hour}
-                className="border-b text-xs text-muted-foreground flex items-start justify-end pr-2 pt-1"
-                style={{ height: HOUR_HEIGHT }}
-              >
+              <div key={hour} className="border-b text-xs text-muted-foreground flex items-start justify-end pr-2 pt-1" style={{ height: HOUR_HEIGHT }}>
                 {String(hour).padStart(2, '0')}:00
               </div>
             ))}
           </div>
 
           {/* Staff columns */}
-          {activeStaff.map((s, colIdx) => (
-            <div key={s.id} className="flex-1 min-w-[180px] border-r last:border-r-0">
-              {/* Staff header */}
-              <div className="border-b px-2 py-1.5 bg-muted/10 sticky top-0 z-10">
-                <p className="text-xs font-medium truncate">{s.name}</p>
-              </div>
+          {activeStaff.map(s => {
+            const branchName = branches.find(b => b.id === s.branchId)?.name;
+            return (
+              <div key={s.id} className="flex-1 min-w-[180px] border-r last:border-r-0">
+                <div className="border-b px-2 py-1.5 bg-muted/10 sticky top-0 z-10">
+                  <p className="text-xs font-semibold truncate">{s.name}</p>
+                  {branchName && <p className="text-[10px] text-muted-foreground truncate">{branchName}</p>}
+                </div>
 
-              {/* Time grid */}
-              <div
-                className="relative"
-                style={{ height: totalHeight }}
-                onDrop={e => handleDrop(e, s.id)}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-              >
-                {/* Hour lines */}
-                {HOURS.map((hour, i) => (
-                  <div
-                    key={hour}
-                    className="absolute w-full border-b border-dashed border-border/50"
-                    style={{ top: i * HOUR_HEIGHT, height: HOUR_HEIGHT }}
-                  >
-                    {/* 30-min line */}
-                    <div className="absolute w-full border-b border-dotted border-border/25" style={{ top: HOUR_HEIGHT / 2 }} />
-                  </div>
-                ))}
-
-                {/* Drop preview */}
-                {dragging && dragPreview && (
-                  <div
-                    className="absolute left-1 right-1 rounded bg-primary/10 border-2 border-dashed border-primary/40 pointer-events-none z-10"
-                    style={{ top: dragPreview.top, height: 36 }}
-                  />
-                )}
-
-                {/* Appointments */}
-                {getStaffAppointments(s.id).map(apt => {
-                  const style = getAppointmentStyle(apt);
-                  return (
-                    <div
-                      key={apt.id}
-                      draggable
-                      onDragStart={e => handleDragStart(e, apt.id)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => onAppointmentClick(apt)}
-                      className={cn(
-                        'absolute left-1 right-1 rounded-md border px-2 py-1 cursor-grab active:cursor-grabbing overflow-hidden transition-shadow hover:shadow-md z-20',
-                        getStaffColor(apt.staffId),
-                        dragging === apt.id && 'opacity-40',
-                        apt.status === 'tamamlandi' && 'opacity-60'
-                      )}
-                      style={{ top: style.top, height: style.height }}
-                    >
-                      <p className="text-xs font-semibold truncate leading-tight">{getCustomerName(apt.customerId)}</p>
-                      {style.height > 36 && (
-                        <p className="text-[10px] truncate opacity-80">{getServiceName(apt.serviceId)}</p>
-                      )}
-                      {style.height > 52 && (
-                        <p className="text-[10px] opacity-60">
-                          {format(parseISO(apt.startTime), 'HH:mm')} - {format(parseISO(apt.endTime), 'HH:mm')}
-                        </p>
-                      )}
+                <div
+                  className="relative"
+                  style={{ height: totalHeight }}
+                  onDrop={e => handleDrop(e, s.id)}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                >
+                  {HOURS.map((hour, i) => (
+                    <div key={hour} className="absolute w-full border-b border-dashed border-border/40" style={{ top: i * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
+                      <div className="absolute w-full border-b border-dotted border-border/20" style={{ top: HOUR_HEIGHT / 2 }} />
                     </div>
-                  );
-                })}
+                  ))}
+
+                  {/* Current time line */}
+                  {isToday && currentTimeTop >= 0 && currentTimeTop <= totalHeight && (
+                    <div className="absolute left-0 right-0 z-30 pointer-events-none" style={{ top: currentTimeTop }}>
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 rounded-full bg-destructive -ml-1" />
+                        <div className="flex-1 h-[2px] bg-destructive/70" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Drop preview */}
+                  {dragging && dragPreview && (
+                    <div className="absolute left-1 right-1 rounded bg-primary/10 border-2 border-dashed border-primary/40 pointer-events-none z-10" style={{ top: dragPreview.top, height: 36 }} />
+                  )}
+
+                  {/* Appointments */}
+                  {getStaffAppointments(s.id).map(apt => {
+                    const style = getAppointmentStyle(apt);
+                    const statusColor = STATUS_COLORS[apt.status] || STATUS_COLORS.bekliyor;
+                    return (
+                      <div
+                        key={apt.id}
+                        draggable={apt.status === 'bekliyor'}
+                        onDragStart={e => handleDragStart(e, apt.id)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => onAppointmentClick(apt)}
+                        className={cn(
+                          'absolute left-1 right-1 rounded-md border border-l-[3px] px-2 py-1 overflow-hidden transition-all hover:shadow-md z-20',
+                          statusColor,
+                          getStaffAccent(apt.staffId),
+                          apt.status === 'bekliyor' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
+                          dragging === apt.id && 'opacity-40 scale-95',
+                        )}
+                        style={{ top: style.top, height: style.height }}
+                      >
+                        <p className="text-xs font-semibold truncate leading-tight">{getCustomerName(apt.customerId)}</p>
+                        {style.height > 36 && (
+                          <p className="text-[10px] truncate opacity-80">{getServiceName(apt.serviceId)}</p>
+                        )}
+                        {style.height > 52 && (
+                          <p className="text-[10px] opacity-60">
+                            {format(parseISO(apt.startTime), 'HH:mm')} - {format(parseISO(apt.endTime), 'HH:mm')}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+            );
+          })}
+
+          {activeStaff.length === 0 && (
+            <div className="flex-1 flex items-center justify-center py-20 text-muted-foreground text-sm">
+              Bu filtreler için personel bulunamadı.
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

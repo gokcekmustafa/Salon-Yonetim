@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2 } from 'lucide-react';
 import { format, parseISO, addMinutes, addDays, subDays, addWeeks, subWeeks } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -17,11 +17,12 @@ import WeekCalendarView from '@/components/calendar/WeekCalendarView';
 type ViewMode = 'day' | 'week';
 
 export default function AppointmentsPage() {
-  const { appointments, customers, staff, services, addAppointment, updateAppointment, hasConflict, addPayment } = useSalon();
+  const { appointments, customers, staff, services, branches, addAppointment, updateAppointment, hasConflict, addPayment } = useSalon();
 
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filteredStaffId, setFilteredStaffId] = useState<string | null>(null);
+  const [filteredBranchId, setFilteredBranchId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailApt, setDetailApt] = useState<Appointment | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -35,6 +36,12 @@ export default function AppointmentsPage() {
   });
 
   const activeStaff = staff.filter(s => s.active);
+  const activeBranches = branches.filter(b => b.active);
+
+  // Filter staff list by selected branch
+  const filteredStaffList = filteredBranchId
+    ? activeStaff.filter(s => s.branchId === filteredBranchId)
+    : activeStaff;
 
   const navigatePrev = () => {
     if (viewMode === 'day') setCurrentDate(d => subDays(d, 1));
@@ -121,6 +128,7 @@ export default function AppointmentsPage() {
   const getStaffName = (id: string) => staff.find(s => s.id === id)?.name ?? '-';
   const getServiceName = (id: string) => services.find(s => s.id === id)?.name ?? '-';
   const getServicePrice = (id: string) => services.find(s => s.id === id)?.price ?? 0;
+  const getBranchName = (id: string) => branches.find(b => b.id === id)?.name ?? '-';
 
   const statusLabel: Record<string, string> = { bekliyor: 'Bekliyor', tamamlandi: 'Tamamlandı', iptal: 'İptal' };
   const statusVariant = (s: string): 'default' | 'secondary' | 'destructive' =>
@@ -172,23 +180,48 @@ export default function AppointmentsPage() {
             </Button>
           </div>
 
-          {/* Staff filter */}
-          <div className="flex items-center gap-1.5 ml-auto">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <Select
-              value={filteredStaffId || 'all'}
-              onValueChange={v => setFilteredStaffId(v === 'all' ? null : v)}
-            >
-              <SelectTrigger className="h-8 w-40 text-xs">
-                <SelectValue placeholder="Tüm personel" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Personel</SelectItem>
-                {activeStaff.map(s => (
-                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Filters */}
+          <div className="flex items-center gap-2 ml-auto">
+            {/* Branch filter */}
+            <div className="flex items-center gap-1.5">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <Select
+                value={filteredBranchId || 'all'}
+                onValueChange={v => {
+                  setFilteredBranchId(v === 'all' ? null : v);
+                  setFilteredStaffId(null);
+                }}
+              >
+                <SelectTrigger className="h-8 w-36 text-xs">
+                  <SelectValue placeholder="Tüm Şubeler" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tüm Şubeler</SelectItem>
+                  {activeBranches.map(b => (
+                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Staff filter */}
+            <div className="flex items-center gap-1.5">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <Select
+                value={filteredStaffId || 'all'}
+                onValueChange={v => setFilteredStaffId(v === 'all' ? null : v)}
+              >
+                <SelectTrigger className="h-8 w-36 text-xs">
+                  <SelectValue placeholder="Tüm Personel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tüm Personel</SelectItem>
+                  {filteredStaffList.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>
@@ -199,12 +232,14 @@ export default function AppointmentsPage() {
           <DayCalendarView
             date={currentDate}
             filteredStaffId={filteredStaffId}
+            filteredBranchId={filteredBranchId}
             onAppointmentClick={handleAppointmentClick}
           />
         ) : (
           <WeekCalendarView
             date={currentDate}
             filteredStaffId={filteredStaffId}
+            filteredBranchId={filteredBranchId}
             onAppointmentClick={handleAppointmentClick}
           />
         )}
@@ -226,7 +261,13 @@ export default function AppointmentsPage() {
               <Label>Personel</Label>
               <Select value={form.staffId} onValueChange={v => setForm(f => ({ ...f, staffId: v }))}>
                 <SelectTrigger><SelectValue placeholder="Personel seçin" /></SelectTrigger>
-                <SelectContent>{activeStaff.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {activeStaff.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} <span className="text-muted-foreground ml-1">({getBranchName(s.branchId)})</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
@@ -272,12 +313,14 @@ export default function AppointmentsPage() {
                   <p className="font-medium">₺{getServicePrice(detailApt.serviceId).toLocaleString('tr-TR')}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Başlangıç</p>
-                  <p className="font-medium">{format(parseISO(detailApt.startTime), 'd MMM yyyy HH:mm', { locale: tr })}</p>
+                  <p className="text-xs text-muted-foreground">Şube</p>
+                  <p className="font-medium">{getBranchName(detailApt.branchId)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Bitiş</p>
-                  <p className="font-medium">{format(parseISO(detailApt.endTime), 'HH:mm', { locale: tr })}</p>
+                  <p className="text-xs text-muted-foreground">Tarih & Saat</p>
+                  <p className="font-medium">
+                    {format(parseISO(detailApt.startTime), 'd MMM yyyy HH:mm', { locale: tr })} — {format(parseISO(detailApt.endTime), 'HH:mm', { locale: tr })}
+                  </p>
                 </div>
               </div>
               <div>
