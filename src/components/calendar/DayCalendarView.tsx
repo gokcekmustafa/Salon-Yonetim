@@ -29,9 +29,10 @@ interface DayCalendarViewProps {
   filteredStaffId: string | null;
   filteredBranchId?: string | null;
   onAppointmentClick: (apt: DbAppointment) => void;
+  rooms?: { id: string; name: string }[];
 }
 
-export default function DayCalendarView({ date, filteredStaffId, filteredBranchId, onAppointmentClick }: DayCalendarViewProps) {
+export default function DayCalendarView({ date, filteredStaffId, filteredBranchId, onAppointmentClick, rooms = [] }: DayCalendarViewProps) {
   const { appointments, staff, customers, services, updateAppointment, hasConflict, branches } = useSalonData();
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{ top: number } | null>(null);
@@ -60,6 +61,7 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
 
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.name ?? '-';
   const getServiceName = (id: string) => services.find(s => s.id === id)?.name ?? '-';
+  const getRoomName = (id: string | null) => rooms.find(r => r.id === id)?.name ?? '';
 
   const getAppointmentStyle = (apt: DbAppointment) => {
     const start = parseISO(apt.start_time);
@@ -223,6 +225,7 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
                         {style.height > 52 && (
                           <p className="text-[10px] opacity-60">
                             {format(parseISO(apt.start_time), 'HH:mm')} - {format(parseISO(apt.end_time), 'HH:mm')}
+                            {(apt as any).room_id && getRoomName((apt as any).room_id) ? ` · ${getRoomName((apt as any).room_id)}` : ''}
                           </p>
                         )}
                       </div>
