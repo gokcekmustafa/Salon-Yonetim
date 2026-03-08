@@ -52,7 +52,7 @@ export default function CashPage() {
   const [txDescription, setTxDescription] = useState('');
   const [txDate, setTxDate] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [txPaymentMethod, setTxPaymentMethod] = useState('cash');
-  const [txCashBoxId, setTxCashBoxId] = useState<string>('');
+  const [txCashBoxId, setTxCashBoxId] = useState<string>('none');
 
   // Box form
   const [boxName, setBoxName] = useState('');
@@ -107,7 +107,7 @@ export default function CashPage() {
   const resetForm = useCallback(() => {
     setTxType('income'); setTxAmount(''); setTxDescription('');
     setTxDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
-    setTxPaymentMethod('cash'); setTxCashBoxId('');
+    setTxPaymentMethod('cash'); setTxCashBoxId('none');
     setEditingTx(null);
   }, []);
 
@@ -122,7 +122,7 @@ export default function CashPage() {
         description: txDescription || null,
         transaction_date: new Date(txDate).toISOString(),
         payment_method: txPaymentMethod,
-        cash_box_id: txCashBoxId || null,
+        cash_box_id: txCashBoxId === 'none' ? null : txCashBoxId,
       };
 
       if (editingTx) {
@@ -179,7 +179,7 @@ export default function CashPage() {
     setTxDescription(tx.description || '');
     setTxDate(format(parseISO(tx.transaction_date), "yyyy-MM-dd'T'HH:mm"));
     setTxPaymentMethod(tx.payment_method || 'cash');
-    setTxCashBoxId(tx.cash_box_id || '');
+    setTxCashBoxId(tx.cash_box_id || 'none');
     setDialogOpen(true);
   };
 

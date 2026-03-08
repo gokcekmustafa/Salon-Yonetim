@@ -182,7 +182,7 @@ export default function ReportsPage() {
   const hasData = filteredPayments.length > 0 || filteredAppointments.length > 0;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="page-container animate-in space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Raporlar</h1>

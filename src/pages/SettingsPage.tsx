@@ -85,6 +85,11 @@ export default function SettingsPage() {
         <PopupManager mode="salon_admin" salonId={currentSalonId} />
       )}
 
+      {/* Online Booking Toggle */}
+      {salon && currentSalonId && (isSalonAdmin || isSuperAdmin) && hasPermission('can_manage_online_booking') && (
+        <OnlineBookingToggle salonId={currentSalonId} initialActive={salon.online_booking_active} salonSlug={salon.slug} />
+      )}
+
       {ns && (
         <Card>
           <CardHeader>

@@ -84,7 +84,7 @@ export default function StaffSalaryPage() {
   const [payType, setPayType] = useState('salary');
   const [payAmount, setPayAmount] = useState('');
   const [payMethod, setPayMethod] = useState('cash');
-  const [payCashBoxId, setPayCashBoxId] = useState('');
+  const [payCashBoxId, setPayCashBoxId] = useState('none');
   const [payDesc, setPayDesc] = useState('');
 
   const { data: salaries = [], isLoading: loadingSal } = useQuery({
@@ -153,7 +153,7 @@ export default function StaffSalaryPage() {
       const { error } = await supabase.from('staff_payments').insert({
         staff_id: payStaffId, salon_id: salonId, payment_type: payType,
         amount, payment_method: payMethod,
-        cash_box_id: payCashBoxId || null,
+        cash_box_id: payCashBoxId === 'none' ? null : payCashBoxId,
         description: payDesc.trim() || null, created_by: user.id,
       } as any);
       if (error) throw error;
@@ -161,7 +161,7 @@ export default function StaffSalaryPage() {
       // Also record as cash transaction (expense)
       await supabase.from('cash_transactions').insert({
         salon_id: salonId, amount, type: 'expense',
-        payment_method: payMethod, cash_box_id: payCashBoxId || null,
+        payment_method: payMethod, cash_box_id: payCashBoxId === 'none' ? null : payCashBoxId,
         description: `Personel ödemesi: ${staff.find(s => s.id === payStaffId)?.name || ''} - ${PAYMENT_TYPES.find(t => t.value === payType)?.label || payType}`,
         created_by: user.id,
       } as any);
@@ -218,7 +218,7 @@ export default function StaffSalaryPage() {
 
   const openPayDialog = (staffId?: string) => {
     setPayStaffId(staffId || '');
-    setPayAmount(''); setPayDesc(''); setPayType('salary'); setPayMethod('cash'); setPayCashBoxId('');
+    setPayAmount(''); setPayDesc(''); setPayType('salary'); setPayMethod('cash'); setPayCashBoxId('none');
     setPayDialogOpen(true);
   };
 
@@ -513,6 +513,7 @@ export default function StaffSalaryPage() {
                 <Select value={payCashBoxId} onValueChange={setPayCashBoxId}>
                   <SelectTrigger className="h-10"><SelectValue placeholder="Kasa seçin" /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">— Genel —</SelectItem>
                     {cashBoxes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
