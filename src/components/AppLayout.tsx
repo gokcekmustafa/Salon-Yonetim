@@ -108,6 +108,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
             {children}
           </main>
+          <PopupDisplay />
         </div>
       </div>
     </SidebarProvider>

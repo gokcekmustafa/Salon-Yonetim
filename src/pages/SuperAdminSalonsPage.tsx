@@ -337,6 +337,9 @@ export default function SuperAdminSalonsPage() {
       {/* Announcements */}
       <AnnouncementManager mode="super_admin" />
 
+      {/* Popup Announcements */}
+      <PopupManager mode="super_admin" />
+
       {/* User Management */}
       <SuperAdminUserManager />
 
