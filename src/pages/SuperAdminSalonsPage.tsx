@@ -311,6 +311,11 @@ export default function SuperAdminSalonsPage() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label className="text-xs font-semibold">Abonelik Bitiş Tarihi</Label>
+              <Input type="date" value={formExpiry} onChange={e => setFormExpiry(e.target.value)} className="h-10" />
+              <p className="text-xs text-muted-foreground">Boş bırakılırsa süresiz olur</p>
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs font-semibold">Adres</Label>
               <Input value={formAddress} onChange={e => setFormAddress(e.target.value)} placeholder="İstanbul, Türkiye" className="h-10" />
             </div>
