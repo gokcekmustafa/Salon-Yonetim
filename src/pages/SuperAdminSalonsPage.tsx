@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Plus, Search, Building2, Users, Calendar, Eye, Loader2, Crown,
-  MoreHorizontal, Edit, Trash2, LogIn, EyeOff, UserPlus,
+  MoreHorizontal, Edit, Trash2, LogIn, EyeOff, UserPlus, Upload, X, Camera,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
