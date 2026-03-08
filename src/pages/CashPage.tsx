@@ -199,13 +199,13 @@ export default function CashPage() {
           <h1 className="page-title">Kasa Yönetimi</h1>
           <p className="page-subtitle">Gelir, gider ve kasa takibi</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setBoxDialogOpen(true)} className="gap-1.5">
-            <Building2 className="h-4 w-4" /> Kasa Ekle
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => setBoxDialogOpen(true)} className="gap-1.5 flex-1 sm:flex-initial">
+            <Building2 className="h-4 w-4" /> <span className="hidden xs:inline">Kasa</span> Ekle
           </Button>
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button className="btn-gradient gap-2"><Plus className="h-4 w-4" />İşlem Ekle</Button>
+              <Button className="btn-gradient gap-2 flex-1 sm:flex-initial"><Plus className="h-4 w-4" />İşlem Ekle</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>{editingTx ? 'İşlem Düzenle' : 'Yeni İşlem'}</DialogTitle></DialogHeader>
@@ -288,8 +288,8 @@ export default function CashPage() {
       {/* KPIs */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         {[
-          { label: 'Aylık Gelir', value: `₺${totalIncome.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-green-600 bg-green-500/10' },
-          { label: 'Aylık Gider', value: `₺${totalExpense.toLocaleString('tr-TR')}`, icon: TrendingDown, color: 'text-red-500 bg-red-500/10' },
+          { label: 'Aylık Gelir', value: `₺${totalIncome.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-success bg-success/10' },
+          { label: 'Aylık Gider', value: `₺${totalExpense.toLocaleString('tr-TR')}`, icon: TrendingDown, color: 'text-destructive bg-destructive/10' },
           { label: 'Bakiye', value: `₺${balance.toLocaleString('tr-TR')}`, icon: Wallet, color: balance >= 0 ? 'text-primary bg-primary/10' : 'text-destructive bg-destructive/10' },
         ].map(kpi => (
           <div key={kpi.label} className="stat-card p-5">
@@ -326,7 +326,7 @@ export default function CashPage() {
           <div key={tx.id} className="card-interactive p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {tx.type === 'income' ? <ArrowUpCircle className="h-5 w-5 text-green-600 shrink-0" /> : <ArrowDownCircle className="h-5 w-5 text-red-500 shrink-0" />}
+                {tx.type === 'income' ? <ArrowUpCircle className="h-5 w-5 text-success shrink-0" /> : <ArrowDownCircle className="h-5 w-5 text-destructive shrink-0" />}
                 <div className="space-y-0.5">
                   <p className="font-semibold text-sm">{tx.description || (tx.type === 'income' ? 'Gelir' : 'Gider')}</p>
                   <p className="text-xs text-muted-foreground">
@@ -336,7 +336,7 @@ export default function CashPage() {
                 </div>
               </div>
               <div className="text-right space-y-1">
-                <p className={`font-bold tabular-nums ${tx.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
+                <p className={`font-bold tabular-nums ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
                   {tx.type === 'income' ? '+' : '-'}₺{Number(tx.amount).toLocaleString('tr-TR')}
                 </p>
                 <div className="flex gap-1 justify-end">
@@ -380,7 +380,7 @@ export default function CashPage() {
                     <TableCell className="text-muted-foreground text-xs">{getMethodLabel(tx.payment_method)}</TableCell>
                     <TableCell className="text-muted-foreground text-xs">{boxName || '-'}</TableCell>
                     <TableCell className="font-medium">{tx.description || '-'}</TableCell>
-                    <TableCell className={`text-right font-bold tabular-nums ${tx.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
+                    <TableCell className={`text-right font-bold tabular-nums ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
                       {tx.type === 'income' ? '+' : '-'}₺{Number(tx.amount).toLocaleString('tr-TR')}
                     </TableCell>
                     <TableCell className="text-right">

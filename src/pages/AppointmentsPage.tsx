@@ -265,12 +265,12 @@ export default function AppointmentsPage() {
             <h1 className="page-title">Randevular</h1>
             <p className="page-subtitle">{format(currentDate, 'd MMMM yyyy', { locale: tr })}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setShowRoomManager(!showRoomManager)}>
-              <DoorOpen className="h-4 w-4" /> Odalar
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 flex-1 sm:flex-initial" onClick={() => setShowRoomManager(!showRoomManager)}>
+              <DoorOpen className="h-4 w-4" /> <span className="hidden xs:inline">Odalar</span>
             </Button>
-            <Button onClick={openAdd} size="sm" className="h-9">
-              <Plus className="h-4 w-4 mr-1.5" /> Yeni Randevu
+            <Button onClick={openAdd} size="sm" className="h-9 flex-1 sm:flex-initial">
+              <Plus className="h-4 w-4 mr-1.5" /> <span className="hidden xs:inline">Yeni</span> Randevu
             </Button>
           </div>
         </div>
@@ -392,7 +392,7 @@ export default function AppointmentsPage() {
       </div>
 
       {/* Calendar View */}
-      <div className="overflow-auto max-h-[calc(100vh-240px)]">
+      <div className="overflow-auto max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-240px)]">
         {viewMode === 'day' ? (
           <DayCalendarView
             date={currentDate}
@@ -453,7 +453,7 @@ export default function AppointmentsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>Tarih</Label>
                 <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
@@ -462,7 +462,7 @@ export default function AppointmentsPage() {
                 <Label>Saat</Label>
                 <Input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 col-span-2 sm:col-span-1">
                 <Label>Süre (dk)</Label>
                 <Select value={form.duration} onValueChange={v => setForm(f => ({ ...f, duration: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -486,7 +486,7 @@ export default function AppointmentsPage() {
           <DialogHeader><DialogTitle>Randevu Detayı</DialogTitle><DialogDescription>Randevu bilgilerini görüntüleyin ve yönetin</DialogDescription></DialogHeader>
           {currentDetailApt && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-x-4 gap-y-3">
                 <div>
                   <p className="text-xs text-muted-foreground">Müşteri</p>
                   <p className="font-medium text-sm">{getCustomerName(currentDetailApt.customer_id)}</p>
