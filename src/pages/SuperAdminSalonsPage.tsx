@@ -115,6 +115,7 @@ export default function SuperAdminSalonsPage() {
     setFormPhone(salon.phone || ''); setFormAddress(salon.address || '');
     setFormPlan(salon.subscription_plan); setFormActive(salon.is_active);
     setFormExpiry((salon as any).subscription_expires_at ? (salon as any).subscription_expires_at.split('T')[0] : '');
+    setLogoPreview(null); setLogoFile(null); setEditingLogoUrl(salon.logo_url);
     setDialogOpen(true);
   };
 
