@@ -69,6 +69,12 @@ export default function SuperAdminSalonsPage() {
   const [ownerName, setOwnerName] = useState('');
   const [showOwnerPassword, setShowOwnerPassword] = useState(false);
 
+  // Logo state
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [editingLogoUrl, setEditingLogoUrl] = useState<string | null>(null);
+  const logoFileRef = useRef<HTMLInputElement>(null);
+
   const fetchSalons = async () => {
     setLoading(true);
     const { data, error } = await supabase.from('salons').select('*').order('created_at', { ascending: false });
