@@ -1,31 +1,32 @@
 import { useState } from 'react';
-import { useSalon } from '@/contexts/SalonContext';
+import { useSalonData, DbAppointment } from '@/hooks/useSalonData';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, MessageSquare, Phone, Send } from 'lucide-react';
-import { format, parseISO, addMinutes, addDays, subDays, addWeeks, subWeeks } from 'date-fns';
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2 } from 'lucide-react';
+import { format, addMinutes, addDays, subDays, addWeeks, subWeeks } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Appointment } from '@/types/salon';
 import DayCalendarView from '@/components/calendar/DayCalendarView';
 import WeekCalendarView from '@/components/calendar/WeekCalendarView';
 
 type ViewMode = 'day' | 'week';
 
 export default function AppointmentsPage() {
-  const { appointments, customers, staff, services, branches, addAppointment, updateAppointment, hasConflict, addPayment, sendReminder, salon, notificationSettings } = useSalon();
+  const {
+    appointments, customers, staff, services, branches,
+    addAppointment, updateAppointment, addPayment, hasConflict,
+  } = useSalonData();
 
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filteredStaffId, setFilteredStaffId] = useState<string | null>(null);
   const [filteredBranchId, setFilteredBranchId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [detailApt, setDetailApt] = useState<Appointment | null>(null);
+  const [detailApt, setDetailApt] = useState<DbAppointment | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const [form, setForm] = useState({
@@ -36,11 +37,11 @@ export default function AppointmentsPage() {
     time: '09:00',
   });
 
-  const activeStaff = staff.filter(s => s.active);
-  const activeBranches = branches.filter(b => b.active);
+  const activeStaff = staff.filter(s => s.is_active);
+  const activeBranches = branches.filter(b => b.is_active);
 
   const filteredStaffList = filteredBranchId
-    ? activeStaff.filter(s => s.branchId === filteredBranchId)
+    ? activeStaff.filter(s => s.branch_id === filteredBranchId)
     : activeStaff;
 
   const navigatePrev = () => {
@@ -66,7 +67,7 @@ export default function AppointmentsPage() {
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.customerId || !form.staffId || !form.serviceId) {
       toast.error('Lütfen tüm alanları doldurun.');
       return;
@@ -83,36 +84,38 @@ export default function AppointmentsPage() {
     }
 
     const staffMember = staff.find(s => s.id === form.staffId);
-    addAppointment({
-      customerId: form.customerId,
-      staffId: form.staffId,
-      serviceId: form.serviceId,
-      branchId: staffMember?.branchId || '',
-      startTime: start.toISOString(),
-      endTime: end.toISOString(),
+    const error = await addAppointment({
+      customer_id: form.customerId,
+      staff_id: form.staffId,
+      service_id: form.serviceId,
+      branch_id: staffMember?.branch_id || '',
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
       status: 'bekliyor',
     });
-    toast.success('Randevu oluşturuldu.');
-    setDialogOpen(false);
+    if (error) {
+      toast.error('Randevu oluşturulamadı: ' + error.message);
+    } else {
+      toast.success('Randevu oluşturuldu.');
+      setDialogOpen(false);
+    }
   };
 
-  const handleAppointmentClick = (apt: Appointment) => {
-    // Get latest version of the appointment
+  const handleAppointmentClick = (apt: DbAppointment) => {
     const latest = appointments.find(a => a.id === apt.id) || apt;
     setDetailApt(latest);
     setDetailOpen(true);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!detailApt) return;
-    updateAppointment(detailApt.id, { status: 'tamamlandi' });
-    const service = services.find(s => s.id === detailApt.serviceId);
+    await updateAppointment(detailApt.id, { status: 'tamamlandi' });
+    const service = services.find(s => s.id === detailApt.service_id);
     if (service) {
-      addPayment({
-        appointmentId: detailApt.id,
+      await addPayment({
+        appointment_id: detailApt.id,
         amount: service.price,
-        type: 'nakit',
-        date: new Date().toISOString(),
+        payment_type: 'nakit',
       });
     }
     toast.success('Randevu tamamlandı, ödeme kaydedildi.');
@@ -120,9 +123,9 @@ export default function AppointmentsPage() {
     setDetailApt(null);
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (!detailApt) return;
-    updateAppointment(detailApt.id, { status: 'iptal' });
+    await updateAppointment(detailApt.id, { status: 'iptal' });
     toast.info('Randevu iptal edildi.');
     setDetailOpen(false);
     setDetailApt(null);
@@ -138,7 +141,6 @@ export default function AppointmentsPage() {
   const statusVariant = (s: string): 'default' | 'secondary' | 'destructive' =>
     s === 'tamamlandi' ? 'default' : s === 'iptal' ? 'destructive' : 'secondary';
 
-  // Get fresh appointment data for the detail dialog
   const currentDetailApt = detailApt ? (appointments.find(a => a.id === detailApt.id) || detailApt) : null;
 
   return (
@@ -158,7 +160,6 @@ export default function AppointmentsPage() {
         {/* Controls bar */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="flex items-center gap-2">
-            {/* View toggle */}
             <div className="flex border rounded-lg overflow-hidden shrink-0">
               <button
                 onClick={() => setViewMode('day')}
@@ -178,7 +179,6 @@ export default function AppointmentsPage() {
               </button>
             </div>
 
-            {/* Navigation */}
             <div className="flex items-center gap-1">
               <Button variant="outline" size="icon" onClick={navigatePrev} className="h-8 w-8">
                 <ChevronLeft className="h-4 w-4" />
@@ -274,7 +274,7 @@ export default function AppointmentsPage() {
                 <SelectContent>
                   {activeStaff.map(s => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name} ({getBranchName(s.branchId)})
+                      {s.name} ({getBranchName(s.branch_id || '')})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -314,28 +314,28 @@ export default function AppointmentsPage() {
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
                   <p className="text-xs text-muted-foreground">Müşteri</p>
-                  <p className="font-medium text-sm">{getCustomerName(currentDetailApt.customerId)}</p>
+                  <p className="font-medium text-sm">{getCustomerName(currentDetailApt.customer_id)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Personel</p>
-                  <p className="font-medium text-sm">{getStaffName(currentDetailApt.staffId)}</p>
+                  <p className="font-medium text-sm">{getStaffName(currentDetailApt.staff_id)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Hizmet</p>
-                  <p className="font-medium text-sm">{getServiceName(currentDetailApt.serviceId)}</p>
+                  <p className="font-medium text-sm">{getServiceName(currentDetailApt.service_id)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Ücret</p>
-                  <p className="font-medium text-sm">₺{getServicePrice(currentDetailApt.serviceId).toLocaleString('tr-TR')}</p>
+                  <p className="font-medium text-sm">₺{getServicePrice(currentDetailApt.service_id).toLocaleString('tr-TR')}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Şube</p>
-                  <p className="font-medium text-sm">{getBranchName(currentDetailApt.branchId)}</p>
+                  <p className="font-medium text-sm">{getBranchName(currentDetailApt.branch_id || '')}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Tarih & Saat</p>
                   <p className="font-medium text-sm">
-                    {format(parseISO(currentDetailApt.startTime), 'd MMM yyyy HH:mm', { locale: tr })} — {format(parseISO(currentDetailApt.endTime), 'HH:mm', { locale: tr })}
+                    {format(new Date(currentDetailApt.start_time), 'd MMM yyyy HH:mm', { locale: tr })} — {format(new Date(currentDetailApt.end_time), 'HH:mm', { locale: tr })}
                   </p>
                 </div>
               </div>
@@ -343,95 +343,6 @@ export default function AppointmentsPage() {
                 <p className="text-xs text-muted-foreground mb-1">Durum</p>
                 <Badge variant={statusVariant(currentDetailApt.status)}>{statusLabel[currentDetailApt.status]}</Badge>
               </div>
-
-              {/* Reminder Status */}
-              {currentDetailApt.status === 'bekliyor' && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Hatırlatma Bildirimleri</p>
-                    <div className="space-y-2">
-                      {/* WhatsApp reminder */}
-                      {(() => {
-                        const waReminder = currentDetailApt.reminders?.find(r => r.channel === 'whatsapp');
-                        return (
-                          <div className="flex items-center justify-between p-2 rounded-lg border bg-muted/20">
-                            <div className="flex items-center gap-2">
-                              <MessageSquare className="h-4 w-4 text-primary" />
-                              <span className="text-sm">WhatsApp</span>
-                              {waReminder?.status === 'gonderildi' ? (
-                                <Badge variant="default" className="text-[10px] px-1.5 py-0">Gönderildi</Badge>
-                              ) : waReminder?.status === 'basarisiz' ? (
-                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Başarısız</Badge>
-                              ) : waReminder ? (
-                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Bekliyor</Badge>
-                              ) : null}
-                            </div>
-                            {(!waReminder || waReminder.status !== 'gonderildi') && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs gap-1"
-                                onClick={() => {
-                                  sendReminder(currentDetailApt.id, 'whatsapp');
-                                  const customer = customers.find(c => c.id === currentDetailApt.customerId);
-                                  const service = services.find(s => s.id === currentDetailApt.serviceId);
-                                  const msg = notificationSettings.messageTemplate
-                                    .replace('{müşteri_adı}', customer?.name || '')
-                                    .replace('{tarih}', format(parseISO(currentDetailApt.startTime), 'd MMMM yyyy', { locale: tr }))
-                                    .replace('{saat}', format(parseISO(currentDetailApt.startTime), 'HH:mm'))
-                                    .replace('{hizmet}', service?.name || '')
-                                    .replace('{personel}', getStaffName(currentDetailApt.staffId))
-                                    .replace('{salon_adı}', salon.name);
-                                  toast.success(`WhatsApp hatırlatması gönderildi: "${msg.substring(0, 60)}..."`);
-                                }}
-                              >
-                                <Send className="h-3 w-3" /> Gönder
-                              </Button>
-                            )}
-                          </div>
-                        );
-                      })()}
-
-                      {/* SMS reminder */}
-                      {(() => {
-                        const smsReminder = currentDetailApt.reminders?.find(r => r.channel === 'sms');
-                        return (
-                          <div className="flex items-center justify-between p-2 rounded-lg border bg-muted/20">
-                            <div className="flex items-center gap-2">
-                              <Phone className="h-4 w-4 text-primary" />
-                              <span className="text-sm">SMS</span>
-                              {smsReminder?.status === 'gonderildi' ? (
-                                <Badge variant="default" className="text-[10px] px-1.5 py-0">Gönderildi</Badge>
-                              ) : smsReminder?.status === 'basarisiz' ? (
-                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Başarısız</Badge>
-                              ) : smsReminder ? (
-                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Bekliyor</Badge>
-                              ) : null}
-                            </div>
-                            {(!smsReminder || smsReminder.status !== 'gonderildi') && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs gap-1"
-                                onClick={() => {
-                                  sendReminder(currentDetailApt.id, 'sms');
-                                  toast.success('SMS hatırlatması gönderildi.');
-                                }}
-                              >
-                                <Send className="h-3 w-3" /> Gönder
-                              </Button>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1.5">
-                      Otomatik hatırlatma: randevudan {notificationSettings.reminderHoursBefore} saat önce
-                    </p>
-                  </div>
-                </>
-              )}
             </div>
           )}
           <DialogFooter className="gap-2 sm:gap-0">

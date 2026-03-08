@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useSalon } from '@/contexts/SalonContext';
+import { useSalonData } from '@/hooks/useSalonData';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -35,18 +35,17 @@ const PIE_COLORS = [
 ];
 
 export default function ReportsPage() {
-  const { appointments, payments, customers, staff, services, branches } = useSalon();
+  const { appointments, payments, customers, staff, services, branches } = useSalonData();
 
   const [dateRange, setDateRange] = useState<DateRange>('30d');
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
 
-  const activeBranches = branches.filter(b => b.active);
+  const activeBranches = branches.filter(b => b.is_active);
   const activeStaff = selectedBranchId
-    ? staff.filter(s => s.active && s.branchId === selectedBranchId)
-    : staff.filter(s => s.active);
+    ? staff.filter(s => s.is_active && s.branch_id === selectedBranchId)
+    : staff.filter(s => s.is_active);
 
-  // Date range calculation
   const { startDate, endDate } = useMemo(() => {
     const end = new Date();
     let start: Date;
@@ -60,14 +59,13 @@ export default function ReportsPage() {
     return { startDate: startOfDay(start), endDate: end };
   }, [dateRange]);
 
-  // Filtered data
   const filteredAppointments = useMemo(() => {
     return appointments.filter(a => {
       try {
-        const d = parseISO(a.startTime);
+        const d = parseISO(a.start_time);
         if (!isWithinInterval(d, { start: startDate, end: endDate })) return false;
-        if (selectedBranchId && a.branchId !== selectedBranchId) return false;
-        if (selectedStaffId && a.staffId !== selectedStaffId) return false;
+        if (selectedBranchId && a.branch_id !== selectedBranchId) return false;
+        if (selectedStaffId && a.staff_id !== selectedStaffId) return false;
         return true;
       } catch { return false; }
     });
@@ -76,33 +74,31 @@ export default function ReportsPage() {
   const filteredPayments = useMemo(() => {
     return payments.filter(p => {
       try {
-        const d = parseISO(p.date);
+        const d = parseISO(p.payment_date);
         if (!isWithinInterval(d, { start: startDate, end: endDate })) return false;
         if (selectedBranchId || selectedStaffId) {
-          const apt = appointments.find(a => a.id === p.appointmentId);
+          const apt = appointments.find(a => a.id === p.appointment_id);
           if (!apt) return false;
-          if (selectedBranchId && apt.branchId !== selectedBranchId) return false;
-          if (selectedStaffId && apt.staffId !== selectedStaffId) return false;
+          if (selectedBranchId && apt.branch_id !== selectedBranchId) return false;
+          if (selectedStaffId && apt.staff_id !== selectedStaffId) return false;
         }
         return true;
       } catch { return false; }
     });
   }, [payments, appointments, startDate, endDate, selectedBranchId, selectedStaffId]);
 
-  // KPIs
   const totalRevenue = filteredPayments.reduce((s, p) => s + p.amount, 0);
   const completedCount = filteredAppointments.filter(a => a.status === 'tamamlandi').length;
   const cancelledCount = filteredAppointments.filter(a => a.status === 'iptal').length;
   const avgRevenue = completedCount > 0 ? Math.round(totalRevenue / completedCount) : 0;
 
-  // Revenue over time
   const revenueOverTime = useMemo(() => {
     if (dateRange === '12m') {
       const months = eachMonthOfInterval({ start: startDate, end: endDate });
       return months.map(m => ({
         label: format(m, 'MMM yy', { locale: tr }),
         gelir: filteredPayments
-          .filter(p => { try { return isSameMonth(parseISO(p.date), m); } catch { return false; } })
+          .filter(p => { try { return isSameMonth(parseISO(p.payment_date), m); } catch { return false; } })
           .reduce((s, p) => s + p.amount, 0),
       }));
     }
@@ -110,20 +106,19 @@ export default function ReportsPage() {
     return days.map(d => ({
       label: dateRange === '7d' ? format(d, 'EEE', { locale: tr }) : format(d, 'd MMM', { locale: tr }),
       gelir: filteredPayments
-        .filter(p => { try { return isSameDay(parseISO(p.date), d); } catch { return false; } })
+        .filter(p => { try { return isSameDay(parseISO(p.payment_date), d); } catch { return false; } })
         .reduce((s, p) => s + p.amount, 0),
     }));
   }, [filteredPayments, startDate, endDate, dateRange]);
 
-  // Top services
   const topServices = useMemo(() => {
     const map: Record<string, { count: number; revenue: number }> = {};
     filteredAppointments.filter(a => a.status === 'tamamlandi').forEach(a => {
-      const svc = services.find(s => s.id === a.serviceId);
+      const svc = services.find(s => s.id === a.service_id);
       if (!svc) return;
-      if (!map[a.serviceId]) map[a.serviceId] = { count: 0, revenue: 0 };
-      map[a.serviceId].count++;
-      map[a.serviceId].revenue += svc.price;
+      if (!map[a.service_id]) map[a.service_id] = { count: 0, revenue: 0 };
+      map[a.service_id].count++;
+      map[a.service_id].revenue += svc.price;
     });
     return Object.entries(map)
       .sort(([, a], [, b]) => b.count - a.count)
@@ -135,11 +130,10 @@ export default function ReportsPage() {
       }));
   }, [filteredAppointments, services]);
 
-  // Top customers
   const topCustomers = useMemo(() => {
     const map: Record<string, number> = {};
     filteredAppointments.filter(a => a.status === 'tamamlandi').forEach(a => {
-      map[a.customerId] = (map[a.customerId] || 0) + 1;
+      map[a.customer_id] = (map[a.customer_id] || 0) + 1;
     });
     return Object.entries(map)
       .sort(([, a], [, b]) => b - a)
@@ -150,28 +144,26 @@ export default function ReportsPage() {
       }));
   }, [filteredAppointments, customers]);
 
-  // Staff performance
   const staffPerformance = useMemo(() => {
     const map: Record<string, { completed: number; cancelled: number; revenue: number }> = {};
     filteredAppointments.forEach(a => {
-      if (!map[a.staffId]) map[a.staffId] = { completed: 0, cancelled: 0, revenue: 0 };
+      if (!map[a.staff_id]) map[a.staff_id] = { completed: 0, cancelled: 0, revenue: 0 };
       if (a.status === 'tamamlandi') {
-        map[a.staffId].completed++;
-        const svc = services.find(s => s.id === a.serviceId);
-        if (svc) map[a.staffId].revenue += svc.price;
+        map[a.staff_id].completed++;
+        const svc = services.find(s => s.id === a.service_id);
+        if (svc) map[a.staff_id].revenue += svc.price;
       }
-      if (a.status === 'iptal') map[a.staffId].cancelled++;
+      if (a.status === 'iptal') map[a.staff_id].cancelled++;
     });
     return Object.entries(map)
       .sort(([, a], [, b]) => b.revenue - a.revenue)
       .map(([id, data]) => ({
         name: staff.find(s => s.id === id)?.name ?? '-',
-        branch: branches.find(b => b.id === staff.find(s => s.id === id)?.branchId)?.name ?? '-',
+        branch: branches.find(b => b.id === staff.find(s => s.id === id)?.branch_id)?.name ?? '-',
         ...data,
       }));
   }, [filteredAppointments, staff, services, branches]);
 
-  // Service distribution for pie chart
   const serviceDistribution = useMemo(() => {
     return topServices.map((s, i) => ({
       ...s,
@@ -198,16 +190,13 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1">
               <Label className="text-xs">Tarih Aralığı</Label>
               <Select value={dateRange} onValueChange={v => setDateRange(v as DateRange)}>
-                <SelectTrigger className="w-36 h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="7d">Son 7 Gün</SelectItem>
                   <SelectItem value="30d">Son 30 Gün</SelectItem>
@@ -219,13 +208,8 @@ export default function ReportsPage() {
 
             <div className="space-y-1">
               <Label className="text-xs flex items-center gap-1"><Building2 className="h-3 w-3" /> Şube</Label>
-              <Select
-                value={selectedBranchId || 'all'}
-                onValueChange={v => { setSelectedBranchId(v === 'all' ? null : v); setSelectedStaffId(null); }}
-              >
-                <SelectTrigger className="w-40 h-9 text-sm">
-                  <SelectValue placeholder="Tüm Şubeler" />
-                </SelectTrigger>
+              <Select value={selectedBranchId || 'all'} onValueChange={v => { setSelectedBranchId(v === 'all' ? null : v); setSelectedStaffId(null); }}>
+                <SelectTrigger className="w-40 h-9 text-sm"><SelectValue placeholder="Tüm Şubeler" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tüm Şubeler</SelectItem>
                   {activeBranches.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
@@ -235,13 +219,8 @@ export default function ReportsPage() {
 
             <div className="space-y-1">
               <Label className="text-xs flex items-center gap-1"><UserCheck className="h-3 w-3" /> Personel</Label>
-              <Select
-                value={selectedStaffId || 'all'}
-                onValueChange={v => setSelectedStaffId(v === 'all' ? null : v)}
-              >
-                <SelectTrigger className="w-40 h-9 text-sm">
-                  <SelectValue placeholder="Tüm Personel" />
-                </SelectTrigger>
+              <Select value={selectedStaffId || 'all'} onValueChange={v => setSelectedStaffId(v === 'all' ? null : v)}>
+                <SelectTrigger className="w-40 h-9 text-sm"><SelectValue placeholder="Tüm Personel" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tüm Personel</SelectItem>
                   {activeStaff.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
@@ -256,7 +235,6 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
-      {/* KPIs */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -302,7 +280,6 @@ export default function ReportsPage() {
         </Card>
       ) : (
         <>
-          {/* Revenue Chart */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Gelir Grafiği</CardTitle>
@@ -332,7 +309,6 @@ export default function ReportsPage() {
           </Card>
 
           <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-            {/* Top Services */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2"><Scissors className="h-4 w-4" /> En Çok Yapılan Hizmetler</CardTitle>
@@ -365,7 +341,6 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
 
-            {/* Top Customers */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" /> En Çok Gelen Müşteriler</CardTitle>
@@ -399,7 +374,6 @@ export default function ReportsPage() {
             </Card>
           </div>
 
-          {/* Staff Performance */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2"><UserCheck className="h-4 w-4" /> Personel Performans Raporu</CardTitle>
@@ -423,7 +397,6 @@ export default function ReportsPage() {
 
                   <Separator className="my-4" />
 
-                  {/* Performance table */}
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>

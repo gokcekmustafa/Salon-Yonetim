@@ -1,22 +1,33 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { useSalon } from '@/contexts/SalonContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Scissors, Clock, User, CalendarDays, CheckCircle2, ChevronLeft, Phone, MapPin, Building2 } from 'lucide-react';
+import { Scissors, Clock, User, CalendarDays, CheckCircle2, ChevronLeft, Phone, MapPin, Building2, Loader2 } from 'lucide-react';
 import { format, addMinutes, addDays, isBefore, startOfDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 type BookingStep = 'branch' | 'service' | 'staff' | 'datetime' | 'info';
 
+interface SalonInfo { id: string; name: string; slug: string; phone: string | null; address: string | null; }
+interface BranchInfo { id: string; name: string; address: string | null; phone: string | null; is_active: boolean; }
+interface ServiceInfo { id: string; name: string; duration: number; price: number; is_active: boolean; }
+interface StaffInfo { id: string; name: string; is_active: boolean; branch_id: string | null; }
+interface AppointmentInfo { id: string; staff_id: string; start_time: string; end_time: string; status: string; }
+
 export default function BookingPage() {
   const { salonSlug } = useParams<{ salonSlug: string }>();
-  const { salon, services, staff, branches, appointments, addAppointment, addCustomer, customers, hasConflict } = useSalon();
+  const [loading, setLoading] = useState(true);
+  const [salon, setSalon] = useState<SalonInfo | null>(null);
+  const [branches, setBranches] = useState<BranchInfo[]>([]);
+  const [services, setServices] = useState<ServiceInfo[]>([]);
+  const [staffList, setStaffList] = useState<StaffInfo[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentInfo[]>([]);
 
   const [step, setStep] = useState<BookingStep>('branch');
   const [selectedBranchId, setSelectedBranchId] = useState('');
@@ -28,18 +39,43 @@ export default function BookingPage() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [booked, setBooked] = useState(false);
 
-  const activeBranches = branches.filter(b => b.active);
-  const branchStaff = staff.filter(s => s.active && s.branchId === selectedBranchId);
+  useEffect(() => {
+    if (!salonSlug) { setLoading(false); return; }
+    (async () => {
+      const { data: s } = await supabase.from('salons').select('id, name, slug, phone, address').eq('slug', salonSlug).eq('is_active', true).single();
+      if (!s) { setLoading(false); return; }
+      setSalon(s);
+      const [br, sv, st, ap] = await Promise.all([
+        supabase.from('branches').select('id, name, address, phone, is_active').eq('salon_id', s.id).eq('is_active', true),
+        supabase.from('services').select('id, name, duration, price, is_active').eq('salon_id', s.id).eq('is_active', true),
+        supabase.from('staff').select('id, name, is_active, branch_id').eq('salon_id', s.id).eq('is_active', true),
+        supabase.from('appointments').select('id, staff_id, start_time, end_time, status').eq('salon_id', s.id).neq('status', 'iptal'),
+      ]);
+      setBranches(br.data || []);
+      setServices(sv.data || []);
+      setStaffList(st.data || []);
+      setAppointments(ap.data || []);
+      setLoading(false);
+    })();
+  }, [salonSlug]);
+
+  const activeBranches = branches;
+  const branchStaff = staffList.filter(s => s.branch_id === selectedBranchId);
   const selectedService = services.find(s => s.id === selectedServiceId);
-  const selectedStaff = staff.find(s => s.id === selectedStaffId);
+  const selectedStaff = staffList.find(s => s.id === selectedStaffId);
   const selectedBranch = branches.find(b => b.id === selectedBranchId);
+
+  const hasConflict = useCallback((staffId: string, start: string, end: string) => {
+    return appointments.some(a => {
+      if (a.staff_id !== staffId || a.status === 'iptal') return false;
+      return new Date(start) < new Date(a.end_time) && new Date(end) > new Date(a.start_time);
+    });
+  }, [appointments]);
 
   const availableDates = useMemo(() => {
     const dates: Date[] = [];
     const today = startOfDay(new Date());
-    for (let i = 0; i < 14; i++) {
-      dates.push(addDays(today, i));
-    }
+    for (let i = 0; i < 14; i++) dates.push(addDays(today, i));
     return dates;
   }, []);
 
@@ -62,8 +98,15 @@ export default function BookingPage() {
     return slots;
   }, [selectedStaffId, selectedDate, selectedService, hasConflict]);
 
-  // Validate salon slug
-  if (salonSlug && salonSlug !== salon.slug) {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!salon) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="max-w-md w-full text-center">
@@ -77,19 +120,24 @@ export default function BookingPage() {
     );
   }
 
-  const handleBook = () => {
+  const handleBook = async () => {
     if (!selectedService || !selectedStaffId || !selectedDate || !selectedTime || !customerName || !customerPhone) {
       toast.error('Lütfen tüm bilgileri doldurun.');
       return;
     }
 
-    const existing = customers.find(c => c.phone === customerPhone.trim());
-    let customerId: string;
+    // Find or create customer
+    const { data: existing } = await supabase
+      .from('customers').select('id').eq('salon_id', salon.id).eq('phone', customerPhone.trim()).single();
 
+    let customerId: string;
     if (existing) {
       customerId = existing.id;
     } else {
-      customerId = addCustomer({ name: customerName.trim(), phone: customerPhone.trim() });
+      const { data: newCust, error: custErr } = await supabase
+        .from('customers').insert({ salon_id: salon.id, name: customerName.trim(), phone: customerPhone.trim() }).select('id').single();
+      if (custErr || !newCust) { toast.error('Müşteri kaydedilemedi.'); return; }
+      customerId = newCust.id;
     }
 
     const start = new Date(`${selectedDate}T${selectedTime}`);
@@ -100,16 +148,18 @@ export default function BookingPage() {
       return;
     }
 
-    addAppointment({
-      customerId,
-      staffId: selectedStaffId,
-      serviceId: selectedServiceId,
-      branchId: selectedBranchId,
-      startTime: start.toISOString(),
-      endTime: end.toISOString(),
+    const { error } = await supabase.from('appointments').insert({
+      salon_id: salon.id,
+      customer_id: customerId,
+      staff_id: selectedStaffId,
+      service_id: selectedServiceId,
+      branch_id: selectedBranchId,
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
       status: 'bekliyor',
     });
 
+    if (error) { toast.error('Randevu oluşturulamadı.'); return; }
     setBooked(true);
   };
 
@@ -164,7 +214,6 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="border-b bg-card">
         <div className="max-w-2xl mx-auto px-4 py-6">
           <div className="flex items-center gap-3">
@@ -174,15 +223,14 @@ export default function BookingPage() {
             <div>
               <h1 className="text-xl font-bold">{salon.name}</h1>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {salon.address}</span>
-                <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {salon.phone}</span>
+                {salon.address && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {salon.address}</span>}
+                {salon.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {salon.phone}</span>}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Progress */}
       <div className="max-w-2xl mx-auto px-4 py-4">
         <div className="flex items-center gap-1 text-xs">
           {allSteps.map((s, i) => {
@@ -205,7 +253,6 @@ export default function BookingPage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="max-w-2xl mx-auto px-4 pb-8">
         {step !== 'branch' && (
           <Button variant="ghost" size="sm" className="mb-3 -ml-2" onClick={goBack}>
@@ -213,7 +260,6 @@ export default function BookingPage() {
           </Button>
         )}
 
-        {/* Step 1: Branch */}
         {step === 'branch' && (
           <div className="space-y-3">
             <h2 className="text-lg font-semibold">Şube Seçin</h2>
@@ -221,14 +267,8 @@ export default function BookingPage() {
               {activeBranches.map(branch => (
                 <Card
                   key={branch.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${
-                    selectedBranchId === branch.id ? 'ring-2 ring-primary shadow-md' : ''
-                  }`}
-                  onClick={() => {
-                    setSelectedBranchId(branch.id);
-                    setSelectedStaffId('');
-                    setStep('service');
-                  }}
+                  className={`cursor-pointer transition-all hover:shadow-md ${selectedBranchId === branch.id ? 'ring-2 ring-primary shadow-md' : ''}`}
+                  onClick={() => { setSelectedBranchId(branch.id); setSelectedStaffId(''); setStep('service'); }}
                 >
                   <CardContent className="flex items-center gap-3 p-4">
                     <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -237,8 +277,8 @@ export default function BookingPage() {
                     <div>
                       <p className="font-medium">{branch.name}</p>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {branch.address}</span>
-                        <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {branch.phone}</span>
+                        {branch.address && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {branch.address}</span>}
+                        {branch.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {branch.phone}</span>}
                       </div>
                     </div>
                   </CardContent>
@@ -248,7 +288,6 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Step 2: Service */}
         {step === 'service' && (
           <div className="space-y-3">
             <h2 className="text-lg font-semibold">Hizmet Seçin</h2>
@@ -256,13 +295,8 @@ export default function BookingPage() {
               {services.map(service => (
                 <Card
                   key={service.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${
-                    selectedServiceId === service.id ? 'ring-2 ring-primary shadow-md' : ''
-                  }`}
-                  onClick={() => {
-                    setSelectedServiceId(service.id);
-                    setStep('staff');
-                  }}
+                  className={`cursor-pointer transition-all hover:shadow-md ${selectedServiceId === service.id ? 'ring-2 ring-primary shadow-md' : ''}`}
+                  onClick={() => { setSelectedServiceId(service.id); setStep('staff'); }}
                 >
                   <CardContent className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-3">
@@ -284,7 +318,6 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Step 3: Staff (filtered by branch) */}
         {step === 'staff' && (
           <div className="space-y-3">
             <h2 className="text-lg font-semibold">Personel Seçin</h2>
@@ -295,13 +328,8 @@ export default function BookingPage() {
                 {branchStaff.map(member => (
                   <Card
                     key={member.id}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedStaffId === member.id ? 'ring-2 ring-primary shadow-md' : ''
-                    }`}
-                    onClick={() => {
-                      setSelectedStaffId(member.id);
-                      setStep('datetime');
-                    }}
+                    className={`cursor-pointer transition-all hover:shadow-md ${selectedStaffId === member.id ? 'ring-2 ring-primary shadow-md' : ''}`}
+                    onClick={() => { setSelectedStaffId(member.id); setStep('datetime'); }}
                   >
                     <CardContent className="flex items-center gap-3 p-4">
                       <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
@@ -319,7 +347,6 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Step 4: Date & Time */}
         {step === 'datetime' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Tarih & Saat Seçin</h2>
@@ -352,9 +379,7 @@ export default function BookingPage() {
               <div>
                 <Label className="text-sm font-medium mb-2 block">Saat</Label>
                 {timeSlots.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-4 text-center">
-                    Bu tarihte müsait saat bulunmamaktadır.
-                  </p>
+                  <p className="text-sm text-muted-foreground py-4 text-center">Bu tarihte müsait saat bulunmamaktadır.</p>
                 ) : (
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                     {timeSlots.map(time => (
@@ -383,7 +408,6 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Step 5: Customer Info */}
         {step === 'info' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Bilgileriniz</h2>
@@ -420,30 +444,16 @@ export default function BookingPage() {
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label>Ad Soyad</Label>
-                <Input
-                  value={customerName}
-                  onChange={e => setCustomerName(e.target.value)}
-                  placeholder="Adınız ve soyadınız"
-                />
+                <Input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Adınız ve soyadınız" />
               </div>
               <div className="space-y-1.5">
                 <Label>Telefon</Label>
-                <Input
-                  value={customerPhone}
-                  onChange={e => setCustomerPhone(e.target.value)}
-                  placeholder="0500 000 0000"
-                  type="tel"
-                />
+                <Input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="0500 000 0000" type="tel" />
               </div>
             </div>
 
-            <Button
-              className="w-full"
-              disabled={!customerName.trim() || !customerPhone.trim()}
-              onClick={handleBook}
-            >
-              <CalendarDays className="h-4 w-4 mr-2" />
-              Randevu Oluştur
+            <Button className="w-full" disabled={!customerName.trim() || !customerPhone.trim()} onClick={handleBook}>
+              <CalendarDays className="h-4 w-4 mr-2" /> Randevu Oluştur
             </Button>
           </div>
         )}

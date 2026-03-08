@@ -1,8 +1,7 @@
-import React, { useRef, useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { format, parseISO, isSameDay, setHours, setMinutes, differenceInMinutes, addMinutes } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { useSalon } from '@/contexts/SalonContext';
-import { Appointment } from '@/types/salon';
+import { useSalonData, DbAppointment } from '@/hooks/useSalonData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -29,17 +28,17 @@ interface DayCalendarViewProps {
   date: Date;
   filteredStaffId: string | null;
   filteredBranchId?: string | null;
-  onAppointmentClick: (apt: Appointment) => void;
+  onAppointmentClick: (apt: DbAppointment) => void;
 }
 
 export default function DayCalendarView({ date, filteredStaffId, filteredBranchId, onAppointmentClick }: DayCalendarViewProps) {
-  const { appointments, staff, customers, services, updateAppointment, hasConflict, branches } = useSalon();
+  const { appointments, staff, customers, services, updateAppointment, hasConflict, branches } = useSalonData();
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{ top: number } | null>(null);
 
   const activeStaff = useMemo(() => {
-    let filtered = staff.filter(s => s.active);
-    if (filteredBranchId) filtered = filtered.filter(s => s.branchId === filteredBranchId);
+    let filtered = staff.filter(s => s.is_active);
+    if (filteredBranchId) filtered = filtered.filter(s => s.branch_id === filteredBranchId);
     if (filteredStaffId) filtered = filtered.filter(s => s.id === filteredStaffId);
     return filtered;
   }, [staff, filteredStaffId, filteredBranchId]);
@@ -47,9 +46,9 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
   const dayAppointments = useMemo(() =>
     appointments.filter(a => {
       try {
-        if (!isSameDay(parseISO(a.startTime), date)) return false;
-        if (filteredStaffId && a.staffId !== filteredStaffId) return false;
-        if (filteredBranchId && a.branchId !== filteredBranchId) return false;
+        if (!isSameDay(parseISO(a.start_time), date)) return false;
+        if (filteredStaffId && a.staff_id !== filteredStaffId) return false;
+        if (filteredBranchId && a.branch_id !== filteredBranchId) return false;
         return true;
       } catch { return false; }
     }), [appointments, date, filteredStaffId, filteredBranchId]);
@@ -62,9 +61,9 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.name ?? '-';
   const getServiceName = (id: string) => services.find(s => s.id === id)?.name ?? '-';
 
-  const getAppointmentStyle = (apt: Appointment) => {
-    const start = parseISO(apt.startTime);
-    const end = parseISO(apt.endTime);
+  const getAppointmentStyle = (apt: DbAppointment) => {
+    const start = parseISO(apt.start_time);
+    const end = parseISO(apt.end_time);
     const startMinutes = start.getHours() * 60 + start.getMinutes();
     const duration = differenceInMinutes(end, start);
     const top = ((startMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT;
@@ -73,7 +72,7 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
   };
 
   const getStaffAppointments = (staffId: string) =>
-    dayAppointments.filter(a => a.staffId === staffId);
+    dayAppointments.filter(a => a.staff_id === staffId);
 
   const handleDragStart = (e: React.DragEvent, aptId: string) => {
     e.dataTransfer.setData('appointmentId', aptId);
@@ -85,7 +84,7 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
 
   const snapToGrid = (minutes: number) => Math.round(minutes / 15) * 15;
 
-  const handleDrop = (e: React.DragEvent, targetStaffId: string) => {
+  const handleDrop = async (e: React.DragEvent, targetStaffId: string) => {
     e.preventDefault();
     const aptId = e.dataTransfer.getData('appointmentId');
     const apt = appointments.find(a => a.id === aptId);
@@ -96,7 +95,7 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
     const rawMinutes = START_HOUR * 60 + (y / HOUR_HEIGHT) * 60;
     const snappedMinutes = snapToGrid(rawMinutes);
 
-    const duration = differenceInMinutes(parseISO(apt.endTime), parseISO(apt.startTime));
+    const duration = differenceInMinutes(parseISO(apt.end_time), parseISO(apt.start_time));
     const newStart = setMinutes(setHours(date, Math.floor(snappedMinutes / 60)), snappedMinutes % 60);
     const newEnd = addMinutes(newStart, duration);
 
@@ -108,11 +107,11 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
     }
 
     const targetStaff = staff.find(s => s.id === targetStaffId);
-    updateAppointment(aptId, {
-      staffId: targetStaffId,
-      branchId: targetStaff?.branchId || apt.branchId,
-      startTime: newStart.toISOString(),
-      endTime: newEnd.toISOString(),
+    await updateAppointment(aptId, {
+      staff_id: targetStaffId,
+      branch_id: targetStaff?.branch_id || apt.branch_id,
+      start_time: newStart.toISOString(),
+      end_time: newEnd.toISOString(),
     });
     toast.success('Randevu taşındı.');
     setDragging(null);
@@ -133,8 +132,6 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
   const handleDragLeave = () => setDragPreview(null);
 
   const totalHeight = HOURS.length * HOUR_HEIGHT;
-
-  // Current time indicator
   const now = new Date();
   const isToday = isSameDay(date, now);
   const currentTimeTop = isToday
@@ -143,13 +140,11 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
 
   return (
     <div className="border rounded-lg bg-card overflow-hidden shadow-sm">
-      {/* Header */}
       <div className="border-b bg-muted/30 px-4 py-3 flex items-center justify-between">
         <div>
           <h3 className="font-semibold">{format(date, 'd MMMM yyyy, EEEE', { locale: tr })}</h3>
           <p className="text-xs text-muted-foreground">{dayAppointments.length} randevu • {activeStaff.length} personel</p>
         </div>
-        {/* Status legend */}
         <div className="hidden sm:flex items-center gap-3 text-xs">
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-primary/40" /> Bekliyor</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-muted-foreground/30" /> Tamamlandı</span>
@@ -159,7 +154,6 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
 
       <div className="overflow-x-auto">
         <div className="flex min-w-[600px]">
-          {/* Time gutter */}
           <div className="w-16 flex-shrink-0 border-r bg-muted/10">
             {HOURS.map(hour => (
               <div key={hour} className="border-b text-xs text-muted-foreground flex items-start justify-end pr-2 pt-1" style={{ height: HOUR_HEIGHT }}>
@@ -168,9 +162,8 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
             ))}
           </div>
 
-          {/* Staff columns */}
           {activeStaff.map(s => {
-            const branchName = branches.find(b => b.id === s.branchId)?.name;
+            const branchName = branches.find(b => b.id === s.branch_id)?.name;
             return (
               <div key={s.id} className="flex-1 min-w-[180px] border-r last:border-r-0">
                 <div className="border-b px-2 py-1.5 bg-muted/10 sticky top-0 z-10">
@@ -191,7 +184,6 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
                     </div>
                   ))}
 
-                  {/* Current time line */}
                   {isToday && currentTimeTop >= 0 && currentTimeTop <= totalHeight && (
                     <div className="absolute left-0 right-0 z-30 pointer-events-none" style={{ top: currentTimeTop }}>
                       <div className="flex items-center">
@@ -201,12 +193,10 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
                     </div>
                   )}
 
-                  {/* Drop preview */}
                   {dragging && dragPreview && (
                     <div className="absolute left-1 right-1 rounded bg-primary/10 border-2 border-dashed border-primary/40 pointer-events-none z-10" style={{ top: dragPreview.top, height: 36 }} />
                   )}
 
-                  {/* Appointments */}
                   {getStaffAppointments(s.id).map(apt => {
                     const style = getAppointmentStyle(apt);
                     const statusColor = STATUS_COLORS[apt.status] || STATUS_COLORS.bekliyor;
@@ -220,19 +210,19 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
                         className={cn(
                           'absolute left-1 right-1 rounded-md border border-l-[3px] px-2 py-1 overflow-hidden transition-all hover:shadow-md z-20',
                           statusColor,
-                          getStaffAccent(apt.staffId),
+                          getStaffAccent(apt.staff_id),
                           apt.status === 'bekliyor' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
                           dragging === apt.id && 'opacity-40 scale-95',
                         )}
                         style={{ top: style.top, height: style.height }}
                       >
-                        <p className="text-xs font-semibold truncate leading-tight">{getCustomerName(apt.customerId)}</p>
+                        <p className="text-xs font-semibold truncate leading-tight">{getCustomerName(apt.customer_id)}</p>
                         {style.height > 36 && (
-                          <p className="text-[10px] truncate opacity-80">{getServiceName(apt.serviceId)}</p>
+                          <p className="text-[10px] truncate opacity-80">{getServiceName(apt.service_id)}</p>
                         )}
                         {style.height > 52 && (
                           <p className="text-[10px] opacity-60">
-                            {format(parseISO(apt.startTime), 'HH:mm')} - {format(parseISO(apt.endTime), 'HH:mm')}
+                            {format(parseISO(apt.start_time), 'HH:mm')} - {format(parseISO(apt.end_time), 'HH:mm')}
                           </p>
                         )}
                       </div>
