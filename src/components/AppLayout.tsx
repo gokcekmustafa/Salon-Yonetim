@@ -8,10 +8,10 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center border-b bg-card px-4 sticky top-0 z-10">
+          <header className="h-14 flex items-center border-b bg-card/80 backdrop-blur-sm px-4 sticky top-0 z-30">
             <SidebarTrigger className="mr-4" />
             <h2 className="text-sm font-medium text-muted-foreground">Salon Yönetim Paneli</h2>
           </header>

@@ -121,7 +121,7 @@ export default function BranchesPage() {
 
       {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editing ? 'Şube Düzenle' : 'Yeni Şube'}</DialogTitle>
           </DialogHeader>

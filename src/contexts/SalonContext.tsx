@@ -110,8 +110,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setBranches(prev => prev.filter(x => x.id !== id));
   }, []);
 
-  const addCustomer = useCallback((c: Omit<Customer, 'id' | 'createdAt'>) => {
-    setCustomers(prev => [...prev, { ...c, id: genId(), createdAt: new Date().toISOString().split('T')[0] }]);
+  const addCustomer = useCallback((c: Omit<Customer, 'id' | 'createdAt'> & { id?: string }): string => {
+    const id = c.id || genId();
+    setCustomers(prev => [...prev, { ...c, id, createdAt: new Date().toISOString().split('T')[0] }]);
+    return id;
   }, []);
 
   const updateCustomer = useCallback((id: string, c: Partial<Customer>) => {
