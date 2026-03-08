@@ -55,7 +55,6 @@ const financeMenu: MenuItem[] = [
 
 const otherMenu: MenuItem[] = [
   { title: 'Bildirimler', url: '/bildirimler', icon: Bell },
-  { title: 'Online Randevu', url: '/online-randevu', icon: Globe },
   { title: 'Ayarlar', url: '/ayarlar', icon: Settings, roles: ['super_admin', 'salon_admin'] },
 ];
 
