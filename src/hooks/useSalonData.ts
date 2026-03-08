@@ -168,9 +168,13 @@ export function useSalonData() {
   const addAppointment = async (data: {
     customer_id: string; staff_id: string; service_id: string;
     branch_id: string; start_time: string; end_time: string; status: string;
+    room_id?: string | null; session_status?: string;
   }) => {
     if (!salonId) return;
-    const { error } = await supabase.from('appointments').insert({ ...data, salon_id: salonId });
+    const insertData: any = { ...data, salon_id: salonId };
+    if (data.room_id) insertData.room_id = data.room_id;
+    if (data.session_status) insertData.session_status = data.session_status;
+    const { error } = await supabase.from('appointments').insert(insertData);
     if (!error) fetchAll();
     return error;
   };
