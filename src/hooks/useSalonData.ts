@@ -110,7 +110,7 @@ export function useSalonData() {
     return error;
   };
 
-  const addCustomer = async (data: { name: string; phone: string; birth_date?: string; notes?: string }) => {
+  const addCustomer = async (data: { name: string; phone: string; birth_date?: string; notes?: string; tc_kimlik_no?: string; address?: string; secondary_phone?: string }) => {
     if (!salonId) return { id: '', error: null };
     const { data: inserted, error } = await supabase
       .from('customers').insert({ ...data, salon_id: salonId }).select('id').single();
