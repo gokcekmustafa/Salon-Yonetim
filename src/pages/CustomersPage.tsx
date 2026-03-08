@@ -72,6 +72,7 @@ export default function CustomersPage() {
       secondary_phone: form.secondary_phone || null,
       source_type: form.source_type || null,
       source_detail: form.source_type === 'other' ? (form.source_detail || null) : null,
+      customer_type: form.customer_type,
     };
     if (editing) {
       await updateCustomer(editing.id, { name: form.name, phone: form.phone, ...optionals });
