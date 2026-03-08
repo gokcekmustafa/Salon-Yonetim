@@ -12,6 +12,7 @@ import ServicesPage from "./pages/ServicesPage";
 import StaffPage from "./pages/StaffPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import SettingsPage from "./pages/SettingsPage";
+import BookingPage from "./pages/BookingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,18 +24,26 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppLayout>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/musteriler" element={<CustomersPage />} />
-              <Route path="/randevular" element={<AppointmentsPage />} />
-              <Route path="/hizmetler" element={<ServicesPage />} />
-              <Route path="/personel" element={<StaffPage />} />
-              <Route path="/kasa" element={<PaymentsPage />} />
-              <Route path="/ayarlar" element={<SettingsPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AppLayout>
+          <Routes>
+            {/* Public booking page - outside AppLayout */}
+            <Route path="/book/:salonSlug" element={<BookingPage />} />
+
+            {/* Admin panel */}
+            <Route path="/*" element={
+              <AppLayout>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/musteriler" element={<CustomersPage />} />
+                  <Route path="/randevular" element={<AppointmentsPage />} />
+                  <Route path="/hizmetler" element={<ServicesPage />} />
+                  <Route path="/personel" element={<StaffPage />} />
+                  <Route path="/kasa" element={<PaymentsPage />} />
+                  <Route path="/ayarlar" element={<SettingsPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AppLayout>
+            } />
+          </Routes>
         </BrowserRouter>
       </SalonProvider>
     </TooltipProvider>
