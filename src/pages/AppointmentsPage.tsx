@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2, Banknote, CreditCard } from 'lucide-react';
 import { format, addMinutes, addDays, subDays, addWeeks, subWeeks } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ import DayCalendarView from '@/components/calendar/DayCalendarView';
 import WeekCalendarView from '@/components/calendar/WeekCalendarView';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import { useQuery } from '@tanstack/react-query';
 
 type ViewMode = 'day' | 'week';
 type Room = { id: string; salon_id: string; name: string; is_active: boolean };
@@ -31,7 +32,7 @@ const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 
 export default function AppointmentsPage() {
   const { hasPermission } = usePermissions();
-  const { currentSalonId } = useAuth();
+  const { currentSalonId, user } = useAuth();
   const {
     appointments, customers, staff, services, branches,
     addAppointment, updateAppointment, addPayment, hasConflict, refetch,
@@ -44,6 +45,21 @@ export default function AppointmentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailApt, setDetailApt] = useState<DbAppointment | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  // Payment method selection for completing
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cash');
+
+  // Fetch cash boxes for auto-routing payments
+  const { data: cashBoxes = [] } = useQuery({
+    queryKey: ['cash_boxes', currentSalonId],
+    queryFn: async () => {
+      if (!currentSalonId) return [];
+      const { data } = await supabase.from('cash_boxes').select('*').eq('salon_id', currentSalonId).eq('is_active', true);
+      return data || [];
+    },
+    enabled: !!currentSalonId,
+  });
 
   // Rooms
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -176,15 +192,38 @@ export default function AppointmentsPage() {
     setDetailOpen(true);
   };
 
+  const openCompleteDialog = () => {
+    setSelectedPaymentMethod('cash');
+    setCompleteDialogOpen(true);
+  };
+
   const handleComplete = async () => {
-    if (!detailApt) return;
+    if (!detailApt || !user) return;
     await updateAppointment(detailApt.id, { status: 'tamamlandi' });
     await supabase.from('appointments').update({ session_status: 'completed' }).eq('id', detailApt.id);
     const service = services.find(s => s.id === detailApt.service_id);
     if (service) {
-      await addPayment({ appointment_id: detailApt.id, amount: service.price, payment_type: 'nakit' });
+      // Create payment record
+      const paymentTypeMap: Record<string, string> = { cash: 'nakit', credit_card: 'kart', eft: 'havale' };
+      await addPayment({ appointment_id: detailApt.id, amount: service.price, payment_type: paymentTypeMap[selectedPaymentMethod] || 'nakit' });
+
+      // Route to correct cash box in cash_transactions
+      const targetBox = cashBoxes.find(b => b.payment_method === selectedPaymentMethod);
+      if (targetBox && currentSalonId) {
+        await supabase.from('cash_transactions').insert({
+          salon_id: currentSalonId,
+          created_by: user.id,
+          type: 'income',
+          amount: service.price,
+          description: `Randevu: ${customers.find(c => c.id === detailApt.customer_id)?.name || ''} — ${service.name}`,
+          transaction_date: new Date().toISOString(),
+          payment_method: selectedPaymentMethod,
+          cash_box_id: targetBox.id,
+        });
+      }
     }
-    toast.success('Randevu tamamlandı, ödeme kaydedildi.');
+    toast.success('Randevu tamamlandı, ödeme kasaya kaydedildi.');
+    setCompleteDialogOpen(false);
     setDetailOpen(false);
     setDetailApt(null);
     refetch();
@@ -558,10 +597,50 @@ export default function AppointmentsPage() {
             {currentDetailApt?.status === 'bekliyor' && (
               <>
                 <Button variant="outline" onClick={handleCancel}>İptal Et</Button>
-                <Button onClick={handleComplete}>Tamamla</Button>
+                <Button onClick={openCompleteDialog} className="btn-gradient">Tamamla & Ödeme Al</Button>
               </>
             )}
             <Button variant="ghost" onClick={() => setDetailOpen(false)}>Kapat</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Method Selection Dialog */}
+      <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Ödeme Yöntemi Seçin</DialogTitle>
+            <DialogDescription>
+              {detailApt && services.find(s => s.id === detailApt.service_id) && (
+                <>Tutar: <strong>₺{services.find(s => s.id === detailApt.service_id)!.price.toLocaleString('tr-TR')}</strong></>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-3 py-4">
+            {[
+              { value: 'cash', label: 'Nakit', icon: Banknote },
+              { value: 'eft', label: 'EFT/Havale', icon: Building2 },
+              { value: 'credit_card', label: 'Kredi Kartı', icon: CreditCard },
+            ].map(m => (
+              <button
+                key={m.value}
+                onClick={() => setSelectedPaymentMethod(m.value)}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  selectedPaymentMethod === m.value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border hover:border-primary/40 text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <m.icon className="h-6 w-6" />
+                <span className="text-xs font-semibold">{m.label}</span>
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCompleteDialogOpen(false)}>İptal</Button>
+            <Button onClick={handleComplete} className="btn-gradient gap-1.5">
+              Tamamla & Kaydet
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
