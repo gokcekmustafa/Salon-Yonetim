@@ -235,10 +235,10 @@ export default function AppointmentsPage() {
     if (!roomName.trim() || !currentSalonId) return;
     setSavingRoom(true);
     if (editingRoom) {
-      await supabase.from('rooms').update({ name: roomName.trim() } as any).eq('id', editingRoom.id);
+      await supabase.from('rooms').update({ name: roomName.trim() }).eq('id', editingRoom.id);
       toast.success('Oda güncellendi');
     } else {
-      await supabase.from('rooms').insert({ name: roomName.trim(), salon_id: currentSalonId } as any);
+      await supabase.from('rooms').insert({ name: roomName.trim(), salon_id: currentSalonId });
       toast.success('Oda eklendi');
     }
     setSavingRoom(false);
