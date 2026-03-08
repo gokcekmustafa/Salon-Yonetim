@@ -392,7 +392,7 @@ export default function AppointmentsPage() {
       </div>
 
       {/* Calendar View */}
-      <div className="overflow-auto max-h-[calc(100vh-240px)]">
+      <div className="overflow-auto max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-240px)]">
         {viewMode === 'day' ? (
           <DayCalendarView
             date={currentDate}
