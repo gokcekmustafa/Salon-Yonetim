@@ -477,9 +477,31 @@ export default function CashPage() {
             )}
 
             {txType === 'income' && (
-              <div className="p-3 rounded-lg bg-muted/50 border border-border/40">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Ödeme Şekli</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'cash', label: 'Nakit', icon: Banknote },
+                    { value: 'eft', label: 'EFT/Havale', icon: Building2 },
+                    { value: 'credit_card', label: 'Kredi Kartı', icon: CreditCard },
+                  ].map(m => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => setTxIncomeMethod(m.value)}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                        txIncomeMethod === m.value
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border hover:border-primary/40 text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <m.icon className="h-5 w-5" />
+                      <span className="text-[10px] font-semibold">{m.label}</span>
+                    </button>
+                  ))}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Gelir <strong>{getTabLabel(activeTab)}</strong> kasasına eklenecek
+                  Gelir <strong>{getTabLabel(txIncomeMethod)}</strong> kasasına eklenecek
                 </p>
               </div>
             )}
