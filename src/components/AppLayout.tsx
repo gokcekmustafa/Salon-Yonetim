@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Bell, LogOut, Building2, ChevronDown } from 'lucide-react';
+import { LogOut, Building2, ChevronDown } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -82,9 +83,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
             <div className="flex items-center gap-1.5">
               <ThemeToggle />
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground relative">
-                <Bell className="h-4 w-4" />
-              </Button>
+              <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="h-9 w-9 rounded-full btn-gradient flex items-center justify-center transition-transform hover:scale-105 active:scale-95">

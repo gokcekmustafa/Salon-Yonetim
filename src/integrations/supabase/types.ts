@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          message: string
+          salon_id: string | null
+          scheduled_at: string | null
+          sender_type: string
+          sender_user_id: string
+          target_salon_ids: string[] | null
+          target_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message: string
+          salon_id?: string | null
+          scheduled_at?: string | null
+          sender_type?: string
+          sender_user_id: string
+          target_salon_ids?: string[] | null
+          target_type?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message?: string
+          salon_id?: string | null
+          scheduled_at?: string | null
+          sender_type?: string
+          sender_user_id?: string
+          target_salon_ids?: string[] | null
+          target_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           branch_id: string | null
@@ -213,6 +266,57 @@ export type Database = {
             foreignKeyName: "notification_settings_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: true
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          announcement_id: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          salon_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          salon_id?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          salon_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
             referencedRelation: "salons"
             referencedColumns: ["id"]
           },

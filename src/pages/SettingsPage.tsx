@@ -11,11 +11,12 @@ import { Bell, MessageSquare, Phone, Clock, Send, AlertTriangle, Loader2 } from 
 import { toast } from 'sonner';
 import { ChangeOwnPassword } from '@/components/password/ChangeOwnPassword';
 import { StaffPasswordManager } from '@/components/password/StaffPasswordManager';
+import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
   const { salon, notificationSettings, updateNotificationSettings, loading } = useSalonData();
-  const { isSalonAdmin, isSuperAdmin } = useAuth();
+  const { isSalonAdmin, isSuperAdmin, currentSalonId } = useAuth();
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
@@ -50,6 +51,11 @@ export default function SettingsPage() {
       <ChangeOwnPassword />
 
       {(isSalonAdmin || isSuperAdmin) && <StaffPasswordManager />}
+
+      {/* Salon Announcements */}
+      {(isSalonAdmin || isSuperAdmin) && currentSalonId && (
+        <AnnouncementManager mode="salon_admin" salonId={currentSalonId} />
+      )}
 
       {ns && (
         <Card>

@@ -12,6 +12,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import SuperAdminDashboard from './SuperAdminDashboard';
+import { SubscriptionAlert } from '@/components/notifications/SubscriptionAlert';
 
 export default function Dashboard() {
   const { isSuperAdmin, currentSalonId } = useAuth();
@@ -80,6 +81,14 @@ export default function Dashboard() {
 
   return (
     <div className="page-container animate-in">
+      {/* Subscription Alert */}
+      {salon && (
+        <SubscriptionAlert
+          expiresAt={(salon as any).subscription_expires_at}
+          plan={(salon as any).subscription_plan || 'free'}
+        />
+      )}
+
       {/* Hero Header */}
       <div className="rounded-2xl p-6 lg:p-8 border border-border/40" style={{ background: 'var(--gradient-hero)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
