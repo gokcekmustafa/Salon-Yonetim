@@ -42,7 +42,7 @@ export default function SettingsPage() {
           salonId={currentSalonId}
           salonName={salon.name}
           logoUrl={salon.logo_url ?? null}
-          onUpdated={refetch}
+          onUpdated={refetchSalon}
         />
       )}
 
