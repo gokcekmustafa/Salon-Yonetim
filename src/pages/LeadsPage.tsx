@@ -312,6 +312,7 @@ export default function LeadsPage() {
                 <TableHead className="font-semibold">Aday</TableHead>
                 <TableHead className="hidden md:table-cell font-semibold">İletişim</TableHead>
                 <TableHead className="font-semibold">Durum</TableHead>
+                <TableHead className="hidden lg:table-cell font-semibold">Personel</TableHead>
                 <TableHead className="hidden lg:table-cell font-semibold">Kaynak</TableHead>
                 <TableHead className="hidden md:table-cell font-semibold">Tarih</TableHead>
                 <TableHead className="w-10"></TableHead>
