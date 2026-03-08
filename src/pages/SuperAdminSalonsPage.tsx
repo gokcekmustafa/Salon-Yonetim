@@ -55,6 +55,7 @@ export default function SuperAdminSalonsPage() {
   const [formAddress, setFormAddress] = useState('');
   const [formPlan, setFormPlan] = useState<string>('free');
   const [formActive, setFormActive] = useState(true);
+  const [formExpiry, setFormExpiry] = useState('');
 
   const fetchSalons = async () => {
     setLoading(true);
