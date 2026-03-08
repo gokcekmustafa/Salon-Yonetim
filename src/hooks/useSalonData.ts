@@ -206,7 +206,7 @@ export function useSalonData() {
     if (!salonId) return;
     const { data } = await supabase
       .from('salons')
-      .select('id, name, slug, phone, address, is_active, logo_url, subscription_plan, subscription_expires_at')
+      .select('id, name, slug, phone, address, is_active, logo_url, subscription_plan, subscription_expires_at, online_booking_active')
       .eq('id', salonId)
       .single();
     if (data) setSalon(data);
