@@ -147,8 +147,8 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground whitespace-nowrap">Randevudan</Label>
               <Select
-                value={String(notifSettings.reminderHoursBefore)}
-                onValueChange={v => setNotifSettings(s => ({ ...s, reminderHoursBefore: Number(v) }))}
+                value={String(notificationSettings.reminderHoursBefore)}
+                onValueChange={v => updateNotificationSettings({ reminderHoursBefore: Number(v) })}
               >
                 <SelectTrigger className="w-32">
                   <SelectValue />
