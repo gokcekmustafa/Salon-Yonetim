@@ -18,6 +18,7 @@ import PaymentsPage from "./pages/PaymentsPage";
 import SettingsPage from "./pages/SettingsPage";
 import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
+import CashPage from "./pages/CashPage";
 import AuthPage from "./pages/AuthPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
