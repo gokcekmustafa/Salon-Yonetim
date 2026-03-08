@@ -213,7 +213,7 @@ export default function PaymentsPage() {
 
         {/* All payments tab */}
         <TabsContent value="all">
-          <Card className="shadow-soft border-border/60 overflow-hidden">
+          <Card className="shadow-soft border-border/60 overflow-hidden overflow-x-auto">
             <CardContent className="p-0">
               {filteredPayments.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground text-sm"><Receipt className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />Bu dönemde ödeme yok</div>
