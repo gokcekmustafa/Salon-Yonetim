@@ -272,6 +272,9 @@ export default function SuperAdminSalonsPage() {
         </Card>
       )}
 
+      {/* User Management */}
+      <SuperAdminUserManager />
+
       {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
