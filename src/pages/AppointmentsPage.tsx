@@ -305,7 +305,33 @@ export default function AppointmentsPage() {
             <h1 className="page-title">Randevular</h1>
             <p className="page-subtitle">{format(currentDate, 'd MMMM yyyy', { locale: tr })}</p>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs" onClick={() => {
+              const headers = ['Tarih', 'Müşteri', 'Personel', 'Hizmet', 'Durum'];
+              const rows = appointments.map(a => ({
+                'Tarih': format(new Date(a.start_time), 'd MMM yyyy HH:mm', { locale: tr }),
+                'Müşteri': customers.find(c => c.id === a.customer_id)?.name || '-',
+                'Personel': staff.find(s => s.id === a.staff_id)?.name || '-',
+                'Hizmet': services.find(s => s.id === a.service_id)?.name || '-',
+                'Durum': a.status === 'tamamlandi' ? 'Tamamlandı' : a.status === 'iptal' ? 'İptal' : 'Bekliyor',
+              }));
+              exportToExcel(rows, headers, 'randevular');
+            }}>
+              <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+            </Button>
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs" onClick={() => {
+              const headers = ['Tarih', 'Müşteri', 'Personel', 'Hizmet', 'Durum'];
+              const rows = appointments.map(a => [
+                format(new Date(a.start_time), 'd MMM yyyy HH:mm', { locale: tr }),
+                customers.find(c => c.id === a.customer_id)?.name || '-',
+                staff.find(s => s.id === a.staff_id)?.name || '-',
+                services.find(s => s.id === a.service_id)?.name || '-',
+                a.status === 'tamamlandi' ? 'Tamamlandı' : a.status === 'iptal' ? 'İptal' : 'Bekliyor',
+              ]);
+              exportToPDF(rows, headers, 'Randevu Listesi', 'randevular', [`Toplam: ${appointments.length} randevu`]);
+            }}>
+              <FileText className="h-3.5 w-3.5" /> PDF
+            </Button>
             <Button variant="outline" size="sm" className="h-9 gap-1.5 flex-1 sm:flex-initial" onClick={() => setShowRoomManager(!showRoomManager)}>
               <DoorOpen className="h-4 w-4" /> <span className="hidden xs:inline">Odalar</span>
             </Button>
