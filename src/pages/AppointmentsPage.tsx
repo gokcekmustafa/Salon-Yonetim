@@ -179,7 +179,7 @@ export default function AppointmentsPage() {
   const handleComplete = async () => {
     if (!detailApt) return;
     await updateAppointment(detailApt.id, { status: 'tamamlandi' });
-    await supabase.from('appointments').update({ session_status: 'completed' } as any).eq('id', detailApt.id);
+    await supabase.from('appointments').update({ session_status: 'completed' }).eq('id', detailApt.id);
     const service = services.find(s => s.id === detailApt.service_id);
     if (service) {
       await addPayment({ appointment_id: detailApt.id, amount: service.price, payment_type: 'nakit' });
