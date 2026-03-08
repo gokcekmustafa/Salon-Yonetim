@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Plus, Search, Building2, Users, Calendar, Eye, Loader2, Crown,
-  MoreHorizontal, Edit, Trash2, LogIn, EyeOff, UserPlus,
+  MoreHorizontal, Edit, Trash2, LogIn, EyeOff, UserPlus, Upload, X, Camera,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -27,6 +27,7 @@ import { PopupManager } from '@/components/popup/PopupManager';
 
 type Salon = {
   id: string; name: string; slug: string; phone: string | null; address: string | null;
+  logo_url: string | null;
   subscription_plan: 'free' | 'starter' | 'professional' | 'enterprise';
   is_active: boolean; created_at: string;
 };
@@ -68,6 +69,12 @@ export default function SuperAdminSalonsPage() {
   const [ownerName, setOwnerName] = useState('');
   const [showOwnerPassword, setShowOwnerPassword] = useState(false);
 
+  // Logo state
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [editingLogoUrl, setEditingLogoUrl] = useState<string | null>(null);
+  const logoFileRef = useRef<HTMLInputElement>(null);
+
   const fetchSalons = async () => {
     setLoading(true);
     const { data, error } = await supabase.from('salons').select('*').order('created_at', { ascending: false });
@@ -99,6 +106,7 @@ export default function SuperAdminSalonsPage() {
     setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress('');
     setFormPlan('free'); setFormActive(true); setFormExpiry('');
     setOwnerEmail(''); setOwnerPassword(''); setOwnerName(''); setShowOwnerPassword(false);
+    setLogoPreview(null); setLogoFile(null); setEditingLogoUrl(null);
     setDialogOpen(true);
   };
 
@@ -107,6 +115,7 @@ export default function SuperAdminSalonsPage() {
     setFormPhone(salon.phone || ''); setFormAddress(salon.address || '');
     setFormPlan(salon.subscription_plan); setFormActive(salon.is_active);
     setFormExpiry((salon as any).subscription_expires_at ? (salon as any).subscription_expires_at.split('T')[0] : '');
+    setLogoPreview(null); setLogoFile(null); setEditingLogoUrl(salon.logo_url);
     setDialogOpen(true);
   };
 
@@ -119,6 +128,25 @@ export default function SuperAdminSalonsPage() {
   const handleNameChange = (val: string) => {
     setFormName(val);
     if (!editing) setFormSlug(generateSlug(val));
+  };
+
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Sadece resim dosyaları yüklenebilir'); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error('Dosya boyutu 2MB\'dan küçük olmalıdır'); return; }
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const uploadLogo = async (salonId: string): Promise<string | null> => {
+    if (!logoFile) return editingLogoUrl;
+    const ext = logoFile.name.split('.').pop() || 'png';
+    const path = `${salonId}/logo-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('salon-logos').upload(path, logoFile, { cacheControl: '3600', upsert: true });
+    if (error) { toast.error('Logo yüklenemedi: ' + error.message); return null; }
+    const { data: { publicUrl } } = supabase.storage.from('salon-logos').getPublicUrl(path);
+    return publicUrl;
   };
 
   const handleSave = async () => {
@@ -154,6 +182,13 @@ export default function SuperAdminSalonsPage() {
         if (res.error || res.data?.error) {
           toast.error(res.data?.error || 'Salon oluşturulamadı');
         } else {
+          // Upload logo if selected (need salon id from response)
+          if (logoFile && res.data?.salon_id) {
+            const logoUrl = await uploadLogo(res.data.salon_id);
+            if (logoUrl) {
+              await supabase.from('salons').update({ logo_url: logoUrl }).eq('id', res.data.salon_id);
+            }
+          }
           toast.success(res.data?.message || 'Salon ve sahip hesabı oluşturuldu');
           setDialogOpen(false);
           fetchSalons();
@@ -165,13 +200,22 @@ export default function SuperAdminSalonsPage() {
       return;
     }
 
-    // Standard create/edit without owner
+    // Standard create/edit
     setSaving(true);
+
+    let logoUrl = editingLogoUrl;
+    if (logoFile && editing) {
+      const url = await uploadLogo(editing.id);
+      if (url === null && logoFile) { setSaving(false); return; }
+      logoUrl = url;
+    }
+
     const payload = {
       name: formName.trim(), slug: formSlug.trim(),
       phone: formPhone.trim() || null, address: formAddress.trim() || null,
       subscription_plan: formPlan as Salon['subscription_plan'], is_active: formActive,
       subscription_expires_at: formExpiry ? new Date(formExpiry).toISOString() : null,
+      logo_url: logoUrl,
     };
 
     const { error } = editing
@@ -287,8 +331,12 @@ export default function SuperAdminSalonsPage() {
                   <TableRow key={salon.id} className="group">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Building2 className="h-4 w-4 text-primary" />
+                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                          {salon.logo_url ? (
+                            <img src={salon.logo_url} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <Building2 className="h-4 w-4 text-primary" />
+                          )}
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{salon.name}</p>
@@ -359,6 +407,36 @@ export default function SuperAdminSalonsPage() {
             {/* Salon Info */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Salon Bilgileri</h3>
+              {/* Logo Upload */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Salon Logosu</Label>
+                <div className="flex items-center gap-3">
+                  <div className="relative group">
+                    <div className="h-16 w-16 rounded-xl border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden">
+                      {(logoPreview || editingLogoUrl) ? (
+                        <img src={logoPreview || editingLogoUrl!} alt="Logo" className="h-full w-full object-cover rounded-xl" />
+                      ) : (
+                        <Building2 className="h-6 w-6 text-muted-foreground/40" />
+                      )}
+                    </div>
+                    <button onClick={() => logoFileRef.current?.click()} className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                      <Camera className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    <Button variant="outline" size="sm" onClick={() => logoFileRef.current?.click()} className="gap-1.5 text-xs h-7">
+                      <Upload className="h-3 w-3" /> Yükle
+                    </Button>
+                    {(logoPreview || editingLogoUrl) && (
+                      <Button variant="ghost" size="sm" onClick={() => { setLogoPreview(null); setLogoFile(null); setEditingLogoUrl(null); }} className="gap-1.5 text-xs h-7 text-destructive hover:text-destructive">
+                        <X className="h-3 w-3" /> Kaldır
+                      </Button>
+                    )}
+                    <p className="text-[10px] text-muted-foreground">PNG, JPG. Maks 2MB</p>
+                  </div>
+                </div>
+                <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
+              </div>
               <div className="space-y-2">
                 <Label className="text-xs font-semibold">Salon Adı *</Label>
                 <Input value={formName} onChange={e => handleNameChange(e.target.value)} placeholder="Güzellik Salonu" className="h-10" />
