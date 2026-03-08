@@ -107,7 +107,7 @@ export function StaffPasswordManager() {
   };
 
   return (
-    <>
+    <div>
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -206,6 +206,6 @@ export function StaffPasswordManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

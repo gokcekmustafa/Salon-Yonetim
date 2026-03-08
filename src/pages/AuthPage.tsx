@@ -9,11 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sparkles, Mail, Lock, User, Loader2, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useBranding } from '@/hooks/useBranding';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { branding } = useBranding();
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -67,11 +69,15 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg mb-4 btn-gradient">
-            <Sparkles className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold font-display text-foreground tracking-tight">SalonYönetim</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">Multi-Salon SaaS Platformu</p>
+          {branding.logo_url ? (
+            <img src={branding.logo_url} alt="Logo" className="h-16 w-16 rounded-2xl object-contain shadow-lg mb-4" />
+          ) : (
+            <div className="h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg mb-4 btn-gradient">
+              <Sparkles className="h-8 w-8 text-primary-foreground" />
+            </div>
+          )}
+          <h1 className="text-2xl font-bold font-display text-foreground tracking-tight">{branding.company_name}</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">{branding.app_name}</p>
         </div>
 
         <Card className="border-border/40 shadow-elevated backdrop-blur-sm">
@@ -143,7 +149,7 @@ export default function AuthPage() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-8">
-          © 2026 SalonYönetim • Multi-Salon SaaS Platform
+          © 2026 {branding.company_name} • {branding.app_name}
         </p>
       </div>
     </div>

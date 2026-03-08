@@ -23,7 +23,7 @@ export function PopupDisplay() {
     if (!popup || !user) return;
     setVisible(false);
     // Track view
-    await supabase.from('popup_views' as any).insert({ popup_id: popup.id, user_id: user.id } as any).select();
+    await supabase.from('popup_views').insert({ popup_id: popup.id, user_id: user.id });
   }, [popup, user]);
 
   useEffect(() => {
@@ -31,21 +31,21 @@ export function PopupDisplay() {
     const fetchPopup = async () => {
       // Get active popups
       const { data: popups } = await supabase
-        .from('popup_announcements' as any)
+        .from('popup_announcements')
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (!popups || (popups as any[]).length === 0) return;
+      if (!popups || popups.length === 0) return;
 
       // Get already-viewed popup IDs
       const { data: views } = await supabase
-        .from('popup_views' as any)
+        .from('popup_views')
         .select('popup_id')
         .eq('user_id', user.id);
 
-      const viewedIds = new Set((views as any[] || []).map((v: any) => v.popup_id));
-      const unseen = (popups as any[]).find((p: any) => !viewedIds.has(p.id));
+      const viewedIds = new Set((views || []).map(v => v.popup_id));
+      const unseen = popups.find(p => !viewedIds.has(p.id));
 
       if (unseen) {
         setPopup(unseen as PopupData);

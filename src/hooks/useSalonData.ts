@@ -35,6 +35,7 @@ export type DbNotificationSettings = {
 export type DbSalon = {
   id: string; name: string; slug: string; phone: string | null;
   address: string | null; is_active: boolean; logo_url: string | null;
+  subscription_plan: string; subscription_expires_at: string | null;
 };
 
 export function useSalonData() {
@@ -64,7 +65,7 @@ export function useSalonData() {
     if (!salonId) { setLoading(false); return; }
 
     const [salonRes, branchRes, custRes, svcRes, staffRes, aptRes, payRes, notifRes] = await Promise.all([
-      supabase.from('salons').select('id, name, slug, phone, address, is_active, logo_url').eq('id', salonId).single(),
+      supabase.from('salons').select('id, name, slug, phone, address, is_active, logo_url, subscription_plan, subscription_expires_at').eq('id', salonId).single(),
       supabase.from('branches').select('*').eq('salon_id', salonId).order('name'),
       supabase.from('customers').select('*').eq('salon_id', salonId).order('name'),
       supabase.from('services').select('*').eq('salon_id', salonId).order('name'),
@@ -202,7 +203,7 @@ export function useSalonData() {
     if (!salonId) return;
     const { data } = await supabase
       .from('salons')
-      .select('id, name, slug, phone, address, is_active, logo_url')
+      .select('id, name, slug, phone, address, is_active, logo_url, subscription_plan, subscription_expires_at')
       .eq('id', salonId)
       .single();
     if (data) setSalon(data);

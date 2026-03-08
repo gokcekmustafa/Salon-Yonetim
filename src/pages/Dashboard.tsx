@@ -84,8 +84,8 @@ export default function Dashboard() {
       {/* Subscription Alert */}
       {salon && (
         <SubscriptionAlert
-          expiresAt={(salon as any).subscription_expires_at}
-          plan={(salon as any).subscription_plan || 'free'}
+          expiresAt={salon.subscription_expires_at}
+          plan={salon.subscription_plan || 'free'}
         />
       )}
 
