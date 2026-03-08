@@ -2,6 +2,7 @@ import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useBranding } from '@/hooks/useBranding';
 import {
   Sidebar,
   SidebarContent,
@@ -73,6 +74,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { roles, isSuperAdmin } = useAuth();
   const { hasPermission } = usePermissions();
+  const { branding } = useBranding();
 
   const filterByRole = (items: MenuItem[]) =>
     items.filter(item => {
@@ -119,15 +121,19 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4 pb-2">
         <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-lg flex items-center justify-center shadow-sm btn-gradient">
-            <Sparkles className="h-4.5 w-4.5 text-primary-foreground" />
-          </div>
+          {branding.logo_url ? (
+            <img src={branding.logo_url} alt="" className="h-9 w-9 rounded-lg object-contain shadow-sm" />
+          ) : (
+            <div className="h-9 w-9 rounded-lg flex items-center justify-center shadow-sm btn-gradient">
+              <Sparkles className="h-4.5 w-4.5 text-primary-foreground" />
+            </div>
+          )}
           {!collapsed && (
             <div>
               <span className="text-base font-bold text-sidebar-accent-foreground font-display tracking-tight">
-                SalonYönetim
+                {branding.company_name}
               </span>
-              <p className="text-[10px] text-sidebar-foreground/50 leading-none mt-0.5">SaaS Platform</p>
+              <p className="text-[10px] text-sidebar-foreground/50 leading-none mt-0.5">{branding.app_name}</p>
             </div>
           )}
         </div>
@@ -160,7 +166,7 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 pt-2">
         {!collapsed && (
           <div className="rounded-lg bg-sidebar-accent/30 p-3 text-center">
-            <p className="text-[10px] text-sidebar-foreground/40">© 2026 SalonYönetim</p>
+            <p className="text-[10px] text-sidebar-foreground/40">© 2026 {branding.company_name}</p>
           </div>
         )}
       </SidebarFooter>
