@@ -3,6 +3,19 @@ import { AlertTriangle, Clock, CreditCard } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+
+interface AlertSettings {
+  message_expired: string;
+  message_expiring: string;
+  show_days_before: number;
+}
+
+const DEFAULTS: AlertSettings = {
+  message_expired: 'Aboneliğiniz {days} gün önce sona erdi. Lütfen yenileyin.',
+  message_expiring: 'Aboneliğiniz {days} gün sonra ({date}) sona erecek.',
+  show_days_before: 30,
+};
 
 interface SubscriptionAlertProps {
   expiresAt: string | null;
@@ -10,13 +23,25 @@ interface SubscriptionAlertProps {
 }
 
 export function SubscriptionAlert({ expiresAt, plan }: SubscriptionAlertProps) {
+  const [settings, setSettings] = useState<AlertSettings>(DEFAULTS);
+
+  useEffect(() => {
+    supabase
+      .from('platform_settings' as any)
+      .select('value')
+      .eq('key', 'subscription_alert')
+      .single()
+      .then(({ data }) => {
+        if (data) setSettings({ ...DEFAULTS, ...(data as any).value });
+      });
+  }, []);
+
   if (!expiresAt) return null;
 
   const expiryDate = parseISO(expiresAt);
   const daysRemaining = differenceInDays(expiryDate, new Date());
 
-  // Don't show if more than 30 days remaining
-  if (daysRemaining > 30) return null;
+  if (daysRemaining > settings.show_days_before) return null;
 
   const isExpired = daysRemaining < 0;
   const isUrgent = daysRemaining <= 7;
