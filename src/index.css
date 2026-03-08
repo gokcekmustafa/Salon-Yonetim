@@ -89,6 +89,13 @@
     --sidebar-border: 224 20% 12%;
     --sidebar-ring: 338 65% 58%;
 
+    --success: 152 55% 48%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 85% 55%;
+    --warning-foreground: 0 0% 100%;
+    --info: 210 70% 60%;
+    --info-foreground: 0 0% 100%;
+
     --gradient-primary: linear-gradient(135deg, hsl(338 65% 58%), hsl(338 70% 65%));
     --gradient-hero: linear-gradient(135deg, hsl(338 65% 58% / 0.08), hsl(210 75% 55% / 0.05));
     --shadow-primary: 0 4px 14px -3px hsl(338 65% 58% / 0.3);
