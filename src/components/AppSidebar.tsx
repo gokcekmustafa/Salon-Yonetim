@@ -29,6 +29,7 @@ import {
   BarChart3,
   Globe,
   DoorOpen,
+  FileText,
   ChevronRight,
   Shield,
   Bell,
