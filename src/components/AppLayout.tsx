@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { PopupDisplay } from '@/components/popup/PopupDisplay';
 
 interface AppLayoutProps {
   children: React.ReactNode;
