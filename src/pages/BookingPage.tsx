@@ -42,7 +42,7 @@ export default function BookingPage() {
   useEffect(() => {
     if (!salonSlug) { setLoading(false); return; }
     (async () => {
-      const { data: s } = await supabase.from('salons').select('id, name, slug, phone, address').eq('slug', salonSlug).eq('is_active', true).single();
+      const { data: s } = await supabase.from('salons').select('id, name, slug, phone, address, online_booking_active').eq('slug', salonSlug).eq('is_active', true).single();
       if (!s) { setLoading(false); return; }
       setSalon(s);
       const [br, sv, st, ap] = await Promise.all([
