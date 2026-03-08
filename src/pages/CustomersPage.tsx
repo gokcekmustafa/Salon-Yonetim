@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 
+const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '' };
+
 export default function CustomersPage() {
   const { hasPermission } = usePermissions();
   const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, loading } = useSalonData();
@@ -23,7 +25,7 @@ export default function CustomersPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<DbCustomer | null>(null);
   const [editing, setEditing] = useState<DbCustomer | null>(null);
-  const [form, setForm] = useState({ name: '', phone: '', birth_date: '', notes: '' });
+  const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
   if (!hasPermission('can_manage_customers')) return <NoPermission feature="Müşteri Yönetimi" />;
@@ -34,20 +36,34 @@ export default function CustomersPage() {
   );
 
   const filtered = customers.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone || '').includes(search)
+    c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone || '').includes(search) || (c.tc_kimlik_no || '').includes(search)
   );
 
-  const openAdd = () => { setEditing(null); setForm({ name: '', phone: '', birth_date: '', notes: '' }); setDialogOpen(true); };
-  const openEdit = (c: DbCustomer) => { setEditing(c); setForm({ name: c.name, phone: c.phone || '', birth_date: c.birth_date || '', notes: c.notes || '' }); setDialogOpen(true); };
+  const openAdd = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
+  const openEdit = (c: DbCustomer) => {
+    setEditing(c);
+    setForm({
+      name: c.name, phone: c.phone || '', birth_date: c.birth_date || '', notes: c.notes || '',
+      tc_kimlik_no: c.tc_kimlik_no || '', address: c.address || '', secondary_phone: c.secondary_phone || '',
+    });
+    setDialogOpen(true);
+  };
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.phone.trim()) { toast.error('Ad ve telefon zorunludur.'); return; }
     setSaving(true);
+    const optionals = {
+      birth_date: form.birth_date || null,
+      notes: form.notes || null,
+      tc_kimlik_no: form.tc_kimlik_no || null,
+      address: form.address || null,
+      secondary_phone: form.secondary_phone || null,
+    };
     if (editing) {
-      await updateCustomer(editing.id, { name: form.name, phone: form.phone, birth_date: form.birth_date || null, notes: form.notes || null });
+      await updateCustomer(editing.id, { name: form.name, phone: form.phone, ...optionals });
       toast.success('Müşteri güncellendi.');
     } else {
-      await addCustomer({ name: form.name, phone: form.phone, birth_date: form.birth_date || undefined, notes: form.notes || undefined });
+      await addCustomer({ name: form.name, phone: form.phone, ...optionals });
       toast.success('Müşteri eklendi.');
     }
     setSaving(false);
@@ -62,6 +78,8 @@ export default function CustomersPage() {
     : [];
 
   const getName = (list: { id: string; name: string }[], id: string) => list.find(x => x.id === id)?.name ?? '-';
+
+  const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }));
 
   return (
     <div className="page-container animate-in">
@@ -95,6 +113,7 @@ export default function CustomersPage() {
                 <div className="space-y-0.5 min-w-0">
                   <p className="font-semibold text-sm">{c.name}</p>
                   <p className="text-xs text-muted-foreground">{c.phone}</p>
+                  {c.secondary_phone && <p className="text-xs text-muted-foreground">2. Tel: {c.secondary_phone}</p>}
                   {c.notes && <p className="text-xs text-muted-foreground/70 truncate max-w-[180px]">{c.notes}</p>}
                 </div>
               </div>
@@ -116,14 +135,15 @@ export default function CustomersPage() {
               <TableRow className="hover:bg-transparent">
                 <TableHead className="font-semibold">Ad Soyad</TableHead>
                 <TableHead className="font-semibold">Telefon</TableHead>
-                <TableHead className="hidden lg:table-cell font-semibold">Doğum Tarihi</TableHead>
+                <TableHead className="hidden lg:table-cell font-semibold">TC Kimlik</TableHead>
+                <TableHead className="hidden xl:table-cell font-semibold">Adres</TableHead>
                 <TableHead className="hidden lg:table-cell font-semibold">Notlar</TableHead>
                 <TableHead className="text-right font-semibold">İşlem</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground text-sm">Müşteri bulunamadı.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground text-sm">Müşteri bulunamadı.</TableCell></TableRow>
               ) : filtered.map(c => (
                 <TableRow key={c.id} className="group">
                   <TableCell>
@@ -132,8 +152,12 @@ export default function CustomersPage() {
                       <span className="font-medium">{c.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{c.phone}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-muted-foreground">{c.birth_date || '-'}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    <div>{c.phone}</div>
+                    {c.secondary_phone && <div className="text-xs text-muted-foreground/70">2. {c.secondary_phone}</div>}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground">{c.tc_kimlik_no || '-'}</TableCell>
+                  <TableCell className="hidden xl:table-cell max-w-[150px] truncate text-muted-foreground">{c.address || '-'}</TableCell>
                   <TableCell className="hidden lg:table-cell max-w-[200px] truncate text-muted-foreground">{c.notes || '-'}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -151,13 +175,16 @@ export default function CustomersPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? 'Müşteri Düzenle' : 'Yeni Müşteri'}</DialogTitle><DialogDescription>{editing ? 'Müşteri bilgilerini güncelleyin' : 'Yeni müşteri ekleyin'}</DialogDescription></DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-2"><Label className="text-xs font-semibold">Ad Soyad</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ad Soyad" className="h-10" /></div>
-            <div className="space-y-2"><Label className="text-xs font-semibold">Telefon</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0500 000 0000" type="tel" className="h-10" /></div>
-            <div className="space-y-2"><Label className="text-xs font-semibold">Doğum Tarihi</Label><Input type="date" value={form.birth_date} onChange={e => setForm(f => ({ ...f, birth_date: e.target.value }))} className="h-10" /></div>
-            <div className="space-y-2"><Label className="text-xs font-semibold">Notlar</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Müşteri notları..." rows={3} /></div>
+            <div className="space-y-2"><Label className="text-xs font-semibold">Ad Soyad *</Label><Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ad Soyad" className="h-10" /></div>
+            <div className="space-y-2"><Label className="text-xs font-semibold">Telefon *</Label><Input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="0500 000 0000" type="tel" className="h-10" /></div>
+            <div className="space-y-2"><Label className="text-xs font-semibold">2. Telefon <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input value={form.secondary_phone} onChange={e => set('secondary_phone', e.target.value)} placeholder="0500 000 0000" type="tel" className="h-10" /></div>
+            <div className="space-y-2"><Label className="text-xs font-semibold">TC Kimlik No <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input value={form.tc_kimlik_no} onChange={e => set('tc_kimlik_no', e.target.value)} placeholder="11 haneli TC Kimlik No" maxLength={11} className="h-10" /></div>
+            <div className="space-y-2"><Label className="text-xs font-semibold">Adres <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.address} onChange={e => set('address', e.target.value)} placeholder="Müşteri adresi..." rows={2} /></div>
+            <div className="space-y-2"><Label className="text-xs font-semibold">Doğum Tarihi <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className="h-10" /></div>
+            <div className="space-y-2"><Label className="text-xs font-semibold">Notlar <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Müşteri notları..." rows={3} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
