@@ -75,10 +75,12 @@ export default function AppointmentsPage() {
       return;
     }
 
+    const staffMember = staff.find(s => s.id === form.staffId);
     addAppointment({
       customerId: form.customerId,
       staffId: form.staffId,
       serviceId: form.serviceId,
+      branchId: staffMember?.branchId || '',
       startTime: start.toISOString(),
       endTime: end.toISOString(),
       status: 'bekliyor',
