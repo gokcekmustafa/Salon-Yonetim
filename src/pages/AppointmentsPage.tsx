@@ -265,12 +265,12 @@ export default function AppointmentsPage() {
             <h1 className="page-title">Randevular</h1>
             <p className="page-subtitle">{format(currentDate, 'd MMMM yyyy', { locale: tr })}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setShowRoomManager(!showRoomManager)}>
-              <DoorOpen className="h-4 w-4" /> Odalar
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 flex-1 sm:flex-initial" onClick={() => setShowRoomManager(!showRoomManager)}>
+              <DoorOpen className="h-4 w-4" /> <span className="hidden xs:inline">Odalar</span>
             </Button>
-            <Button onClick={openAdd} size="sm" className="h-9">
-              <Plus className="h-4 w-4 mr-1.5" /> Yeni Randevu
+            <Button onClick={openAdd} size="sm" className="h-9 flex-1 sm:flex-initial">
+              <Plus className="h-4 w-4 mr-1.5" /> <span className="hidden xs:inline">Yeni</span> Randevu
             </Button>
           </div>
         </div>
