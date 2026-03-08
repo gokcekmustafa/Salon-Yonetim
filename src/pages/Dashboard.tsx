@@ -104,7 +104,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <Select value={selectedBranchId || 'all'} onValueChange={v => setSelectedBranchId(v === 'all' ? null : v)}>
-              <SelectTrigger className="w-48 h-9 text-sm bg-card/80 backdrop-blur-sm"><SelectValue placeholder="Tüm Şubeler" /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-48 h-9 text-sm bg-card/80 backdrop-blur-sm"><SelectValue placeholder="Tüm Şubeler" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tüm Şubeler</SelectItem>
                 {branches.filter(b => b.is_active).map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}

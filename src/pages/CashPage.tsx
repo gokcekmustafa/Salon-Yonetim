@@ -336,7 +336,7 @@ export default function CashPage() {
                 </div>
               </div>
               <div className="text-right space-y-1">
-                <p className={`font-bold tabular-nums ${tx.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
+                <p className={`font-bold tabular-nums ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
                   {tx.type === 'income' ? '+' : '-'}₺{Number(tx.amount).toLocaleString('tr-TR')}
                 </p>
                 <div className="flex gap-1 justify-end">

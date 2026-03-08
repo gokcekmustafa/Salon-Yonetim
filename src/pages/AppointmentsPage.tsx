@@ -486,7 +486,7 @@ export default function AppointmentsPage() {
           <DialogHeader><DialogTitle>Randevu Detayı</DialogTitle><DialogDescription>Randevu bilgilerini görüntüleyin ve yönetin</DialogDescription></DialogHeader>
           {currentDetailApt && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-x-4 gap-y-3">
                 <div>
                   <p className="text-xs text-muted-foreground">Müşteri</p>
                   <p className="font-medium text-sm">{getCustomerName(currentDetailApt.customer_id)}</p>
