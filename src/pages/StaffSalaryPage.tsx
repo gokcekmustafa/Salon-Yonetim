@@ -153,7 +153,7 @@ export default function StaffSalaryPage() {
       const { error } = await supabase.from('staff_payments').insert({
         staff_id: payStaffId, salon_id: salonId, payment_type: payType,
         amount, payment_method: payMethod,
-        cash_box_id: payCashBoxId || null,
+        cash_box_id: payCashBoxId === 'none' ? null : payCashBoxId,
         description: payDesc.trim() || null, created_by: user.id,
       } as any);
       if (error) throw error;
