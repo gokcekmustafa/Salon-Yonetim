@@ -248,7 +248,7 @@ export default function PaymentsPage() {
                 {box.txs.length === 0 ? (
                   <div className="py-12 text-center text-muted-foreground text-sm">Bu dönemde işlem yok</div>
                 ) : (
-                  <Table>
+                  <Table className="min-w-[500px]">
                     <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="font-semibold">Tarih</TableHead><TableHead className="font-semibold">Tür</TableHead><TableHead className="font-semibold">Açıklama</TableHead><TableHead className="text-right font-semibold">Tutar</TableHead></TableRow></TableHeader>
                     <TableBody>
                       {box.txs.map(tx => (
