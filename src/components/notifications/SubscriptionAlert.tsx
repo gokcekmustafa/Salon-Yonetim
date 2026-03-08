@@ -76,11 +76,13 @@ export function SubscriptionAlert({ expiresAt, plan }: SubscriptionAlertProps) {
             {isExpired ? 'Abonelik Süresi Doldu!' : 'Abonelik Süresi Yaklaşıyor'}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            {isExpired ? (
-              <>Aboneliğiniz <strong>{Math.abs(daysRemaining)} gün önce</strong> sona erdi. Lütfen yenileyin.</>
-            ) : (
-              <>Aboneliğiniz <strong>{daysRemaining} gün</strong> sonra ({format(expiryDate, 'd MMMM yyyy', { locale: tr })}) sona erecek.</>
-            )}
+            {isExpired
+              ? settings.message_expired
+                  .replace('{days}', String(Math.abs(daysRemaining)))
+              : settings.message_expiring
+                  .replace('{days}', String(daysRemaining))
+                  .replace('{date}', format(expiryDate, 'd MMMM yyyy', { locale: tr }))
+            }
           </p>
           <div className="flex items-center gap-4 mt-2">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
