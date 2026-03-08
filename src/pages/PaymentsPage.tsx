@@ -120,8 +120,8 @@ export default function PaymentsPage() {
     <div className="page-container animate-in space-y-5">
       <div className="page-header">
         <div><h1 className="page-title">Kasa & Ödemeler</h1><p className="page-subtitle">Ödeme geçmişi ve kasa bazlı gelir takibi</p></div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => {
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
             const headers = ['Tarih', 'Müşteri', 'Hizmet', 'Ödeme Türü', 'Tutar (₺)'];
             const rows = filteredPayments.map(p => ({
               Tarih: format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr }),
@@ -131,10 +131,10 @@ export default function PaymentsPage() {
               'Tutar (₺)': Number(p.amount),
             }));
             exportToExcel(rows, headers, `odemeler-${periodLabel}`);
-          }} className="gap-1.5">
-            <FileSpreadsheet className="h-4 w-4" /> Excel
+          }}>
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
           </Button>
-          <Button variant="outline" size="sm" onClick={() => {
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
             const headers = ['Tarih', 'Müşteri', 'Hizmet', 'Ödeme Türü', 'Tutar (₺)'];
             const rows = filteredPayments.map(p => [
               format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr }),
@@ -145,25 +145,26 @@ export default function PaymentsPage() {
             ]);
             const summary = [`Toplam Gelir: ₺${totalRevenue.toLocaleString('tr-TR')}  |  Dönem: ${periodLabel}`];
             exportToPDF(rows, headers, 'Ödeme Raporu', `odemeler-${periodLabel}`, summary);
-          }} className="gap-1.5">
-            <FileText className="h-4 w-4" /> PDF
+          }}>
+            <FileText className="h-3.5 w-3.5" /> PDF
           </Button>
         </div>
       </div>
 
-      {/* Period Selector */}
-      <div className="flex items-center gap-3">
-        <Label className="text-xs">Periyot</Label>
-        <Select value={dateRange} onValueChange={v => setDateRange(v as DateRange)}>
-          <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="daily">Günlük</SelectItem>
-            <SelectItem value="weekly">Haftalık</SelectItem>
-            <SelectItem value="monthly">Aylık</SelectItem>
-            <SelectItem value="yearly">Yıllık</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="text-xs text-muted-foreground ml-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Label className="text-xs whitespace-nowrap">Periyot</Label>
+          <Select value={dateRange} onValueChange={v => setDateRange(v as DateRange)}>
+            <SelectTrigger className="w-28 sm:w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">Günlük</SelectItem>
+              <SelectItem value="weekly">Haftalık</SelectItem>
+              <SelectItem value="monthly">Aylık</SelectItem>
+              <SelectItem value="yearly">Yıllık</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <span className="text-xs text-muted-foreground sm:ml-auto">
           {format(startDate, 'd MMM yyyy', { locale: tr })} — {format(endDate, 'd MMM yyyy', { locale: tr })}
         </span>
       </div>
@@ -201,21 +202,23 @@ export default function PaymentsPage() {
 
       {/* Tabs: Toplu + Per-box */}
       <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">Tümü</TabsTrigger>
-          {cashBoxes.map(box => (
-            <TabsTrigger key={box.id} value={box.id}>{box.name}</TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="w-max">
+            <TabsTrigger value="all">Tümü</TabsTrigger>
+            {cashBoxes.map(box => (
+              <TabsTrigger key={box.id} value={box.id}>{box.name}</TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         {/* All payments tab */}
         <TabsContent value="all">
-          <Card className="shadow-soft border-border/60 overflow-hidden">
+          <Card className="shadow-soft border-border/60 overflow-hidden overflow-x-auto">
             <CardContent className="p-0">
               {filteredPayments.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground text-sm"><Receipt className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />Bu dönemde ödeme yok</div>
               ) : (
-                <Table>
+                <Table className="min-w-[600px]">
                   <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="font-semibold">Tarih</TableHead><TableHead className="font-semibold">Müşteri</TableHead><TableHead className="font-semibold">Hizmet</TableHead><TableHead className="font-semibold">Ödeme Türü</TableHead><TableHead className="text-right font-semibold">Tutar</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {filteredPayments.map(p => (
@@ -237,7 +240,7 @@ export default function PaymentsPage() {
         {/* Per cash box tabs */}
         {boxSummaries.map(box => (
           <TabsContent key={box.id} value={box.id}>
-            <Card className="shadow-soft border-border/60 overflow-hidden">
+            <Card className="shadow-soft border-border/60 overflow-hidden overflow-x-auto">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">{box.name} — İşlem Geçmişi</CardTitle>
               </CardHeader>
@@ -245,7 +248,7 @@ export default function PaymentsPage() {
                 {box.txs.length === 0 ? (
                   <div className="py-12 text-center text-muted-foreground text-sm">Bu dönemde işlem yok</div>
                 ) : (
-                  <Table>
+                  <Table className="min-w-[500px]">
                     <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="font-semibold">Tarih</TableHead><TableHead className="font-semibold">Tür</TableHead><TableHead className="font-semibold">Açıklama</TableHead><TableHead className="text-right font-semibold">Tutar</TableHead></TableRow></TableHeader>
                     <TableBody>
                       {box.txs.map(tx => (
