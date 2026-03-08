@@ -517,8 +517,6 @@ export default function StaffSalaryPage() {
                     {cashBoxes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             <div className="space-y-2">
