@@ -167,7 +167,7 @@ export default function CustomersPage() {
       {/* History Dialog */}
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{selectedCustomer?.name} — Geçmiş</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{selectedCustomer?.name} — Geçmiş</DialogTitle><DialogDescription>Müşterinin geçmiş randevuları</DialogDescription></DialogHeader>
           {customerAppointments.length === 0 ? (
             <div className="empty-state py-8"><History className="empty-state-icon !h-8 !w-8" /><p className="empty-state-title">Geçmiş randevu yok</p></div>
           ) : (

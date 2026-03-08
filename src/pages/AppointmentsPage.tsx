@@ -308,7 +308,7 @@ export default function AppointmentsPage() {
       {/* Appointment Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={v => { setDetailOpen(v); if (!v) setDetailApt(null); }}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Randevu Detayı</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Randevu Detayı</DialogTitle><DialogDescription>Randevu bilgilerini görüntüleyin</DialogDescription></DialogHeader>
           {currentDetailApt && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
