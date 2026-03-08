@@ -169,8 +169,18 @@ export default function SuperAdminDataPage() {
       </div>
 
       {/* Salon selector for imports */}
-      <div className="flex items-center gap-3 flex-wrap">
-        {salonSelector}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">İçe aktarılacak salon:</span>
+        <Select value={importSalonId} onValueChange={setImportSalonId}>
+          <SelectTrigger className="h-8 w-full sm:w-48 text-xs">
+            <SelectValue placeholder="Salon seçin" />
+          </SelectTrigger>
+          <SelectContent>
+            {salons.map(s => (
+              <SelectItem key={s.id} value={s.id} className="text-xs">{s.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Tabs defaultValue="customers" className="space-y-4">
