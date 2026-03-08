@@ -348,7 +348,7 @@ export default function InstallmentsPage() {
               <Select value={formCustomerId} onValueChange={setFormCustomerId}>
                 <SelectTrigger className="h-10"><SelectValue placeholder="Müşteri seçin" /></SelectTrigger>
                 <SelectContent>
-                  {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {customers.filter(c => (c as any).customer_type !== 'single_session').map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

@@ -25,7 +25,7 @@ const SOURCE_OPTIONS = [
 ];
 const getSourceLabel = (val: string | null) => SOURCE_OPTIONS.find(o => o.value === val)?.label ?? val ?? '-';
 
-const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '' };
+const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '', customer_type: 'installment' };
 
 export default function CustomersPage() {
   const { hasPermission } = usePermissions();
@@ -56,6 +56,7 @@ export default function CustomersPage() {
       name: c.name, phone: c.phone || '', birth_date: c.birth_date || '', notes: c.notes || '',
       tc_kimlik_no: c.tc_kimlik_no || '', address: c.address || '', secondary_phone: c.secondary_phone || '',
       source_type: c.source_type || '', source_detail: c.source_detail || '',
+      customer_type: c.customer_type || 'installment',
     });
     setDialogOpen(true);
   };
@@ -71,6 +72,7 @@ export default function CustomersPage() {
       secondary_phone: form.secondary_phone || null,
       source_type: form.source_type || null,
       source_detail: form.source_type === 'other' ? (form.source_detail || null) : null,
+      customer_type: form.customer_type,
     };
     if (editing) {
       await updateCustomer(editing.id, { name: form.name, phone: form.phone, ...optionals });
@@ -124,7 +126,12 @@ export default function CustomersPage() {
                   <span className="text-xs font-bold text-primary">{c.name.charAt(0)}</span>
                 </div>
                 <div className="space-y-0.5 min-w-0">
-                  <p className="font-semibold text-sm">{c.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm">{c.name}</p>
+                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : 'default'} className="text-[10px]">
+                      {c.customer_type === 'single_session' ? 'Tek Seans' : 'Taksitli'}
+                    </Badge>
+                  </div>
                   <p className="text-xs text-muted-foreground">{c.phone}</p>
                   {c.secondary_phone && <p className="text-xs text-muted-foreground">2. Tel: {c.secondary_phone}</p>}
                   {c.notes && <p className="text-xs text-muted-foreground/70 truncate max-w-[180px]">{c.notes}</p>}
@@ -147,6 +154,7 @@ export default function CustomersPage() {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="font-semibold">Ad Soyad</TableHead>
+                <TableHead className="font-semibold">Tür</TableHead>
                 <TableHead className="font-semibold">Telefon</TableHead>
                 <TableHead className="hidden lg:table-cell font-semibold">TC Kimlik</TableHead>
                 <TableHead className="hidden xl:table-cell font-semibold">Adres</TableHead>
@@ -157,7 +165,7 @@ export default function CustomersPage() {
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground text-sm">Müşteri bulunamadı.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground text-sm">Müşteri bulunamadı.</TableCell></TableRow>
               ) : filtered.map(c => (
                 <TableRow key={c.id} className="group">
                   <TableCell>
@@ -165,6 +173,11 @@ export default function CustomersPage() {
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><span className="text-xs font-bold text-primary">{c.name.charAt(0)}</span></div>
                       <span className="font-medium">{c.name}</span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : 'default'} className="text-[10px]">
+                      {c.customer_type === 'single_session' ? 'Tek Seans' : 'Taksitli'}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     <div>{c.phone}</div>
@@ -203,6 +216,19 @@ export default function CustomersPage() {
             <div className="space-y-2"><Label className="text-xs font-semibold">Adres <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.address} onChange={e => set('address', e.target.value)} placeholder="Müşteri adresi..." rows={2} /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Doğum Tarihi <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className="h-10" /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Notlar <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Müşteri notları..." rows={3} /></div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Müşteri Türü</Label>
+              <Select value={form.customer_type} onValueChange={v => set('customer_type', v)}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="installment">Taksitli Müşteri</SelectItem>
+                  <SelectItem value="single_session">Tek Seans Müşteri</SelectItem>
+                </SelectContent>
+              </Select>
+              {form.customer_type === 'single_session' && (
+                <p className="text-xs text-muted-foreground">Tek seans müşterilerde taksit sistemi devre dışıdır, ödemeler doğrudan kasaya gider.</p>
+              )}
+            </div>
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Müşteri Kaynağı <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label>
               <Select value={form.source_type} onValueChange={v => set('source_type', v)}>
