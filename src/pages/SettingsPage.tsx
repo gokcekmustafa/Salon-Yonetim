@@ -194,7 +194,7 @@ export default function SettingsPage() {
             <div className="p-3 rounded-lg bg-muted/50 border">
               <p className="text-xs font-medium text-muted-foreground mb-1">Önizleme:</p>
               <p className="text-sm">
-                {notifSettings.messageTemplate
+                {notificationSettings.messageTemplate
                   .replace('{müşteri_adı}', 'Ayşe Yılmaz')
                   .replace('{tarih}', '10 Mart 2026')
                   .replace('{saat}', '14:00')
