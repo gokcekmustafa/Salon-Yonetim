@@ -143,13 +143,15 @@ export default function CashPage() {
       const amount = parseFloat(txAmount);
       if (isNaN(amount) || amount <= 0) throw new Error('Geçerli bir tutar girin');
 
-      // For income: use the current tab's box
+      // For income: route to the box matching selected payment method
       // For expense: use selected source box
       let targetBoxId: string | null = null;
       let paymentMethod = activeTab;
 
       if (txType === 'income') {
-        targetBoxId = currentBox?.id || null;
+        const targetBox = cashBoxes.find(b => b.payment_method === txIncomeMethod);
+        targetBoxId = targetBox?.id || currentBox?.id || null;
+        paymentMethod = txIncomeMethod;
       } else {
         if (!txSourceBox) throw new Error('Lütfen harcama yapılacak kasayı seçin');
         targetBoxId = txSourceBox;
