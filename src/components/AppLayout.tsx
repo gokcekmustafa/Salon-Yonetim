@@ -16,6 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PopupDisplay } from '@/components/popup/PopupDisplay';
+import { useOnlineHeartbeat } from '@/hooks/useOnlineStatus';
 
 interface AppLayoutProps {
   children: React.ReactNode;
