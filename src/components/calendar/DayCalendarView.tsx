@@ -32,7 +32,7 @@ interface DayCalendarViewProps {
   rooms?: { id: string; name: string }[];
 }
 
-export default function DayCalendarView({ date, filteredStaffId, filteredBranchId, onAppointmentClick }: DayCalendarViewProps) {
+export default function DayCalendarView({ date, filteredStaffId, filteredBranchId, onAppointmentClick, rooms = [] }: DayCalendarViewProps) {
   const { appointments, staff, customers, services, updateAppointment, hasConflict, branches } = useSalonData();
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{ top: number } | null>(null);
