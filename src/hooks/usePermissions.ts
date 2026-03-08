@@ -97,6 +97,7 @@ export function usePermissions() {
         can_add_branches: data.can_add_branches,
         can_manage_services: data.can_manage_services,
         can_manage_leads: (data as any).can_manage_leads ?? true,
+        can_manage_online_booking: (data as any).can_manage_online_booking ?? true,
       });
     }
     setLoading(false);
