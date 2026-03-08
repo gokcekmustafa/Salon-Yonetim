@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,9 +20,14 @@ export function SalonProfileSettings({ salonId, salonName, logoUrl, onUpdated }:
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(logoUrl);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const currentLogo = preview || logoUrl;
+  // Sync props when they change
+  useEffect(() => { setName(salonName); }, [salonName]);
+  useEffect(() => { setCurrentLogoUrl(logoUrl); }, [logoUrl]);
+
+  const displayLogo = preview || currentLogoUrl;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,62 +42,90 @@ export function SalonProfileSettings({ salonId, salonName, logoUrl, onUpdated }:
     }
     setSelectedFile(file);
     setPreview(URL.createObjectURL(file));
-  };
-
-  const uploadLogo = async (): Promise<string | null> => {
-    if (!selectedFile) return logoUrl;
-    const ext = selectedFile.name.split('.').pop() || 'png';
-    const path = `${salonId}/logo-${Date.now()}.${ext}`;
-
-    const { error } = await supabase.storage.from('salon-logos').upload(path, selectedFile, {
-      cacheControl: '3600',
-      upsert: true,
-    });
-    if (error) {
-      toast.error('Logo yüklenemedi: ' + error.message);
-      return null;
-    }
-    const { data: { publicUrl } } = supabase.storage.from('salon-logos').getPublicUrl(path);
-    return publicUrl;
+    // Reset input so same file can be re-selected
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   const handleSave = async () => {
     if (!name.trim()) { toast.error('Salon adı zorunludur'); return; }
     setSaving(true);
 
-    let newLogoUrl = logoUrl;
-    if (selectedFile) {
-      const url = await uploadLogo();
-      if (url === null && selectedFile) { setSaving(false); return; }
-      newLogoUrl = url;
+    try {
+      let newLogoUrl = currentLogoUrl;
+
+      // Upload logo if a new file was selected
+      if (selectedFile) {
+        const ext = selectedFile.name.split('.').pop() || 'png';
+        const path = `${salonId}/logo-${Date.now()}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('salon-logos')
+          .upload(path, selectedFile, { cacheControl: '3600', upsert: true });
+
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          toast.error('Logo yüklenemedi: ' + uploadError.message);
+          setSaving(false);
+          return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('salon-logos')
+          .getPublicUrl(path);
+        newLogoUrl = publicUrl;
+      }
+
+      // Update salon record
+      const { error: updateError, data } = await supabase
+        .from('salons')
+        .update({ name: name.trim(), logo_url: newLogoUrl })
+        .eq('id', salonId)
+        .select();
+
+      if (updateError) {
+        console.error('Salon update error:', updateError);
+        toast.error('Güncelleme başarısız: ' + updateError.message);
+      } else if (!data || data.length === 0) {
+        console.error('Salon update returned no rows - RLS may be blocking');
+        toast.error('Güncelleme yapılamadı. Yetkiniz olmayabilir.');
+      } else {
+        toast.success('Salon profili güncellendi');
+        setSelectedFile(null);
+        setPreview(null);
+        setCurrentLogoUrl(newLogoUrl);
+        onUpdated();
+      }
+    } catch (err) {
+      console.error('Unexpected error during save:', err);
+      toast.error('Beklenmeyen bir hata oluştu');
     }
 
-    const { error } = await supabase.from('salons').update({
-      name: name.trim(),
-      logo_url: newLogoUrl,
-    }).eq('id', salonId);
-
-    if (error) {
-      toast.error('Güncelleme başarısız: ' + error.message);
-    } else {
-      toast.success('Salon profili güncellendi');
-      setSelectedFile(null);
-      setPreview(null);
-      onUpdated();
-    }
     setSaving(false);
   };
 
   const handleRemoveLogo = async () => {
     setRemoving(true);
-    const { error } = await supabase.from('salons').update({ logo_url: null }).eq('id', salonId);
-    if (error) {
-      toast.error('Logo kaldırılamadı');
-    } else {
-      toast.success('Logo kaldırıldı');
-      setPreview(null);
-      setSelectedFile(null);
-      onUpdated();
+    try {
+      const { error, data } = await supabase
+        .from('salons')
+        .update({ logo_url: null })
+        .eq('id', salonId)
+        .select();
+
+      if (error) {
+        toast.error('Logo kaldırılamadı: ' + error.message);
+      } else if (!data || data.length === 0) {
+        toast.error('Logo kaldırılamadı. Yetkiniz olmayabilir.');
+      } else {
+        toast.success('Logo kaldırıldı');
+        setPreview(null);
+        setSelectedFile(null);
+        setCurrentLogoUrl(null);
+        onUpdated();
+      }
+    } catch (err) {
+      console.error('Error removing logo:', err);
+      toast.error('Beklenmeyen bir hata oluştu');
     }
     setRemoving(false);
   };
@@ -117,8 +150,8 @@ export function SalonProfileSettings({ salonId, salonName, logoUrl, onUpdated }:
           <div className="flex items-center gap-4">
             <div className="relative group">
               <div className="h-20 w-20 rounded-xl border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden transition-colors group-hover:border-primary/50">
-                {currentLogo ? (
-                  <img src={currentLogo} alt="Salon logo" className="h-full w-full object-cover rounded-xl" />
+                {displayLogo ? (
+                  <img src={displayLogo} alt="Salon logo" className="h-full w-full object-cover rounded-xl" />
                 ) : (
                   <Building2 className="h-8 w-8 text-muted-foreground/40" />
                 )}
@@ -134,7 +167,7 @@ export function SalonProfileSettings({ salonId, salonName, logoUrl, onUpdated }:
               <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="gap-1.5 text-xs">
                 <Upload className="h-3.5 w-3.5" /> Logo Yükle
               </Button>
-              {currentLogo && (
+              {displayLogo && (
                 <Button variant="ghost" size="sm" onClick={handleRemoveLogo} disabled={removing} className="gap-1.5 text-xs text-destructive hover:text-destructive">
                   {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Kaldır
                 </Button>
