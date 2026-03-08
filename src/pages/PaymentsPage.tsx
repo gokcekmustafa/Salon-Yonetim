@@ -151,19 +151,20 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      {/* Period Selector */}
-      <div className="flex items-center gap-3">
-        <Label className="text-xs">Periyot</Label>
-        <Select value={dateRange} onValueChange={v => setDateRange(v as DateRange)}>
-          <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="daily">Günlük</SelectItem>
-            <SelectItem value="weekly">Haftalık</SelectItem>
-            <SelectItem value="monthly">Aylık</SelectItem>
-            <SelectItem value="yearly">Yıllık</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="text-xs text-muted-foreground ml-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Label className="text-xs whitespace-nowrap">Periyot</Label>
+          <Select value={dateRange} onValueChange={v => setDateRange(v as DateRange)}>
+            <SelectTrigger className="w-28 sm:w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">Günlük</SelectItem>
+              <SelectItem value="weekly">Haftalık</SelectItem>
+              <SelectItem value="monthly">Aylık</SelectItem>
+              <SelectItem value="yearly">Yıllık</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <span className="text-xs text-muted-foreground sm:ml-auto">
           {format(startDate, 'd MMM yyyy', { locale: tr })} — {format(endDate, 'd MMM yyyy', { locale: tr })}
         </span>
       </div>
