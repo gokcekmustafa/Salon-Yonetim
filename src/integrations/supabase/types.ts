@@ -766,6 +766,7 @@ export type Database = {
           can_manage_appointments: boolean
           can_manage_customers: boolean
           can_manage_leads: boolean
+          can_manage_online_booking: boolean
           can_manage_payments: boolean
           can_manage_popups: boolean
           can_manage_services: boolean
@@ -782,6 +783,7 @@ export type Database = {
           can_manage_appointments?: boolean
           can_manage_customers?: boolean
           can_manage_leads?: boolean
+          can_manage_online_booking?: boolean
           can_manage_payments?: boolean
           can_manage_popups?: boolean
           can_manage_services?: boolean
@@ -798,6 +800,7 @@ export type Database = {
           can_manage_appointments?: boolean
           can_manage_customers?: boolean
           can_manage_leads?: boolean
+          can_manage_online_booking?: boolean
           can_manage_payments?: boolean
           can_manage_popups?: boolean
           can_manage_services?: boolean
@@ -826,6 +829,7 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           name: string
+          online_booking_active: boolean
           owner_user_id: string | null
           phone: string | null
           slug: string
@@ -840,6 +844,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name: string
+          online_booking_active?: boolean
           owner_user_id?: string | null
           phone?: string | null
           slug: string
@@ -854,6 +859,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name?: string
+          online_booking_active?: boolean
           owner_user_id?: string | null
           phone?: string | null
           slug?: string
