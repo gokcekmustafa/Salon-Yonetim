@@ -39,6 +39,9 @@ export default function SettingsPage() {
     <div className="page-container animate-in">
       <div><h1 className="page-title">Ayarlar</h1><p className="page-subtitle">Salon ve bildirim ayarlarını yönetin</p></div>
 
+      {/* System Branding - Super Admin only */}
+      {isSuperAdmin && <BrandingSettings />}
+
       {/* Salon Profile (name + logo edit) */}
       {salon && currentSalonId && (isSalonAdmin || isSuperAdmin) && (
         <SalonProfileSettings

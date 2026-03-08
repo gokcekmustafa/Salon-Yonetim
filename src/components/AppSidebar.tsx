@@ -166,7 +166,7 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 pt-2">
         {!collapsed && (
           <div className="rounded-lg bg-sidebar-accent/30 p-3 text-center">
-            <p className="text-[10px] text-sidebar-foreground/40">© 2026 SalonYönetim</p>
+            <p className="text-[10px] text-sidebar-foreground/40">© 2026 {branding.company_name}</p>
           </div>
         )}
       </SidebarFooter>
