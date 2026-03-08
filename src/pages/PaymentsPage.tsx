@@ -120,8 +120,8 @@ export default function PaymentsPage() {
     <div className="page-container animate-in space-y-5">
       <div className="page-header">
         <div><h1 className="page-title">Kasa & Ödemeler</h1><p className="page-subtitle">Ödeme geçmişi ve kasa bazlı gelir takibi</p></div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => {
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
             const headers = ['Tarih', 'Müşteri', 'Hizmet', 'Ödeme Türü', 'Tutar (₺)'];
             const rows = filteredPayments.map(p => ({
               Tarih: format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr }),
@@ -131,10 +131,10 @@ export default function PaymentsPage() {
               'Tutar (₺)': Number(p.amount),
             }));
             exportToExcel(rows, headers, `odemeler-${periodLabel}`);
-          }} className="gap-1.5">
-            <FileSpreadsheet className="h-4 w-4" /> Excel
+          }}>
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
           </Button>
-          <Button variant="outline" size="sm" onClick={() => {
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
             const headers = ['Tarih', 'Müşteri', 'Hizmet', 'Ödeme Türü', 'Tutar (₺)'];
             const rows = filteredPayments.map(p => [
               format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr }),
@@ -145,8 +145,8 @@ export default function PaymentsPage() {
             ]);
             const summary = [`Toplam Gelir: ₺${totalRevenue.toLocaleString('tr-TR')}  |  Dönem: ${periodLabel}`];
             exportToPDF(rows, headers, 'Ödeme Raporu', `odemeler-${periodLabel}`, summary);
-          }} className="gap-1.5">
-            <FileText className="h-4 w-4" /> PDF
+          }}>
+            <FileText className="h-3.5 w-3.5" /> PDF
           </Button>
         </div>
       </div>
