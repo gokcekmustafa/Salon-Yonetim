@@ -161,7 +161,7 @@ export default function StaffSalaryPage() {
       // Also record as cash transaction (expense)
       await supabase.from('cash_transactions').insert({
         salon_id: salonId, amount, type: 'expense',
-        payment_method: payMethod, cash_box_id: payCashBoxId || null,
+        payment_method: payMethod, cash_box_id: payCashBoxId === 'none' ? null : payCashBoxId,
         description: `Personel ödemesi: ${staff.find(s => s.id === payStaffId)?.name || ''} - ${PAYMENT_TYPES.find(t => t.value === payType)?.label || payType}`,
         created_by: user.id,
       } as any);
