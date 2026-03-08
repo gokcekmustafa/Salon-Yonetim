@@ -255,38 +255,86 @@ export type Database = {
           },
         ]
       }
+      cash_boxes: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          payment_method: string
+          salon_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          payment_method?: string
+          salon_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          payment_method?: string
+          salon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_boxes_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cash_transactions: {
         Row: {
           amount: number
+          cash_box_id: string | null
           created_at: string
           created_by: string
           description: string | null
           id: string
+          payment_method: string
           salon_id: string
           transaction_date: string
           type: string
         }
         Insert: {
           amount: number
+          cash_box_id?: string | null
           created_at?: string
           created_by: string
           description?: string | null
           id?: string
+          payment_method?: string
           salon_id: string
           transaction_date?: string
           type?: string
         }
         Update: {
           amount?: number
+          cash_box_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
           id?: string
+          payment_method?: string
           salon_id?: string
           transaction_date?: string
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "cash_transactions_cash_box_id_fkey"
+            columns: ["cash_box_id"]
+            isOneToOne: false
+            referencedRelation: "cash_boxes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cash_transactions_salon_id_fkey"
             columns: ["salon_id"]
@@ -345,6 +393,114 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "customers_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installment_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          installment_id: string
+          installment_number: number
+          is_paid: boolean
+          paid_amount: number
+          paid_at: string | null
+          payment_method: string | null
+          salon_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date: string
+          id?: string
+          installment_id: string
+          installment_number?: number
+          is_paid?: boolean
+          paid_amount?: number
+          paid_at?: string | null
+          payment_method?: string | null
+          salon_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          installment_id?: string
+          installment_number?: number
+          is_paid?: boolean
+          paid_amount?: number
+          paid_at?: string | null
+          payment_method?: string | null
+          salon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installment_payments_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installment_payments_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installments: {
+        Row: {
+          created_at: string
+          created_by: string
+          customer_id: string
+          id: string
+          installment_count: number
+          notes: string | null
+          salon_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          customer_id: string
+          id?: string
+          installment_count?: number
+          notes?: string | null
+          salon_id: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          id?: string
+          installment_count?: number
+          notes?: string | null
+          salon_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installments_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
