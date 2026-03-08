@@ -20,6 +20,7 @@ import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
 import CashPage from "./pages/CashPage";
 import AuthPage from "./pages/AuthPage";
+import InstallmentsPage from "./pages/InstallmentsPage";
 import SessionsPage from "./pages/SessionsPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
@@ -78,6 +79,7 @@ const App = () => (
 
               {/* Finance - admin only */}
               <Route path="/kasa" element={<FinanceRoute><PaymentsPage /></FinanceRoute>} />
+              <Route path="/taksitler" element={<FinanceRoute><InstallmentsPage /></FinanceRoute>} />
               <Route path="/kasa-yonetimi" element={<FinanceRoute><CashPage /></FinanceRoute>} />
               <Route path="/raporlar" element={<FinanceRoute><ReportsPage /></FinanceRoute>} />
 

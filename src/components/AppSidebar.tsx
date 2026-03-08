@@ -34,6 +34,7 @@ import {
   Bell,
   Activity,
   BadgeDollarSign,
+  CreditCard,
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
@@ -60,6 +61,7 @@ const mainMenu: MenuItem[] = [
 const financeMenu: MenuItem[] = [
   { title: 'Ödemeler', url: '/kasa', icon: Wallet, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
   { title: 'Kasa Yönetimi', url: '/kasa-yonetimi', icon: BadgeDollarSign, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
+  { title: 'Taksitler', url: '/taksitler', icon: CreditCard, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
   { title: 'Raporlar', url: '/raporlar', icon: BarChart3, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
 ];
 
