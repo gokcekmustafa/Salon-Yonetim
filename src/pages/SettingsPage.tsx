@@ -183,7 +183,7 @@ export default function SettingsPage() {
               {templateVars.map(v => (
                 <button
                   key={v.key}
-                  onClick={() => setNotifSettings(s => ({ ...s, messageTemplate: s.messageTemplate + ' ' + v.key }))}
+                  onClick={() => updateNotificationSettings({ messageTemplate: notificationSettings.messageTemplate + ' ' + v.key })}
                   className="text-xs px-2 py-1 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
                   title={v.desc}
                 >
