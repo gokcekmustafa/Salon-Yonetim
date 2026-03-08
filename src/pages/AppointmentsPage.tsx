@@ -538,7 +538,7 @@ export default function AppointmentsPage() {
                     <Button
                       key={s.value}
                       size="sm"
-                      variant={((currentDetailApt as any).session_status || 'waiting') === s.value ? 'default' : 'outline'}
+                      variant={(currentDetailApt.session_status || 'waiting') === s.value ? 'default' : 'outline'}
                       className="text-xs flex-1"
                       onClick={() => updateSessionStatus(currentDetailApt.id, s.value)}
                     >
