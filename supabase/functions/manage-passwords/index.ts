@@ -202,6 +202,58 @@ Deno.serve(async (req) => {
         })
       }
 
+      // ─── Super admin creates a new user ───
+      case 'create_user': {
+        if (!isSuperAdmin) {
+          return new Response(JSON.stringify({ error: 'Yetkiniz yok' }), {
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        const { email, password, full_name, role, salon_id: assignSalonId, salon_role } = params
+        if (!email || !password || password.length < 6) {
+          return new Response(JSON.stringify({ error: 'Email ve şifre (min 6 karakter) gerekli' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        // Create user
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { full_name: full_name || email },
+        })
+
+        if (createError) {
+          return new Response(JSON.stringify({ error: createError.message }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        // Assign role if specified
+        if (role) {
+          await supabaseAdmin.from('user_roles').insert({ user_id: newUser.user.id, role })
+        }
+
+        // Assign to salon if specified
+        if (assignSalonId) {
+          await supabaseAdmin.from('salon_members').insert({
+            user_id: newUser.user.id,
+            salon_id: assignSalonId,
+            role: salon_role || 'staff',
+          })
+        }
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          user_id: newUser.user.id,
+          message: 'Kullanıcı başarıyla oluşturuldu' 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
       // ─── Salon admin lists staff with user accounts in their salon ───
       case 'list_salon_staff_users': {
         const { salon_id } = params
