@@ -30,6 +30,7 @@ type Lead = {
   phone: string | null; status: LeadStatus; source: string | null;
   notes_summary: string | null; created_by: string;
   converted_customer_id: string | null;
+  assigned_staff_id: string | null;
   created_at: string; updated_at: string;
 };
 
