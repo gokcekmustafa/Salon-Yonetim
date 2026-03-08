@@ -230,6 +230,111 @@ export type Database = {
           },
         ]
       }
+      lead_notes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          lead_id: string
+          note_type: string
+          salon_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          lead_id: string
+          note_type?: string
+          salon_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          lead_id?: string
+          note_type?: string
+          salon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_notes_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          converted_customer_id: string | null
+          created_at: string
+          created_by: string
+          email: string | null
+          id: string
+          name: string
+          notes_summary: string | null
+          phone: string | null
+          salon_id: string
+          source: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+        }
+        Insert: {
+          converted_customer_id?: string | null
+          created_at?: string
+          created_by: string
+          email?: string | null
+          id?: string
+          name: string
+          notes_summary?: string | null
+          phone?: string | null
+          salon_id: string
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Update: {
+          converted_customer_id?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes_summary?: string | null
+          phone?: string | null
+          salon_id?: string
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_converted_customer_id_fkey"
+            columns: ["converted_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_settings: {
         Row: {
           created_at: string
@@ -551,6 +656,7 @@ export type Database = {
           can_manage_announcements: boolean
           can_manage_appointments: boolean
           can_manage_customers: boolean
+          can_manage_leads: boolean
           can_manage_payments: boolean
           can_manage_popups: boolean
           can_manage_services: boolean
@@ -566,6 +672,7 @@ export type Database = {
           can_manage_announcements?: boolean
           can_manage_appointments?: boolean
           can_manage_customers?: boolean
+          can_manage_leads?: boolean
           can_manage_payments?: boolean
           can_manage_popups?: boolean
           can_manage_services?: boolean
@@ -581,6 +688,7 @@ export type Database = {
           can_manage_announcements?: boolean
           can_manage_appointments?: boolean
           can_manage_customers?: boolean
+          can_manage_leads?: boolean
           can_manage_payments?: boolean
           can_manage_popups?: boolean
           can_manage_services?: boolean
@@ -784,6 +892,13 @@ export type Database = {
     }
     Enums: {
       app_role: "super_admin" | "salon_admin" | "staff"
+      lead_status:
+        | "new"
+        | "contacted"
+        | "proposal_sent"
+        | "negotiation"
+        | "won"
+        | "lost"
       subscription_plan: "free" | "starter" | "professional" | "enterprise"
     }
     CompositeTypes: {
@@ -913,6 +1028,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["super_admin", "salon_admin", "staff"],
+      lead_status: [
+        "new",
+        "contacted",
+        "proposal_sent",
+        "negotiation",
+        "won",
+        "lost",
+      ],
       subscription_plan: ["free", "starter", "professional", "enterprise"],
     },
   },
