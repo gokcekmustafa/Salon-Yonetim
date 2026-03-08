@@ -28,6 +28,7 @@ import {
   Globe,
   ChevronRight,
   Shield,
+  Bell,
   type LucideIcon,
 } from 'lucide-react';
 
