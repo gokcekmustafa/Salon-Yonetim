@@ -11,6 +11,7 @@ export type DbCustomer = {
   id: string; salon_id: string; name: string; phone: string | null;
   birth_date: string | null; notes: string | null; created_at: string; updated_at: string;
   tc_kimlik_no: string | null; address: string | null; secondary_phone: string | null;
+  source_type: string | null; source_detail: string | null;
 };
 export type DbService = {
   id: string; salon_id: string; name: string; duration: number;
@@ -110,7 +111,7 @@ export function useSalonData() {
     return error;
   };
 
-  const addCustomer = async (data: { name: string; phone: string; birth_date?: string; notes?: string; tc_kimlik_no?: string; address?: string; secondary_phone?: string }) => {
+  const addCustomer = async (data: { name: string; phone: string; birth_date?: string; notes?: string; tc_kimlik_no?: string; address?: string; secondary_phone?: string; source_type?: string; source_detail?: string }) => {
     if (!salonId) return { id: '', error: null };
     const { data: inserted, error } = await supabase
       .from('customers').insert({ ...data, salon_id: salonId }).select('id').single();

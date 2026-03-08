@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Search, Pencil, Trash2, History, Users, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -15,7 +16,16 @@ import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 
-const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '' };
+const SOURCE_OPTIONS = [
+  { value: 'advertisement', label: 'Reklam' },
+  { value: 'social_media', label: 'Sosyal Medya Reklamı' },
+  { value: 'referral', label: 'Tanıdık Tavsiyesi' },
+  { value: 'surveyor', label: 'Anketör / Personel' },
+  { value: 'other', label: 'Diğer' },
+];
+const getSourceLabel = (val: string | null) => SOURCE_OPTIONS.find(o => o.value === val)?.label ?? val ?? '-';
+
+const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '' };
 
 export default function CustomersPage() {
   const { hasPermission } = usePermissions();
@@ -45,6 +55,7 @@ export default function CustomersPage() {
     setForm({
       name: c.name, phone: c.phone || '', birth_date: c.birth_date || '', notes: c.notes || '',
       tc_kimlik_no: c.tc_kimlik_no || '', address: c.address || '', secondary_phone: c.secondary_phone || '',
+      source_type: c.source_type || '', source_detail: c.source_detail || '',
     });
     setDialogOpen(true);
   };
@@ -58,6 +69,8 @@ export default function CustomersPage() {
       tc_kimlik_no: form.tc_kimlik_no || null,
       address: form.address || null,
       secondary_phone: form.secondary_phone || null,
+      source_type: form.source_type || null,
+      source_detail: form.source_type === 'other' ? (form.source_detail || null) : null,
     };
     if (editing) {
       await updateCustomer(editing.id, { name: form.name, phone: form.phone, ...optionals });
@@ -138,12 +151,13 @@ export default function CustomersPage() {
                 <TableHead className="hidden lg:table-cell font-semibold">TC Kimlik</TableHead>
                 <TableHead className="hidden xl:table-cell font-semibold">Adres</TableHead>
                 <TableHead className="hidden lg:table-cell font-semibold">Notlar</TableHead>
+                <TableHead className="hidden xl:table-cell font-semibold">Kaynak</TableHead>
                 <TableHead className="text-right font-semibold">İşlem</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground text-sm">Müşteri bulunamadı.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground text-sm">Müşteri bulunamadı.</TableCell></TableRow>
               ) : filtered.map(c => (
                 <TableRow key={c.id} className="group">
                   <TableCell>
@@ -159,6 +173,10 @@ export default function CustomersPage() {
                   <TableCell className="hidden lg:table-cell text-muted-foreground">{c.tc_kimlik_no || '-'}</TableCell>
                   <TableCell className="hidden xl:table-cell max-w-[150px] truncate text-muted-foreground">{c.address || '-'}</TableCell>
                   <TableCell className="hidden lg:table-cell max-w-[200px] truncate text-muted-foreground">{c.notes || '-'}</TableCell>
+                  <TableCell className="hidden xl:table-cell text-muted-foreground">
+                    {c.source_type ? getSourceLabel(c.source_type) : '-'}
+                    {c.source_detail && <span className="text-xs text-muted-foreground/70 block">{c.source_detail}</span>}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => openHistory(c)}><History className="h-3.5 w-3.5" /></Button>
@@ -185,6 +203,18 @@ export default function CustomersPage() {
             <div className="space-y-2"><Label className="text-xs font-semibold">Adres <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.address} onChange={e => set('address', e.target.value)} placeholder="Müşteri adresi..." rows={2} /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Doğum Tarihi <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className="h-10" /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Notlar <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Müşteri notları..." rows={3} /></div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Müşteri Kaynağı <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label>
+              <Select value={form.source_type} onValueChange={v => set('source_type', v)}>
+                <SelectTrigger className="h-10"><SelectValue placeholder="Kaynak seçin" /></SelectTrigger>
+                <SelectContent>
+                  {SOURCE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {form.source_type === 'other' && (
+              <div className="space-y-2"><Label className="text-xs font-semibold">Kaynak Detayı</Label><Input value={form.source_detail} onChange={e => set('source_detail', e.target.value)} placeholder="Detay yazın..." className="h-10" /></div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>

@@ -294,6 +294,8 @@ export type Database = {
           phone: string | null
           salon_id: string
           secondary_phone: string | null
+          source_detail: string | null
+          source_type: string | null
           tc_kimlik_no: string | null
           updated_at: string
         }
@@ -307,6 +309,8 @@ export type Database = {
           phone?: string | null
           salon_id: string
           secondary_phone?: string | null
+          source_detail?: string | null
+          source_type?: string | null
           tc_kimlik_no?: string | null
           updated_at?: string
         }
@@ -320,6 +324,8 @@ export type Database = {
           phone?: string | null
           salon_id?: string
           secondary_phone?: string | null
+          source_detail?: string | null
+          source_type?: string | null
           tc_kimlik_no?: string | null
           updated_at?: string
         }
