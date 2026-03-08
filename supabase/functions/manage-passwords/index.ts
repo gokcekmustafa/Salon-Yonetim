@@ -254,6 +254,45 @@ Deno.serve(async (req) => {
         })
       }
 
+      // ─── Super admin deletes a user ───
+      case 'delete_user': {
+        if (!isSuperAdmin) {
+          return new Response(JSON.stringify({ error: 'Yetkiniz yok' }), {
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        const { target_user_id: deleteUserId } = params
+        if (!deleteUserId) {
+          return new Response(JSON.stringify({ error: 'target_user_id gerekli' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        // Prevent self-deletion
+        if (deleteUserId === user.id) {
+          return new Response(JSON.stringify({ error: 'Kendinizi silemezsiniz' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        // Clean up related data first
+        await supabaseAdmin.from('user_roles').delete().eq('user_id', deleteUserId)
+        await supabaseAdmin.from('salon_members').delete().eq('user_id', deleteUserId)
+        await supabaseAdmin.from('profiles').delete().eq('user_id', deleteUserId)
+
+        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(deleteUserId)
+        if (deleteError) {
+          return new Response(JSON.stringify({ error: deleteError.message }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        return new Response(JSON.stringify({ success: true, message: 'Kullanıcı silindi' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
       // ─── Salon admin lists staff with user accounts in their salon ───
       case 'list_salon_staff_users': {
         const { salon_id } = params
