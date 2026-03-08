@@ -380,7 +380,7 @@ export default function CashPage() {
                     <TableCell className="text-muted-foreground text-xs">{getMethodLabel(tx.payment_method)}</TableCell>
                     <TableCell className="text-muted-foreground text-xs">{boxName || '-'}</TableCell>
                     <TableCell className="font-medium">{tx.description || '-'}</TableCell>
-                    <TableCell className={`text-right font-bold tabular-nums ${tx.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
+                    <TableCell className={`text-right font-bold tabular-nums ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
                       {tx.type === 'income' ? '+' : '-'}₺{Number(tx.amount).toLocaleString('tr-TR')}
                     </TableCell>
                     <TableCell className="text-right">
