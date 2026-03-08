@@ -329,6 +329,9 @@ export default function SuperAdminSalonsPage() {
         </Card>
       )}
 
+      {/* Announcements */}
+      <AnnouncementManager mode="super_admin" />
+
       {/* User Management */}
       <SuperAdminUserManager />
 
