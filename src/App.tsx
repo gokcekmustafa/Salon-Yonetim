@@ -29,6 +29,7 @@ const App = () => (
           <Routes>
             {/* Public booking page */}
             <Route path="/book/:salonSlug" element={<BookingPage />} />
+            <Route path="/:salonSlug" element={<BookingPage />} />
 
             {/* Admin panel */}
             <Route path="/*" element={
