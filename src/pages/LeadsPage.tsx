@@ -152,6 +152,7 @@ export default function LeadsPage() {
       phone: form.phone.trim() || null,
       source: form.source.trim() || null,
       status: form.status,
+      assigned_staff_id: form.assigned_staff_id || null,
       salon_id: salonId,
       created_by: user.id,
     };
