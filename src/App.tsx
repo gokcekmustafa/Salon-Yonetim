@@ -43,42 +43,44 @@ const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public */}
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/book/:salonSlug" element={<BookingPage />} />
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public */}
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/book/:salonSlug" element={<BookingPage />} />
 
-            {/* Super Admin */}
-            <Route path="/admin/salonlar" element={<SuperAdminRoute><SuperAdminSalonsPage /></SuperAdminRoute>} />
+              {/* Super Admin */}
+              <Route path="/admin/salonlar" element={<SuperAdminRoute><SuperAdminSalonsPage /></SuperAdminRoute>} />
 
-            {/* Admin panel - all authenticated users */}
-            <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
-            <Route path="/musteriler" element={<AdminRoute><CustomersPage /></AdminRoute>} />
-            <Route path="/randevular" element={<AdminRoute><AppointmentsPage /></AdminRoute>} />
-            <Route path="/hizmetler" element={<AdminRoute><ServicesPage /></AdminRoute>} />
-            <Route path="/personel" element={<AdminRoute><StaffPage /></AdminRoute>} />
-            <Route path="/subeler" element={<AdminRoute><BranchesPage /></AdminRoute>} />
+              {/* Admin panel - all authenticated users */}
+              <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
+              <Route path="/musteriler" element={<AdminRoute><CustomersPage /></AdminRoute>} />
+              <Route path="/randevular" element={<AdminRoute><AppointmentsPage /></AdminRoute>} />
+              <Route path="/hizmetler" element={<AdminRoute><ServicesPage /></AdminRoute>} />
+              <Route path="/personel" element={<AdminRoute><StaffPage /></AdminRoute>} />
+              <Route path="/subeler" element={<AdminRoute><BranchesPage /></AdminRoute>} />
 
-            {/* Finance - admin only */}
-            <Route path="/kasa" element={<FinanceRoute><PaymentsPage /></FinanceRoute>} />
-            <Route path="/raporlar" element={<FinanceRoute><ReportsPage /></FinanceRoute>} />
+              {/* Finance - admin only */}
+              <Route path="/kasa" element={<FinanceRoute><PaymentsPage /></FinanceRoute>} />
+              <Route path="/raporlar" element={<FinanceRoute><ReportsPage /></FinanceRoute>} />
 
-            {/* Settings - admin only */}
-            <Route path="/ayarlar" element={<FinanceRoute><SettingsPage /></FinanceRoute>} />
+              {/* Settings - admin only */}
+              <Route path="/ayarlar" element={<FinanceRoute><SettingsPage /></FinanceRoute>} />
 
-            {/* Public salon slug */}
-            <Route path="/:salonSlug" element={<BookingPage />} />
+              {/* Public salon slug */}
+              <Route path="/:salonSlug" element={<BookingPage />} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
