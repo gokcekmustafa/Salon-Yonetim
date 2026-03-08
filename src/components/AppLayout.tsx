@@ -16,6 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PopupDisplay } from '@/components/popup/PopupDisplay';
+import { useOnlineHeartbeat } from '@/hooks/useOnlineStatus';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -25,6 +26,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { profile, roles, signOut, isSuperAdmin, currentSalonId } = useAuth();
   const { salon } = useSalonData();
   const navigate = useNavigate();
+  useOnlineHeartbeat();
 
   const initials = (profile?.full_name || 'U')
     .split(' ')
