@@ -65,7 +65,7 @@ export function OnlineUsersPanel() {
       is_online: s.is_online,
       profile_name: profileMap.get(s.user_id) || 'Bilinmiyor',
       role_name: roleLabels[roleMap.get(s.user_id) || ''] || 'Kullanıcı',
-      salon_name: s.salon_id ? salonMap.get(s.salon_id) || '-' : '-',
+      salon_name: s.salon_id ? (salonMap.get(s.salon_id) as string) || '-' : '-',
     }));
 
     setUsers(enriched);
