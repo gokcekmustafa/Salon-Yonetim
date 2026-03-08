@@ -468,6 +468,12 @@ export default function LeadsPage() {
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>{format(parseISO(selectedLead.created_at), 'd MMMM yyyy HH:mm', { locale: tr })}</span>
                   </div>
+                  {selectedLead.assigned_staff_id && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <UserPlus className="h-4 w-4 text-muted-foreground" />
+                      <span>Personel: {activeStaff.find(s => s.id === selectedLead.assigned_staff_id)?.name || '—'}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Status */}
