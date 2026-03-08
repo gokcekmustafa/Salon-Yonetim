@@ -58,7 +58,7 @@ export function PopupManager({ mode, salonId }: PopupManagerProps) {
       query = query.is('salon_id', null);
     }
     const { data } = await query;
-    setPopups((data as PopupAnnouncement[]) || []);
+    setPopups((data as unknown as PopupAnnouncement[]) || []);
     setLoading(false);
   };
 
