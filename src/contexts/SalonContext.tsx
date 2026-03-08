@@ -1,7 +1,15 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Customer, Service, Staff, Appointment, Payment, AppointmentStatus, PaymentType } from '@/types/salon';
 
+interface SalonInfo {
+  name: string;
+  slug: string;
+  phone: string;
+  address: string;
+}
+
 interface SalonContextType {
+  salon: SalonInfo;
   customers: Customer[];
   services: Service[];
   staff: Staff[];
@@ -52,7 +60,15 @@ const demoStaff: Staff[] = [
   { id: genId(), name: 'Selin Öztürk', phone: '0537 666 7788', active: false },
 ];
 
+const defaultSalon: SalonInfo = {
+  name: 'Güzellik Salonu',
+  slug: 'guzellik-salonu',
+  phone: '0212 555 1234',
+  address: 'İstanbul, Kadıköy',
+};
+
 export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [salon] = useState<SalonInfo>(defaultSalon);
   const [customers, setCustomers] = useState<Customer[]>(demoCustomers);
   const [services, setServices] = useState<Service[]>(demoServices);
   const [staff, setStaff] = useState<Staff[]>(demoStaff);
@@ -112,7 +128,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <SalonContext.Provider value={{
-      customers, services, staff, appointments, payments,
+      salon, customers, services, staff, appointments, payments,
       addCustomer, updateCustomer, deleteCustomer,
       addService, updateService, deleteService,
       addStaff, updateStaff,
