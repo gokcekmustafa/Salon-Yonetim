@@ -32,7 +32,7 @@ const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 
 export default function AppointmentsPage() {
   const { hasPermission } = usePermissions();
-  const { currentSalonId } = useAuth();
+  const { currentSalonId, user } = useAuth();
   const {
     appointments, customers, staff, services, branches,
     addAppointment, updateAppointment, addPayment, hasConflict, refetch,
@@ -45,6 +45,21 @@ export default function AppointmentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailApt, setDetailApt] = useState<DbAppointment | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  // Payment method selection for completing
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cash');
+
+  // Fetch cash boxes for auto-routing payments
+  const { data: cashBoxes = [] } = useQuery({
+    queryKey: ['cash_boxes', currentSalonId],
+    queryFn: async () => {
+      if (!currentSalonId) return [];
+      const { data } = await supabase.from('cash_boxes').select('*').eq('salon_id', currentSalonId).eq('is_active', true);
+      return data || [];
+    },
+    enabled: !!currentSalonId,
+  });
 
   // Rooms
   const [rooms, setRooms] = useState<Room[]>([]);
