@@ -140,7 +140,7 @@ export default function AppointmentsPage() {
     // Check room conflict
     if (form.roomId !== 'none') {
       const roomConflict = appointments.some(a => {
-        if ((a as any).room_id !== form.roomId || a.status === 'iptal') return false;
+        if (a.room_id !== form.roomId || a.status === 'iptal') return false;
         return new Date(start) < new Date(a.end_time) && new Date(end) > new Date(a.start_time);
       });
       if (roomConflict) {
