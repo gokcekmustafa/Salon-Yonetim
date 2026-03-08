@@ -1,8 +1,9 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Bell, LogOut } from 'lucide-react';
+import { Bell, LogOut, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSalonData } from '@/hooks/useSalonData';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,8 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const { profile, roles, signOut } = useAuth();
+  const { profile, roles, signOut, isSuperAdmin, currentSalonId } = useAuth();
+  const { salon } = useSalonData();
   const navigate = useNavigate();
 
   const initials = (profile?.full_name || 'U')
@@ -47,9 +49,28 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
               <div className="hidden sm:block h-5 w-px bg-border" />
-              <span className="hidden sm:block text-xs font-medium text-muted-foreground bg-primary/8 text-primary px-2 py-0.5 rounded-full">
+              <span className="hidden sm:block text-xs font-medium text-primary bg-primary/8 px-2 py-0.5 rounded-full">
                 {roleBadge}
               </span>
+              {salon && (
+                <>
+                  <div className="hidden sm:block h-5 w-px bg-border" />
+                  <span className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Building2 className="h-3.5 w-3.5" />
+                    {salon.name}
+                  </span>
+                </>
+              )}
+              {isSuperAdmin && currentSalonId && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden sm:flex h-6 text-[10px] text-muted-foreground hover:text-foreground"
+                  onClick={() => navigate('/admin/salonlar')}
+                >
+                  Salon Değiştir
+                </Button>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
