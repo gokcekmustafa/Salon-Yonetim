@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useSalon } from '@/contexts/SalonContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -14,14 +13,7 @@ import { toast } from 'sonner';
 import type { NotificationSettings } from '@/types/salon';
 
 export default function SettingsPage() {
-  const { salon } = useSalon();
-
-  const [notifSettings, setNotifSettings] = useState<NotificationSettings>({
-    whatsappEnabled: true,
-    smsEnabled: false,
-    reminderHoursBefore: 24,
-    messageTemplate: 'Merhaba {müşteri_adı}, {tarih} tarihinde saat {saat}\'de {hizmet} randevunuz bulunmaktadır. {salon_adı}',
-  });
+  const { salon, notificationSettings, updateNotificationSettings } = useSalon();
 
   const handleSaveNotifications = () => {
     toast.success('Bildirim ayarları kaydedildi.');
@@ -112,12 +104,12 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={notifSettings.whatsappEnabled ? 'default' : 'secondary'} className="text-xs">
-                  {notifSettings.whatsappEnabled ? 'Aktif' : 'Pasif'}
+                <Badge variant={notificationSettings.whatsappEnabled ? 'default' : 'secondary'} className="text-xs">
+                  {notificationSettings.whatsappEnabled ? 'Aktif' : 'Pasif'}
                 </Badge>
                 <Switch
-                  checked={notifSettings.whatsappEnabled}
-                  onCheckedChange={v => setNotifSettings(s => ({ ...s, whatsappEnabled: v }))}
+                  checked={notificationSettings.whatsappEnabled}
+                  onCheckedChange={v => updateNotificationSettings({ whatsappEnabled: v })}
                 />
               </div>
             </div>
@@ -133,12 +125,12 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={notifSettings.smsEnabled ? 'default' : 'secondary'} className="text-xs">
-                  {notifSettings.smsEnabled ? 'Aktif' : 'Pasif'}
+                <Badge variant={notificationSettings.smsEnabled ? 'default' : 'secondary'} className="text-xs">
+                  {notificationSettings.smsEnabled ? 'Aktif' : 'Pasif'}
                 </Badge>
                 <Switch
-                  checked={notifSettings.smsEnabled}
-                  onCheckedChange={v => setNotifSettings(s => ({ ...s, smsEnabled: v }))}
+                  checked={notificationSettings.smsEnabled}
+                  onCheckedChange={v => updateNotificationSettings({ smsEnabled: v })}
                 />
               </div>
             </div>
@@ -154,8 +146,8 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground whitespace-nowrap">Randevudan</Label>
               <Select
-                value={String(notifSettings.reminderHoursBefore)}
-                onValueChange={v => setNotifSettings(s => ({ ...s, reminderHoursBefore: Number(v) }))}
+                value={String(notificationSettings.reminderHoursBefore)}
+                onValueChange={v => updateNotificationSettings({ reminderHoursBefore: Number(v) })}
               >
                 <SelectTrigger className="w-32">
                   <SelectValue />
@@ -181,8 +173,8 @@ export default function SettingsPage() {
               <Send className="h-4 w-4" /> Mesaj Şablonu
             </h3>
             <Textarea
-              value={notifSettings.messageTemplate}
-              onChange={e => setNotifSettings(s => ({ ...s, messageTemplate: e.target.value }))}
+              value={notificationSettings.messageTemplate}
+              onChange={e => updateNotificationSettings({ messageTemplate: e.target.value })}
               rows={3}
               className="text-sm"
             />
@@ -190,7 +182,7 @@ export default function SettingsPage() {
               {templateVars.map(v => (
                 <button
                   key={v.key}
-                  onClick={() => setNotifSettings(s => ({ ...s, messageTemplate: s.messageTemplate + ' ' + v.key }))}
+                  onClick={() => updateNotificationSettings({ messageTemplate: notificationSettings.messageTemplate + ' ' + v.key })}
                   className="text-xs px-2 py-1 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
                   title={v.desc}
                 >
@@ -201,7 +193,7 @@ export default function SettingsPage() {
             <div className="p-3 rounded-lg bg-muted/50 border">
               <p className="text-xs font-medium text-muted-foreground mb-1">Önizleme:</p>
               <p className="text-sm">
-                {notifSettings.messageTemplate
+                {notificationSettings.messageTemplate
                   .replace('{müşteri_adı}', 'Ayşe Yılmaz')
                   .replace('{tarih}', '10 Mart 2026')
                   .replace('{saat}', '14:00')

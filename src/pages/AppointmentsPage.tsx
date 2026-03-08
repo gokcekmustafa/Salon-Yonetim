@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, MessageSquare, Phone, Send } from 'lucide-react';
 import { format, parseISO, addMinutes, addDays, subDays, addWeeks, subWeeks } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -17,7 +18,7 @@ import WeekCalendarView from '@/components/calendar/WeekCalendarView';
 type ViewMode = 'day' | 'week';
 
 export default function AppointmentsPage() {
-  const { appointments, customers, staff, services, branches, addAppointment, updateAppointment, hasConflict, addPayment } = useSalon();
+  const { appointments, customers, staff, services, branches, addAppointment, updateAppointment, hasConflict, addPayment, sendReminder, salon, notificationSettings } = useSalon();
 
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -327,6 +328,95 @@ export default function AppointmentsPage() {
                 <p className="text-xs text-muted-foreground mb-1">Durum</p>
                 <Badge variant={statusVariant(detailApt.status)}>{statusLabel[detailApt.status]}</Badge>
               </div>
+
+              {/* Reminder Status */}
+              {detailApt.status === 'bekliyor' && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Hatırlatma Bildirimleri</p>
+                    <div className="space-y-2">
+                      {/* WhatsApp reminder */}
+                      {(() => {
+                        const waReminder = detailApt.reminders?.find(r => r.channel === 'whatsapp');
+                        return (
+                          <div className="flex items-center justify-between p-2 rounded-lg border bg-muted/20">
+                            <div className="flex items-center gap-2">
+                              <MessageSquare className="h-4 w-4 text-primary" />
+                              <span className="text-sm">WhatsApp</span>
+                              {waReminder?.status === 'gonderildi' ? (
+                                <Badge variant="default" className="text-[10px] px-1.5 py-0">Gönderildi</Badge>
+                              ) : waReminder?.status === 'basarisiz' ? (
+                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Başarısız</Badge>
+                              ) : waReminder ? (
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Bekliyor</Badge>
+                              ) : null}
+                            </div>
+                            {(!waReminder || waReminder.status !== 'gonderildi') && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs gap-1"
+                                onClick={() => {
+                                  sendReminder(detailApt.id, 'whatsapp');
+                                  const customer = customers.find(c => c.id === detailApt.customerId);
+                                  const service = services.find(s => s.id === detailApt.serviceId);
+                                  const msg = notificationSettings.messageTemplate
+                                    .replace('{müşteri_adı}', customer?.name || '')
+                                    .replace('{tarih}', format(parseISO(detailApt.startTime), 'd MMMM yyyy', { locale: tr }))
+                                    .replace('{saat}', format(parseISO(detailApt.startTime), 'HH:mm'))
+                                    .replace('{hizmet}', service?.name || '')
+                                    .replace('{personel}', getStaffName(detailApt.staffId))
+                                    .replace('{salon_adı}', salon.name);
+                                  toast.success(`WhatsApp hatırlatması gönderildi: "${msg.substring(0, 60)}..."`);
+                                }}
+                              >
+                                <Send className="h-3 w-3" /> Gönder
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* SMS reminder */}
+                      {(() => {
+                        const smsReminder = detailApt.reminders?.find(r => r.channel === 'sms');
+                        return (
+                          <div className="flex items-center justify-between p-2 rounded-lg border bg-muted/20">
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-primary" />
+                              <span className="text-sm">SMS</span>
+                              {smsReminder?.status === 'gonderildi' ? (
+                                <Badge variant="default" className="text-[10px] px-1.5 py-0">Gönderildi</Badge>
+                              ) : smsReminder?.status === 'basarisiz' ? (
+                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Başarısız</Badge>
+                              ) : smsReminder ? (
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Bekliyor</Badge>
+                              ) : null}
+                            </div>
+                            {(!smsReminder || smsReminder.status !== 'gonderildi') && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs gap-1"
+                                onClick={() => {
+                                  sendReminder(detailApt.id, 'sms');
+                                  toast.success('SMS hatırlatması gönderildi.');
+                                }}
+                              >
+                                <Send className="h-3 w-3" /> Gönder
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1.5">
+                      Otomatik hatırlatma: randevudan {notificationSettings.reminderHoursBefore} saat önce
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
           <DialogFooter>

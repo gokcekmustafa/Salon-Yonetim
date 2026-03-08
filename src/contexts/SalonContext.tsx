@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Customer, Service, Staff, Appointment, Payment, Branch } from '@/types/salon';
+import { Customer, Service, Staff, Appointment, Payment, Branch, NotificationSettings, AppointmentReminder } from '@/types/salon';
 
 interface SalonInfo {
   name: string;
@@ -31,6 +31,9 @@ interface SalonContextType {
   updateAppointment: (id: string, a: Partial<Appointment>) => void;
   addPayment: (p: Omit<Payment, 'id'>) => void;
   hasConflict: (staffId: string, start: string, end: string, excludeId?: string) => boolean;
+  notificationSettings: NotificationSettings;
+  updateNotificationSettings: (s: Partial<NotificationSettings>) => void;
+  sendReminder: (appointmentId: string, channel: 'whatsapp' | 'sms') => void;
 }
 
 const SalonContext = createContext<SalonContextType | null>(null);
@@ -84,6 +87,16 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [staff, setStaff] = useState<Staff[]>(demoStaff);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+    whatsappEnabled: true,
+    smsEnabled: false,
+    reminderHoursBefore: 24,
+    messageTemplate: 'Merhaba {müşteri_adı}, {tarih} tarihinde saat {saat}\'de {hizmet} randevunuz bulunmaktadır. {salon_adı}',
+  });
+
+  const updateNotificationSettings = useCallback((s: Partial<NotificationSettings>) => {
+    setNotificationSettings(prev => ({ ...prev, ...s }));
+  }, []);
 
   const addBranch = useCallback((b: Omit<Branch, 'id'>) => {
     setBranches(prev => [...prev, { ...b, id: genId() }]);
@@ -137,7 +150,29 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [appointments]);
 
   const addAppointment = useCallback((a: Omit<Appointment, 'id'>) => {
-    setAppointments(prev => [...prev, { ...a, id: genId() }]);
+    const reminders: AppointmentReminder[] = [];
+    const reminderTime = new Date(new Date(a.startTime).getTime() - notificationSettings.reminderHoursBefore * 60 * 60 * 1000).toISOString();
+    if (notificationSettings.whatsappEnabled) {
+      reminders.push({ channel: 'whatsapp', status: 'bekliyor', scheduledAt: reminderTime });
+    }
+    if (notificationSettings.smsEnabled) {
+      reminders.push({ channel: 'sms', status: 'bekliyor', scheduledAt: reminderTime });
+    }
+    setAppointments(prev => [...prev, { ...a, id: genId(), reminders }]);
+  }, [notificationSettings]);
+
+  const sendReminder = useCallback((appointmentId: string, channel: 'whatsapp' | 'sms') => {
+    setAppointments(prev => prev.map(apt => {
+      if (apt.id !== appointmentId) return apt;
+      const reminders = (apt.reminders || []).map(r =>
+        r.channel === channel ? { ...r, status: 'gonderildi' as const, sentAt: new Date().toISOString() } : r
+      );
+      // If no reminder for this channel exists, add one
+      if (!reminders.some(r => r.channel === channel)) {
+        reminders.push({ channel, status: 'gonderildi', scheduledAt: new Date().toISOString(), sentAt: new Date().toISOString() });
+      }
+      return { ...apt, reminders };
+    }));
   }, []);
 
   const updateAppointment = useCallback((id: string, a: Partial<Appointment>) => {
@@ -157,6 +192,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addStaff, updateStaff,
       addAppointment, updateAppointment,
       addPayment, hasConflict,
+      notificationSettings, updateNotificationSettings, sendReminder,
     }}>
       {children}
     </SalonContext.Provider>
