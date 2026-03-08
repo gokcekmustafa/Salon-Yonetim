@@ -31,6 +31,7 @@ import {
   ChevronRight,
   Shield,
   Bell,
+  Activity,
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
