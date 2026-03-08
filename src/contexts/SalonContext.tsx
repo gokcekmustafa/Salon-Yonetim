@@ -150,7 +150,29 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [appointments]);
 
   const addAppointment = useCallback((a: Omit<Appointment, 'id'>) => {
-    setAppointments(prev => [...prev, { ...a, id: genId() }]);
+    const reminders: AppointmentReminder[] = [];
+    const reminderTime = new Date(new Date(a.startTime).getTime() - notificationSettings.reminderHoursBefore * 60 * 60 * 1000).toISOString();
+    if (notificationSettings.whatsappEnabled) {
+      reminders.push({ channel: 'whatsapp', status: 'bekliyor', scheduledAt: reminderTime });
+    }
+    if (notificationSettings.smsEnabled) {
+      reminders.push({ channel: 'sms', status: 'bekliyor', scheduledAt: reminderTime });
+    }
+    setAppointments(prev => [...prev, { ...a, id: genId(), reminders }]);
+  }, [notificationSettings]);
+
+  const sendReminder = useCallback((appointmentId: string, channel: 'whatsapp' | 'sms') => {
+    setAppointments(prev => prev.map(apt => {
+      if (apt.id !== appointmentId) return apt;
+      const reminders = (apt.reminders || []).map(r =>
+        r.channel === channel ? { ...r, status: 'gonderildi' as const, sentAt: new Date().toISOString() } : r
+      );
+      // If no reminder for this channel exists, add one
+      if (!reminders.some(r => r.channel === channel)) {
+        reminders.push({ channel, status: 'gonderildi', scheduledAt: new Date().toISOString(), sentAt: new Date().toISOString() });
+      }
+      return { ...apt, reminders };
+    }));
   }, []);
 
   const updateAppointment = useCallback((id: string, a: Partial<Appointment>) => {
