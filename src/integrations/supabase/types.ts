@@ -148,6 +148,59 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          salon_id: string | null
+          salon_name: string | null
+          target_id: string | null
+          target_label: string | null
+          target_type: string
+          user_id: string
+          user_name: string | null
+          user_role: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          salon_id?: string | null
+          salon_name?: string | null
+          target_id?: string | null
+          target_label?: string | null
+          target_type: string
+          user_id: string
+          user_name?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          salon_id?: string | null
+          salon_name?: string | null
+          target_id?: string | null
+          target_label?: string | null
+          target_type?: string
+          user_id?: string
+          user_name?: string | null
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
@@ -839,6 +892,38 @@ export type Database = {
           },
           {
             foreignKeyName: "staff_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_online_status: {
+        Row: {
+          id: string
+          is_online: boolean
+          last_seen_at: string
+          salon_id: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_online?: boolean
+          last_seen_at?: string
+          salon_id?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_online?: boolean
+          last_seen_at?: string
+          salon_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_online_status_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
