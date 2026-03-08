@@ -81,71 +81,31 @@ export default function AuthPage() {
         </div>
 
         <Card className="border-border/40 shadow-elevated backdrop-blur-sm">
-          <Tabs defaultValue="login">
-            <CardHeader className="pb-3">
-              <TabsList className="grid w-full grid-cols-2 h-11">
-                <TabsTrigger value="login" className="text-sm font-medium">Giriş Yap</TabsTrigger>
-                <TabsTrigger value="register" className="text-sm font-medium">Kayıt Ol</TabsTrigger>
-              </TabsList>
-            </CardHeader>
-
-            <CardContent>
-              <TabsContent value="login" className="mt-0">
-                <CardTitle className="text-lg mb-1">Hoş Geldiniz</CardTitle>
-                <CardDescription className="mb-6">Hesabınıza giriş yapın</CardDescription>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email" className="text-xs font-semibold">E-posta</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="login-email" type="email" placeholder="ornek@email.com" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="pl-10 h-11" required />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password" className="text-xs font-semibold">Şifre</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="login-password" type="password" placeholder="••••••••" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="pl-10 h-11" required />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full h-11 btn-gradient rounded-xl text-sm font-semibold gap-2" disabled={loading}>
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>Giriş Yap</span><ArrowRight className="h-4 w-4" /></>}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="register" className="mt-0">
-                <CardTitle className="text-lg mb-1">Hesap Oluştur</CardTitle>
-                <CardDescription className="mb-6">İlk kayıt olan Super Admin olur</CardDescription>
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-name" className="text-xs font-semibold">Ad Soyad</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="reg-name" placeholder="Adınız Soyadınız" value={regName} onChange={e => setRegName(e.target.value)} className="pl-10 h-11" required />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-email" className="text-xs font-semibold">E-posta</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="reg-email" type="email" placeholder="ornek@email.com" value={regEmail} onChange={e => setRegEmail(e.target.value)} className="pl-10 h-11" required />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-password" className="text-xs font-semibold">Şifre</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="reg-password" type="password" placeholder="En az 6 karakter" value={regPassword} onChange={e => setRegPassword(e.target.value)} className="pl-10 h-11" minLength={6} required />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full h-11 btn-gradient rounded-xl text-sm font-semibold gap-2" disabled={loading}>
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>Kayıt Ol</span><ArrowRight className="h-4 w-4" /></>}
-                  </Button>
-                </form>
-              </TabsContent>
-            </CardContent>
-          </Tabs>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Hoş Geldiniz</CardTitle>
+            <CardDescription>Hesabınıza giriş yapın</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="login-email" className="text-xs font-semibold">E-posta</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input id="login-email" type="email" placeholder="ornek@email.com" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="pl-10 h-11" required />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-password" className="text-xs font-semibold">Şifre</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input id="login-password" type="password" placeholder="••••••••" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="pl-10 h-11" required />
+                </div>
+              </div>
+              <Button type="submit" className="w-full h-11 btn-gradient rounded-xl text-sm font-semibold gap-2" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>Giriş Yap</span><ArrowRight className="h-4 w-4" /></>}
+              </Button>
+            </form>
+          </CardContent>
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-8">
