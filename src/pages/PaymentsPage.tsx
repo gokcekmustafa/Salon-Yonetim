@@ -1,29 +1,97 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useSalonData } from '@/hooks/useSalonData';
-import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { format, parseISO, isToday, isSameMonth } from 'date-fns';
+import { Label } from '@/components/ui/label';
+import { format, parseISO, isToday, isSameMonth, isSameWeek, startOfDay, subDays, subWeeks, subMonths, startOfYear, isWithinInterval, eachDayOfInterval, eachMonthOfInterval, isSameDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { Wallet, TrendingUp, Receipt, Loader2 } from 'lucide-react';
+import { Wallet, TrendingUp, Receipt, Loader2, Banknote, ArrowRightLeft, CreditCard } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+
+type DateRange = 'daily' | 'weekly' | 'monthly' | 'yearly';
+type CashBox = { id: string; name: string; payment_method: string; salon_id: string; is_active: boolean };
+type CashTx = { id: string; cash_box_id: string | null; amount: number; type: string; description: string | null; transaction_date: string; payment_method: string; salon_id: string };
+
+const BOX_ICONS: Record<string, React.ElementType> = {
+  cash: Banknote,
+  eft: ArrowRightLeft,
+  credit_card: CreditCard,
+};
 
 export default function PaymentsPage() {
   const { hasPermission } = usePermissions();
   const { payments, appointments, customers, services, loading } = useSalonData();
-  const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
+  const { currentSalonId } = useAuth();
+  const [dateRange, setDateRange] = useState<DateRange>('monthly');
+  const [cashBoxes, setCashBoxes] = useState<CashBox[]>([]);
+  const [cashTransactions, setCashTransactions] = useState<CashTx[]>([]);
 
-  const dailyRevenue = useMemo(() =>
-    payments.filter(p => { try { return isToday(parseISO(p.payment_date)); } catch { return false; } }).reduce((s, p) => s + Number(p.amount), 0), [payments]);
+  useEffect(() => {
+    if (!currentSalonId) return;
+    const fetch = async () => {
+      const [boxRes, txRes] = await Promise.all([
+        supabase.from('cash_boxes').select('*').eq('salon_id', currentSalonId),
+        supabase.from('cash_transactions').select('*').eq('salon_id', currentSalonId).order('transaction_date', { ascending: false }),
+      ]);
+      setCashBoxes((boxRes.data as CashBox[]) || []);
+      setCashTransactions((txRes.data as CashTx[]) || []);
+    };
+    fetch();
+  }, [currentSalonId]);
 
-  const monthlyRevenue = useMemo(() =>
-    payments.filter(p => { try { return isSameMonth(parseISO(p.payment_date), parseISO(month + '-01')); } catch { return false; } }).reduce((s, p) => s + Number(p.amount), 0), [payments, month]);
+  const { startDate, endDate } = useMemo(() => {
+    const end = new Date();
+    let start: Date;
+    switch (dateRange) {
+      case 'daily': start = startOfDay(end); break;
+      case 'weekly': start = subWeeks(end, 0); break;
+      case 'monthly': start = subMonths(end, 0); break;
+      case 'yearly': start = startOfYear(end); break;
+      default: start = subMonths(end, 0);
+    }
+    // For daily, show today. For weekly current week. For monthly current month. For yearly current year.
+    if (dateRange === 'daily') start = startOfDay(end);
+    else if (dateRange === 'weekly') start = subDays(end, end.getDay() === 0 ? 6 : end.getDay() - 1);
+    else if (dateRange === 'monthly') start = new Date(end.getFullYear(), end.getMonth(), 1);
+    else start = startOfYear(end);
+    return { startDate: startOfDay(start), endDate: end };
+  }, [dateRange]);
 
-  const monthPayments = useMemo(() =>
-    payments.filter(p => { try { return isSameMonth(parseISO(p.payment_date), parseISO(month + '-01')); } catch { return false; } })
-      .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()), [payments, month]);
+  const filteredPayments = useMemo(() => {
+    return payments.filter(p => {
+      try {
+        const d = parseISO(p.payment_date);
+        return isWithinInterval(d, { start: startDate, end: endDate });
+      } catch { return false; }
+    }).sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
+  }, [payments, startDate, endDate]);
+
+  const filteredCashTx = useMemo(() => {
+    return cashTransactions.filter(tx => {
+      try {
+        const d = parseISO(tx.transaction_date);
+        return isWithinInterval(d, { start: startDate, end: endDate });
+      } catch { return false; }
+    });
+  }, [cashTransactions, startDate, endDate]);
+
+  const totalRevenue = filteredPayments.reduce((s, p) => s + Number(p.amount), 0);
+
+  // Per cash box summaries
+  const boxSummaries = useMemo(() => {
+    return cashBoxes.map(box => {
+      const txs = filteredCashTx.filter(tx => tx.cash_box_id === box.id);
+      const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+      const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+      return { ...box, income, expense, balance: income - expense, txs };
+    });
+  }, [cashBoxes, filteredCashTx]);
 
   if (!hasPermission('can_manage_payments')) return <NoPermission feature="Kasa / Ödemeler" />;
   if (loading) return (
@@ -44,73 +112,133 @@ export default function PaymentsPage() {
     return apt ? (services.find(s => s.id === apt.service_id)?.name ?? '-') : '-';
   };
 
-  const kpis = [
-    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, color: 'text-success bg-success/10' },
-    { label: 'Aylık Gelir', value: `₺${monthlyRevenue.toLocaleString('tr-TR')}`, icon: TrendingUp, color: 'text-primary bg-primary/10' },
-  ];
+  const periodLabel = dateRange === 'daily' ? 'Bugün' : dateRange === 'weekly' ? 'Bu Hafta' : dateRange === 'monthly' ? 'Bu Ay' : 'Bu Yıl';
 
   return (
-    <div className="page-container animate-in">
-      <div className="page-header"><div><h1 className="page-title">Kasa</h1><p className="page-subtitle">Ödeme geçmişi ve gelir takibi</p></div></div>
-
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-        {kpis.map(kpi => (
-          <div key={kpi.label} className="stat-card p-5">
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{kpi.label}</p>
-                <p className="text-2xl font-bold tracking-tight tabular-nums">{kpi.value}</p>
-              </div>
-              <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${kpi.color}`}><kpi.icon className="h-5 w-5" /></div>
-            </div>
-          </div>
-        ))}
+    <div className="page-container animate-in space-y-5">
+      <div className="page-header">
+        <div><h1 className="page-title">Kasa & Ödemeler</h1><p className="page-subtitle">Ödeme geçmişi ve kasa bazlı gelir takibi</p></div>
       </div>
 
-      <div className="flex items-center gap-2"><Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-48 h-10" /></div>
-
-      {/* Mobile Cards */}
-      <div className="block md:hidden space-y-3">
-        {monthPayments.length === 0 ? (
-          <Card className="shadow-soft border-border/60"><CardContent className="empty-state"><Receipt className="empty-state-icon" /><p className="empty-state-title">Bu ay ödeme yok</p></CardContent></Card>
-        ) : monthPayments.map(p => (
-          <div key={p.id} className="card-interactive p-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <p className="font-semibold text-sm">{getCustomerName(p.appointment_id)}</p>
-                <p className="text-xs text-muted-foreground">{getServiceName(p.appointment_id)}</p>
-                <p className="text-xs text-muted-foreground">{format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr })}</p>
-              </div>
-              <div className="text-right space-y-1">
-                <p className="font-bold tabular-nums">₺{Number(p.amount).toLocaleString('tr-TR')}</p>
-                <Badge variant="secondary" className="text-[10px] font-semibold">{p.payment_type === 'nakit' ? 'Nakit' : 'Kart'}</Badge>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* Period Selector */}
+      <div className="flex items-center gap-3">
+        <Label className="text-xs">Periyot</Label>
+        <Select value={dateRange} onValueChange={v => setDateRange(v as DateRange)}>
+          <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="daily">Günlük</SelectItem>
+            <SelectItem value="weekly">Haftalık</SelectItem>
+            <SelectItem value="monthly">Aylık</SelectItem>
+            <SelectItem value="yearly">Yıllık</SelectItem>
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground ml-auto">
+          {format(startDate, 'd MMM yyyy', { locale: tr })} — {format(endDate, 'd MMM yyyy', { locale: tr })}
+        </span>
       </div>
 
-      {/* Desktop Table */}
-      <Card className="hidden md:block shadow-soft border-border/60 overflow-hidden">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="font-semibold">Tarih</TableHead><TableHead className="font-semibold">Müşteri</TableHead><TableHead className="font-semibold">Hizmet</TableHead><TableHead className="font-semibold">Ödeme Türü</TableHead><TableHead className="text-right font-semibold">Tutar</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {monthPayments.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground text-sm">Bu ay ödeme bulunmamaktadır.</TableCell></TableRow>
-              ) : monthPayments.map(p => (
-                <TableRow key={p.id}>
-                  <TableCell className="text-muted-foreground">{format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr })}</TableCell>
-                  <TableCell className="font-medium">{getCustomerName(p.appointment_id)}</TableCell>
-                  <TableCell className="text-muted-foreground">{getServiceName(p.appointment_id)}</TableCell>
-                  <TableCell><Badge variant="secondary" className="text-[10px] font-semibold">{p.payment_type === 'nakit' ? 'Nakit' : 'Kart'}</Badge></TableCell>
-                  <TableCell className="text-right font-bold tabular-nums">₺{Number(p.amount).toLocaleString('tr-TR')}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* KPI Cards */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="stat-card p-5 border-primary/30 bg-primary/5">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Toplam Gelir ({periodLabel})</p>
+              <p className="text-2xl font-bold tracking-tight tabular-nums text-primary">₺{totalRevenue.toLocaleString('tr-TR')}</p>
+            </div>
+            <div className="h-11 w-11 rounded-xl flex items-center justify-center text-primary bg-primary/10"><Wallet className="h-5 w-5" /></div>
+          </div>
+        </div>
+        {boxSummaries.map(box => {
+          const Icon = BOX_ICONS[box.payment_method] || Wallet;
+          return (
+            <div key={box.id} className="stat-card p-5">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{box.name}</p>
+                  <p className="text-2xl font-bold tracking-tight tabular-nums">₺{box.balance.toLocaleString('tr-TR')}</p>
+                  <div className="flex gap-2 text-xs">
+                    <span className="text-green-600">+₺{box.income.toLocaleString('tr-TR')}</span>
+                    <span className="text-red-500">-₺{box.expense.toLocaleString('tr-TR')}</span>
+                  </div>
+                </div>
+                <div className="h-11 w-11 rounded-xl flex items-center justify-center text-muted-foreground bg-muted"><Icon className="h-5 w-5" /></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tabs: Toplu + Per-box */}
+      <Tabs defaultValue="all">
+        <TabsList>
+          <TabsTrigger value="all">Tümü</TabsTrigger>
+          {cashBoxes.map(box => (
+            <TabsTrigger key={box.id} value={box.id}>{box.name}</TabsTrigger>
+          ))}
+        </TabsList>
+
+        {/* All payments tab */}
+        <TabsContent value="all">
+          <Card className="shadow-soft border-border/60 overflow-hidden">
+            <CardContent className="p-0">
+              {filteredPayments.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground text-sm"><Receipt className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />Bu dönemde ödeme yok</div>
+              ) : (
+                <Table>
+                  <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="font-semibold">Tarih</TableHead><TableHead className="font-semibold">Müşteri</TableHead><TableHead className="font-semibold">Hizmet</TableHead><TableHead className="font-semibold">Ödeme Türü</TableHead><TableHead className="text-right font-semibold">Tutar</TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {filteredPayments.map(p => (
+                      <TableRow key={p.id}>
+                        <TableCell className="text-muted-foreground">{format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr })}</TableCell>
+                        <TableCell className="font-medium">{getCustomerName(p.appointment_id)}</TableCell>
+                        <TableCell className="text-muted-foreground">{getServiceName(p.appointment_id)}</TableCell>
+                        <TableCell><Badge variant="secondary" className="text-[10px] font-semibold">{p.payment_type === 'nakit' ? 'Nakit' : p.payment_type === 'eft' ? 'EFT' : 'Kart'}</Badge></TableCell>
+                        <TableCell className="text-right font-bold tabular-nums">₺{Number(p.amount).toLocaleString('tr-TR')}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Per cash box tabs */}
+        {boxSummaries.map(box => (
+          <TabsContent key={box.id} value={box.id}>
+            <Card className="shadow-soft border-border/60 overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{box.name} — İşlem Geçmişi</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {box.txs.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground text-sm">Bu dönemde işlem yok</div>
+                ) : (
+                  <Table>
+                    <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="font-semibold">Tarih</TableHead><TableHead className="font-semibold">Tür</TableHead><TableHead className="font-semibold">Açıklama</TableHead><TableHead className="text-right font-semibold">Tutar</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                      {box.txs.map(tx => (
+                        <TableRow key={tx.id}>
+                          <TableCell className="text-muted-foreground">{format(parseISO(tx.transaction_date), 'd MMM yyyy HH:mm', { locale: tr })}</TableCell>
+                          <TableCell>
+                            <Badge variant={tx.type === 'income' ? 'default' : 'destructive'} className="text-[10px]">
+                              {tx.type === 'income' ? 'Gelir' : 'Gider'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{tx.description || '-'}</TableCell>
+                          <TableCell className={`text-right font-bold tabular-nums ${tx.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
+                            {tx.type === 'income' ? '+' : '-'}₺{Number(tx.amount).toLocaleString('tr-TR')}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 }
