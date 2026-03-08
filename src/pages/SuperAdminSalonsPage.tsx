@@ -540,6 +540,16 @@ export default function SuperAdminSalonsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Permission Manager Dialog */}
+      {permSalon && (
+        <PermissionManager
+          salonId={permSalon.id}
+          salonName={permSalon.name}
+          open={permDialogOpen}
+          onOpenChange={setPermDialogOpen}
+        />
+      )}
     </div>
   );
 }
