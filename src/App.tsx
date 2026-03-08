@@ -29,26 +29,27 @@ const App = () => (
           <Routes>
             {/* Public booking page */}
             <Route path="/book/:salonSlug" element={<BookingPage />} />
-            <Route path="/:salonSlug" element={<BookingPage />} />
 
             {/* Admin panel */}
-            <Route path="/*" element={
+            <Route path="/" element={
               <AppLayout>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/musteriler" element={<CustomersPage />} />
-                  <Route path="/randevular" element={<AppointmentsPage />} />
-                  <Route path="/hizmetler" element={<ServicesPage />} />
-                  <Route path="/personel" element={<StaffPage />} />
-                  <Route path="/subeler" element={<BranchesPage />} />
-                  <Route path="/kasa" element={<PaymentsPage />} />
-                  <Route path="/raporlar" element={<ReportsPage />} />
-                  <Route path="/online-randevu" element={<BookingPage />} />
-                  <Route path="/ayarlar" element={<SettingsPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <Dashboard />
               </AppLayout>
             } />
+            <Route path="/musteriler" element={<AppLayout><CustomersPage /></AppLayout>} />
+            <Route path="/randevular" element={<AppLayout><AppointmentsPage /></AppLayout>} />
+            <Route path="/hizmetler" element={<AppLayout><ServicesPage /></AppLayout>} />
+            <Route path="/personel" element={<AppLayout><StaffPage /></AppLayout>} />
+            <Route path="/subeler" element={<AppLayout><BranchesPage /></AppLayout>} />
+            <Route path="/kasa" element={<AppLayout><PaymentsPage /></AppLayout>} />
+            <Route path="/raporlar" element={<AppLayout><ReportsPage /></AppLayout>} />
+            <Route path="/online-randevu" element={<AppLayout><BookingPage /></AppLayout>} />
+            <Route path="/ayarlar" element={<AppLayout><SettingsPage /></AppLayout>} />
+
+            {/* Public salon slug - must be LAST to avoid catching admin routes */}
+            <Route path="/:salonSlug" element={<BookingPage />} />
+
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </SalonProvider>
