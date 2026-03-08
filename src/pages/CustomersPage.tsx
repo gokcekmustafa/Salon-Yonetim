@@ -217,6 +217,19 @@ export default function CustomersPage() {
             <div className="space-y-2"><Label className="text-xs font-semibold">Doğum Tarihi <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className="h-10" /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Notlar <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Müşteri notları..." rows={3} /></div>
             <div className="space-y-2">
+              <Label className="text-xs font-semibold">Müşteri Türü</Label>
+              <Select value={form.customer_type} onValueChange={v => set('customer_type', v)}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="installment">Taksitli Müşteri</SelectItem>
+                  <SelectItem value="single_session">Tek Seans Müşteri</SelectItem>
+                </SelectContent>
+              </Select>
+              {form.customer_type === 'single_session' && (
+                <p className="text-xs text-muted-foreground">Tek seans müşterilerde taksit sistemi devre dışıdır, ödemeler doğrudan kasaya gider.</p>
+              )}
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs font-semibold">Müşteri Kaynağı <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label>
               <Select value={form.source_type} onValueChange={v => set('source_type', v)}>
                 <SelectTrigger className="h-10"><SelectValue placeholder="Kaynak seçin" /></SelectTrigger>
