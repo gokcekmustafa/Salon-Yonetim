@@ -79,6 +79,7 @@ const App = () => (
 
               {/* Finance - admin only */}
               <Route path="/kasa" element={<FinanceRoute><PaymentsPage /></FinanceRoute>} />
+              <Route path="/taksitler" element={<FinanceRoute><InstallmentsPage /></FinanceRoute>} />
               <Route path="/kasa-yonetimi" element={<FinanceRoute><CashPage /></FinanceRoute>} />
               <Route path="/raporlar" element={<FinanceRoute><ReportsPage /></FinanceRoute>} />
 
