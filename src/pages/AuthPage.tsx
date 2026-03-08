@@ -34,28 +34,6 @@ export default function AuthPage() {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (regPassword.length < 6) {
-      toast({ title: 'Hata', description: 'Şifre en az 6 karakter olmalıdır', variant: 'destructive' });
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: regEmail,
-      password: regPassword,
-      options: {
-        data: { full_name: regName },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: 'Kayıt başarısız', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Kayıt başarılı', description: 'Hesabınız oluşturuldu. Giriş yapabilirsiniz.' });
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ background: 'var(--gradient-hero)' }}>
