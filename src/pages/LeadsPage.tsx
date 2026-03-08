@@ -42,7 +42,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   new: { label: 'Yeni', color: 'bg-info/10 text-info border-info/20', icon: <UserPlus className="h-3 w-3" /> },
   contacted: { label: 'İletişime Geçildi', color: 'bg-warning/10 text-warning border-warning/20', icon: <Phone className="h-3 w-3" /> },
   proposal_sent: { label: 'Teklif Gönderildi', color: 'bg-primary/10 text-primary border-primary/20', icon: <Send className="h-3 w-3" /> },
-  negotiation: { label: 'Görüşme', color: 'bg-accent/10 text-accent border-accent/20', icon: <Handshake className="h-3 w-3" /> },
+  negotiation: { label: 'Görüşme', color: 'bg-info/10 text-info border-info/20', icon: <Handshake className="h-3 w-3" /> },
   won: { label: 'Kazanıldı', color: 'bg-success/10 text-success border-success/20', icon: <ArrowRightLeft className="h-3 w-3" /> },
   lost: { label: 'Kaybedildi', color: 'bg-destructive/10 text-destructive border-destructive/20', icon: <XCircle className="h-3 w-3" /> },
 };
