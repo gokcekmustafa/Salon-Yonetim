@@ -130,6 +130,25 @@ export default function SuperAdminSalonsPage() {
     if (!editing) setFormSlug(generateSlug(val));
   };
 
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Sadece resim dosyaları yüklenebilir'); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error('Dosya boyutu 2MB\'dan küçük olmalıdır'); return; }
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const uploadLogo = async (salonId: string): Promise<string | null> => {
+    if (!logoFile) return editingLogoUrl;
+    const ext = logoFile.name.split('.').pop() || 'png';
+    const path = `${salonId}/logo-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('salon-logos').upload(path, logoFile, { cacheControl: '3600', upsert: true });
+    if (error) { toast.error('Logo yüklenemedi: ' + error.message); return null; }
+    const { data: { publicUrl } } = supabase.storage.from('salon-logos').getPublicUrl(path);
+    return publicUrl;
+  };
+
   const handleSave = async () => {
     if (!formName.trim() || !formSlug.trim()) { toast.error('Salon adı ve slug zorunludur'); return; }
 
@@ -163,6 +182,13 @@ export default function SuperAdminSalonsPage() {
         if (res.error || res.data?.error) {
           toast.error(res.data?.error || 'Salon oluşturulamadı');
         } else {
+          // Upload logo if selected (need salon id from response)
+          if (logoFile && res.data?.salon_id) {
+            const logoUrl = await uploadLogo(res.data.salon_id);
+            if (logoUrl) {
+              await supabase.from('salons').update({ logo_url: logoUrl }).eq('id', res.data.salon_id);
+            }
+          }
           toast.success(res.data?.message || 'Salon ve sahip hesabı oluşturuldu');
           setDialogOpen(false);
           fetchSalons();
@@ -174,13 +200,22 @@ export default function SuperAdminSalonsPage() {
       return;
     }
 
-    // Standard create/edit without owner
+    // Standard create/edit
     setSaving(true);
+
+    let logoUrl = editingLogoUrl;
+    if (logoFile && editing) {
+      const url = await uploadLogo(editing.id);
+      if (url === null && logoFile) { setSaving(false); return; }
+      logoUrl = url;
+    }
+
     const payload = {
       name: formName.trim(), slug: formSlug.trim(),
       phone: formPhone.trim() || null, address: formAddress.trim() || null,
       subscription_plan: formPlan as Salon['subscription_plan'], is_active: formActive,
       subscription_expires_at: formExpiry ? new Date(formExpiry).toISOString() : null,
+      logo_url: logoUrl,
     };
 
     const { error } = editing
