@@ -192,6 +192,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addStaff, updateStaff,
       addAppointment, updateAppointment,
       addPayment, hasConflict,
+      notificationSettings, updateNotificationSettings, sendReminder,
     }}>
       {children}
     </SalonContext.Provider>
