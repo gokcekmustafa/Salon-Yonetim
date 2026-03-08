@@ -66,7 +66,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <>
                   <div className="hidden md:block h-5 w-px bg-border/60" />
                   <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Building2 className="h-3.5 w-3.5" />
+                    {salon.logo_url ? (
+                      <img src={salon.logo_url} alt="" className="h-5 w-5 rounded object-cover" />
+                    ) : (
+                      <Building2 className="h-3.5 w-3.5" />
+                    )}
                     <span className="font-medium text-foreground/80">{salon.name}</span>
                   </div>
                 </>

@@ -36,10 +36,23 @@ export default function SettingsPage() {
     <div className="page-container animate-in">
       <div><h1 className="page-title">Ayarlar</h1><p className="page-subtitle">Salon ve bildirim ayarlarını yönetin</p></div>
 
+      {/* Salon Profile (name + logo edit) */}
+      {salon && currentSalonId && (isSalonAdmin || isSuperAdmin) && (
+        <SalonProfileSettings
+          salonId={currentSalonId}
+          salonName={salon.name}
+          logoUrl={salon.logo_url ?? null}
+          onUpdated={() => window.location.reload()}
+        />
+      )}
+
       <Card>
         <CardHeader><CardTitle>Salon Bilgileri</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div><p className="text-sm font-medium text-muted-foreground">Salon Adı</p><p className="font-medium">{salon?.name || '-'}</p></div>
+          <div className="flex items-center gap-3">
+            {salon?.logo_url && <img src={salon.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-cover border" />}
+            <div><p className="text-sm font-medium text-muted-foreground">Salon Adı</p><p className="font-medium">{salon?.name || '-'}</p></div>
+          </div>
           <Separator />
           <div><p className="text-sm font-medium text-muted-foreground">Rezervasyon Linki</p><p className="font-medium text-primary text-sm">/book/{salon?.slug || '-'}</p></div>
           <Separator />
