@@ -28,6 +28,7 @@ import {
   Building2,
   BarChart3,
   Globe,
+  DoorOpen,
   ChevronRight,
   Shield,
   Bell,
