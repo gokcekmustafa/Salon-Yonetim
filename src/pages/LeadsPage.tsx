@@ -23,9 +23,11 @@ import {
   ArrowRightLeft, ChevronRight, Trash2, Send, Handshake, XCircle, Eye, Clock
 } from 'lucide-react';
 
+type LeadStatus = 'new' | 'contacted' | 'proposal_sent' | 'negotiation' | 'won' | 'lost';
+
 type Lead = {
   id: string; salon_id: string; name: string; email: string | null;
-  phone: string | null; status: string; source: string | null;
+  phone: string | null; status: LeadStatus; source: string | null;
   notes_summary: string | null; created_by: string;
   converted_customer_id: string | null;
   created_at: string; updated_at: string;
