@@ -52,6 +52,11 @@ export default function SettingsPage() {
 
       {(isSalonAdmin || isSuperAdmin) && <StaffPasswordManager />}
 
+      {/* Salon Announcements */}
+      {(isSalonAdmin || isSuperAdmin) && currentSalonId && (
+        <AnnouncementManager mode="salon_admin" salonId={currentSalonId} />
+      )}
+
       {ns && (
         <Card>
           <CardHeader>
