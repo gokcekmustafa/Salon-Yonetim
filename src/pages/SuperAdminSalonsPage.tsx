@@ -115,6 +115,7 @@ export default function SuperAdminSalonsPage() {
       name: formName.trim(), slug: formSlug.trim(),
       phone: formPhone.trim() || null, address: formAddress.trim() || null,
       subscription_plan: formPlan as Salon['subscription_plan'], is_active: formActive,
+      subscription_expires_at: formExpiry ? new Date(formExpiry).toISOString() : null,
     };
 
     const { error } = editing
