@@ -18,8 +18,9 @@ import { format, parseISO, isSameMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Loader2, ArrowUpCircle, ArrowDownCircle,
-  Receipt, Pencil, Trash2, Banknote, CreditCard, Building2, Send,
+  Receipt, Pencil, Trash2, Banknote, CreditCard, Building2, Send, Download, FileSpreadsheet, FileText,
 } from 'lucide-react';
+import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -270,7 +271,37 @@ export default function CashPage() {
           <h1 className="page-title">Kasa Yönetimi</h1>
           <p className="page-subtitle">Nakit, EFT/Havale ve Kredi Kartı kasalarınız</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex gap-2 w-full sm:w-auto flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => {
+            const headers = ['Tarih', 'Tür', 'Açıklama', 'Tutar (₺)'];
+            const boxName = currentBox?.name || 'Kasa';
+            const rows = tabTransactions.map(tx => ({
+              Tarih: format(parseISO(tx.transaction_date), 'd MMM yyyy HH:mm', { locale: tr }),
+              Tür: tx.type === 'income' ? 'Gelir' : 'Gider',
+              Açıklama: tx.description || '-',
+              'Tutar (₺)': Number(tx.amount),
+            }));
+            exportToExcel(rows, headers, `kasa-${boxName}-${month}`);
+          }} className="gap-1.5">
+            <FileSpreadsheet className="h-4 w-4" /> Excel
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            const headers = ['Tarih', 'Tür', 'Açıklama', 'Tutar (₺)'];
+            const boxName = currentBox?.name || 'Kasa';
+            const rows = tabTransactions.map(tx => [
+              format(parseISO(tx.transaction_date), 'd MMM yyyy HH:mm', { locale: tr }),
+              tx.type === 'income' ? 'Gelir' : 'Gider',
+              tx.description || '-',
+              Number(tx.amount).toLocaleString('tr-TR'),
+            ]);
+            const summary = [
+              `Kasa: ${boxName}  |  Dönem: ${month}`,
+              `Gelir: ₺${monthlyIncome.toLocaleString('tr-TR')}  |  Gider: ₺${monthlyExpense.toLocaleString('tr-TR')}  |  Net: ₺${(monthlyIncome - monthlyExpense).toLocaleString('tr-TR')}`,
+            ];
+            exportToPDF(rows, headers, `${boxName} — Kasa Raporu`, `kasa-${boxName}-${month}`, summary);
+          }} className="gap-1.5">
+            <FileText className="h-4 w-4" /> PDF
+          </Button>
           <Button variant="outline" onClick={() => setTransferDialogOpen(true)} className="gap-1.5 flex-1 sm:flex-initial">
             <Send className="h-4 w-4" /> Para Çıkışı
           </Button>

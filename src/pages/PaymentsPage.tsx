@@ -10,7 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { format, parseISO, isToday, isSameMonth, isSameWeek, startOfDay, subDays, subWeeks, subMonths, startOfYear, isWithinInterval, eachDayOfInterval, eachMonthOfInterval, isSameDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { Wallet, TrendingUp, Receipt, Loader2, Banknote, ArrowRightLeft, CreditCard } from 'lucide-react';
+import { Wallet, TrendingUp, Receipt, Loader2, Banknote, ArrowRightLeft, CreditCard, FileSpreadsheet, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 
@@ -118,6 +120,35 @@ export default function PaymentsPage() {
     <div className="page-container animate-in space-y-5">
       <div className="page-header">
         <div><h1 className="page-title">Kasa & Ödemeler</h1><p className="page-subtitle">Ödeme geçmişi ve kasa bazlı gelir takibi</p></div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => {
+            const headers = ['Tarih', 'Müşteri', 'Hizmet', 'Ödeme Türü', 'Tutar (₺)'];
+            const rows = filteredPayments.map(p => ({
+              Tarih: format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr }),
+              Müşteri: getCustomerName(p.appointment_id),
+              Hizmet: getServiceName(p.appointment_id),
+              'Ödeme Türü': p.payment_type === 'nakit' ? 'Nakit' : p.payment_type === 'eft' ? 'EFT' : 'Kart',
+              'Tutar (₺)': Number(p.amount),
+            }));
+            exportToExcel(rows, headers, `odemeler-${periodLabel}`);
+          }} className="gap-1.5">
+            <FileSpreadsheet className="h-4 w-4" /> Excel
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            const headers = ['Tarih', 'Müşteri', 'Hizmet', 'Ödeme Türü', 'Tutar (₺)'];
+            const rows = filteredPayments.map(p => [
+              format(parseISO(p.payment_date), 'd MMM yyyy HH:mm', { locale: tr }),
+              getCustomerName(p.appointment_id),
+              getServiceName(p.appointment_id),
+              p.payment_type === 'nakit' ? 'Nakit' : p.payment_type === 'eft' ? 'EFT' : 'Kart',
+              Number(p.amount).toLocaleString('tr-TR'),
+            ]);
+            const summary = [`Toplam Gelir: ₺${totalRevenue.toLocaleString('tr-TR')}  |  Dönem: ${periodLabel}`];
+            exportToPDF(rows, headers, 'Ödeme Raporu', `odemeler-${periodLabel}`, summary);
+          }} className="gap-1.5">
+            <FileText className="h-4 w-4" /> PDF
+          </Button>
+        </div>
       </div>
 
       {/* Period Selector */}
