@@ -84,7 +84,7 @@ export default function CustomersPage() {
       address: form.address || null,
       secondary_phone: form.secondary_phone || null,
       source_type: form.source_type || null,
-      source_detail: form.source_type === 'other' ? (form.source_detail || null) : null,
+      source_detail: form.source_detail || null,
       customer_type: form.customer_type,
     };
     if (editing) {
