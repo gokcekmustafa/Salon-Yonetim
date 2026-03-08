@@ -1,9 +1,10 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Bell, LogOut, Building2 } from 'lucide-react';
+import { Bell, LogOut, Building2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData } from '@/hooks/useSalonData';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +36,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
     ? 'Salon Admin'
     : 'Personel';
 
+  const roleColor = roles.includes('super_admin')
+    ? 'bg-primary/10 text-primary border-primary/20'
+    : roles.includes('salon_admin')
+    ? 'bg-info/10 text-info border-info/20'
+    : 'bg-muted text-muted-foreground border-border';
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
@@ -45,47 +52,47 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center justify-between border-b border-border/60 bg-card/60 backdrop-blur-md px-4 sticky top-0 z-30">
+          <header className="h-14 flex items-center justify-between border-b border-border/60 bg-card/80 backdrop-blur-lg px-4 lg:px-6 sticky top-0 z-30">
             <div className="flex items-center gap-3">
-              <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-              <div className="hidden sm:block h-5 w-px bg-border" />
-              <span className="hidden sm:block text-xs font-medium text-primary bg-primary/8 px-2 py-0.5 rounded-full">
+              <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
+              <div className="hidden sm:block h-5 w-px bg-border/60" />
+              <Badge variant="outline" className={`hidden sm:inline-flex text-[10px] font-semibold px-2 py-0.5 ${roleColor}`}>
                 {roleBadge}
-              </span>
+              </Badge>
               {salon && (
                 <>
-                  <div className="hidden sm:block h-5 w-px bg-border" />
-                  <span className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <div className="hidden md:block h-5 w-px bg-border/60" />
+                  <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Building2 className="h-3.5 w-3.5" />
-                    {salon.name}
-                  </span>
+                    <span className="font-medium text-foreground/80">{salon.name}</span>
+                  </div>
                 </>
               )}
               {isSuperAdmin && currentSalonId && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="hidden sm:flex h-6 text-[10px] text-muted-foreground hover:text-foreground"
+                  className="hidden sm:flex h-6 text-[10px] text-muted-foreground hover:text-foreground gap-1"
                   onClick={() => navigate('/admin/salonlar')}
                 >
-                  Salon Değiştir
+                  Değiştir <ChevronDown className="h-3 w-3" />
                 </Button>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+            <div className="flex items-center gap-1.5">
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground relative">
                 <Bell className="h-4 w-4" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors">
-                    <span className="text-xs font-semibold text-primary">{initials}</span>
+                  <button className="h-9 w-9 rounded-full btn-gradient flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
+                    <span className="text-xs font-bold text-primary-foreground">{initials}</span>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{profile?.full_name || 'Kullanıcı'}</p>
-                    <p className="text-xs text-muted-foreground">{roleBadge}</p>
+                <DropdownMenuContent align="end" className="w-52">
+                  <div className="px-3 py-2.5">
+                    <p className="text-sm font-semibold">{profile?.full_name || 'Kullanıcı'}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{roleBadge}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">

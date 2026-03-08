@@ -17,6 +17,7 @@
 
     --primary: 338 65% 50%;
     --primary-foreground: 0 0% 100%;
+    --primary-glow: 338 70% 60%;
 
     --secondary: 220 16% 96%;
     --secondary-foreground: 224 20% 30%;
@@ -51,6 +52,11 @@
     --warning-foreground: 0 0% 100%;
     --info: 210 75% 55%;
     --info-foreground: 0 0% 100%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(338 65% 50%), hsl(338 70% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(338 65% 50% / 0.08), hsl(210 75% 55% / 0.05));
+    --shadow-primary: 0 4px 14px -3px hsl(338 65% 50% / 0.25);
+    --shadow-card-hover: 0 8px 30px -8px hsl(224 24% 12% / 0.12);
   }
 
   .dark {
@@ -62,6 +68,7 @@
     --popover-foreground: 0 0% 95%;
     --primary: 338 65% 58%;
     --primary-foreground: 0 0% 100%;
+    --primary-glow: 338 70% 65%;
     --secondary: 224 20% 14%;
     --secondary-foreground: 220 15% 75%;
     --muted: 224 20% 14%;
@@ -81,6 +88,11 @@
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 224 20% 12%;
     --sidebar-ring: 338 65% 58%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(338 65% 58%), hsl(338 70% 65%));
+    --gradient-hero: linear-gradient(135deg, hsl(338 65% 58% / 0.08), hsl(210 75% 55% / 0.05));
+    --shadow-primary: 0 4px 14px -3px hsl(338 65% 58% / 0.3);
+    --shadow-card-hover: 0 8px 30px -8px hsl(0 0% 0% / 0.3);
   }
 }
 
@@ -106,7 +118,7 @@
   }
 
   .stat-card {
-    @apply bg-card rounded-xl border border-border/60 shadow-sm transition-all duration-200 hover:shadow-md hover:border-border;
+    @apply bg-card rounded-xl border border-border/60 shadow-soft transition-all duration-300 hover:shadow-card hover:border-border hover:-translate-y-0.5;
   }
 
   .page-container {
@@ -126,11 +138,11 @@
   }
 
   .animate-in {
-    animation: fade-slide-in 0.35s ease-out;
+    animation: fade-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   @keyframes fade-slide-in {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
@@ -148,5 +160,24 @@
 
   .empty-state-description {
     @apply text-xs text-muted-foreground/70;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .btn-gradient {
+    background-image: var(--gradient-primary);
+    box-shadow: var(--shadow-primary);
+    @apply text-primary-foreground border-0 transition-all duration-200 hover:opacity-90 hover:shadow-lg;
+  }
+
+  .card-interactive {
+    @apply bg-card rounded-xl border border-border/60 shadow-soft transition-all duration-300 cursor-pointer;
+    &:hover {
+      box-shadow: var(--shadow-card-hover);
+      @apply border-border -translate-y-0.5;
+    }
   }
 }

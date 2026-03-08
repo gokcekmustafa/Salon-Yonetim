@@ -29,8 +29,8 @@ type Salon = {
 type SalonStats = { staff_count: number; customer_count: number; appointment_count: number; };
 
 const planColors: Record<string, string> = {
-  free: 'bg-muted text-muted-foreground', starter: 'bg-blue-100 text-blue-700',
-  professional: 'bg-primary/10 text-primary', enterprise: 'bg-amber-100 text-amber-700',
+  free: 'bg-muted text-muted-foreground', starter: 'bg-info/10 text-info',
+  professional: 'bg-primary/10 text-primary', enterprise: 'bg-warning/10 text-warning',
 };
 const planLabels: Record<string, string> = {
   free: 'Ücretsiz', starter: 'Başlangıç', professional: 'Profesyonel', enterprise: 'Kurumsal',
@@ -153,42 +153,48 @@ export default function SuperAdminSalonsPage() {
 
   return (
     <div className="page-container animate-in">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Crown className="h-6 w-6 text-primary" /> Platform Yönetimi
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Tüm salonları yönetin ve izleyin</p>
+      {/* Hero header */}
+      <div className="rounded-2xl p-6 lg:p-8 border border-border/40" style={{ background: 'var(--gradient-hero)' }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl btn-gradient flex items-center justify-center">
+              <Crown className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Platform Yönetimi</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">Tüm salonları yönetin ve izleyin</p>
+            </div>
+          </div>
+          <Button onClick={openCreate} className="gap-2 btn-gradient h-10 px-5 rounded-xl">
+            <Plus className="h-4 w-4" /> Yeni Salon
+          </Button>
         </div>
-        <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Yeni Salon</Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Toplam Salon', value: totalStats.salons, icon: Building2, color: 'text-primary bg-primary/8' },
+          { label: 'Toplam Salon', value: totalStats.salons, icon: Building2, color: 'text-primary bg-primary/10' },
           { label: 'Aktif Salon', value: totalStats.active, icon: Eye, color: 'text-success bg-success/10' },
-          { label: 'Toplam Personel', value: totalStats.totalStaff, icon: Users, color: 'text-blue-600 bg-blue-50' },
-          { label: 'Toplam Müşteri', value: totalStats.totalCustomers, icon: Calendar, color: 'text-amber-600 bg-amber-50' },
+          { label: 'Toplam Personel', value: totalStats.totalStaff, icon: Users, color: 'text-info bg-info/10' },
+          { label: 'Toplam Müşteri', value: totalStats.totalCustomers, icon: Calendar, color: 'text-warning bg-warning/10' },
         ].map(stat => (
-          <Card key={stat.label}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${stat.color}`}><stat.icon className="h-5 w-5" /></div>
-                <div>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
+          <div key={stat.label} className="stat-card p-4">
+            <div className="flex items-center gap-3">
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${stat.color}`}><stat.icon className="h-5 w-5" /></div>
+              <div>
+                <p className="text-2xl font-bold tabular-nums">{stat.value}</p>
+                <p className="text-[11px] text-muted-foreground font-medium">{stat.label}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
 
       {/* Search */}
-      <div className="relative mb-4 max-w-sm">
+      <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Salon ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+        <Input placeholder="Salon ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-10" />
       </div>
 
       {/* Table */}
@@ -197,20 +203,20 @@ export default function SuperAdminSalonsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <Building2 className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground">Henüz salon bulunmuyor</p>
-          <Button onClick={openCreate} variant="outline" className="mt-3"><Plus className="h-4 w-4 mr-2" /> İlk Salonu Oluştur</Button>
+          <p className="text-muted-foreground font-medium">Henüz salon bulunmuyor</p>
+          <Button onClick={openCreate} variant="outline" className="mt-4 gap-2"><Plus className="h-4 w-4" /> İlk Salonu Oluştur</Button>
         </div>
       ) : (
-        <Card>
+        <Card className="shadow-soft border-border/60 overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Salon</TableHead>
-                <TableHead className="hidden md:table-cell">Slug</TableHead>
-                <TableHead className="hidden lg:table-cell">Plan</TableHead>
-                <TableHead className="hidden md:table-cell text-center">Personel</TableHead>
-                <TableHead className="hidden md:table-cell text-center">Müşteri</TableHead>
-                <TableHead className="text-center">Durum</TableHead>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="font-semibold">Salon</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold">Slug</TableHead>
+                <TableHead className="hidden lg:table-cell font-semibold">Plan</TableHead>
+                <TableHead className="hidden md:table-cell text-center font-semibold">Personel</TableHead>
+                <TableHead className="hidden md:table-cell text-center font-semibold">Müşteri</TableHead>
+                <TableHead className="text-center font-semibold">Durum</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -220,23 +226,35 @@ export default function SuperAdminSalonsPage() {
                 return (
                   <TableRow key={salon.id} className="group">
                     <TableCell>
-                      <div><p className="font-medium text-sm">{salon.name}</p><p className="text-xs text-muted-foreground">{salon.phone || '—'}</p></div>
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Building2 className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm">{salon.name}</p>
+                          <p className="text-xs text-muted-foreground">{salon.phone || '—'}</p>
+                        </div>
+                      </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell"><code className="text-xs bg-muted px-1.5 py-0.5 rounded">/{salon.slug}</code></TableCell>
+                    <TableCell className="hidden md:table-cell"><code className="text-xs bg-muted px-2 py-0.5 rounded-md font-mono">/{salon.slug}</code></TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      <Badge variant="secondary" className={planColors[salon.subscription_plan]}>{planLabels[salon.subscription_plan]}</Badge>
+                      <Badge variant="secondary" className={`text-[10px] font-semibold ${planColors[salon.subscription_plan]}`}>{planLabels[salon.subscription_plan]}</Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-center text-sm">{s.staff_count}</TableCell>
-                    <TableCell className="hidden md:table-cell text-center text-sm">{s.customer_count}</TableCell>
+                    <TableCell className="hidden md:table-cell text-center text-sm tabular-nums">{s.staff_count}</TableCell>
+                    <TableCell className="hidden md:table-cell text-center text-sm tabular-nums">{s.customer_count}</TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="secondary" className={salon.is_active ? 'bg-success/10 text-success cursor-pointer' : 'bg-destructive/10 text-destructive cursor-pointer'} onClick={() => toggleActive(salon)}>
+                      <Badge
+                        variant="secondary"
+                        className={`text-[10px] font-semibold cursor-pointer transition-colors ${salon.is_active ? 'bg-success/10 text-success hover:bg-success/20' : 'bg-destructive/10 text-destructive hover:bg-destructive/20'}`}
+                        onClick={() => toggleActive(salon)}
+                      >
                         {salon.is_active ? 'Aktif' : 'Pasif'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100"><MoreHorizontal className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => manageSalon(salon)}><LogIn className="h-4 w-4 mr-2" /> Yönet</DropdownMenuItem>
@@ -258,24 +276,24 @@ export default function SuperAdminSalonsPage() {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{editing ? 'Salon Düzenle' : 'Yeni Salon Oluştur'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Salon Adı</Label>
-              <Input value={formName} onChange={e => handleNameChange(e.target.value)} placeholder="Güzellik Salonu" />
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Salon Adı</Label>
+              <Input value={formName} onChange={e => handleNameChange(e.target.value)} placeholder="Güzellik Salonu" className="h-10" />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">URL Slug</Label>
-              <Input value={formSlug} onChange={e => setFormSlug(e.target.value)} placeholder="guzellik-salonu" />
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">URL Slug</Label>
+              <Input value={formSlug} onChange={e => setFormSlug(e.target.value)} placeholder="guzellik-salonu" className="h-10" />
               <p className="text-xs text-muted-foreground">Online randevu linki: /book/{formSlug || 'slug'}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Telefon</Label>
-                <Input type="tel" value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="0212 555 1234" />
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Telefon</Label>
+                <Input type="tel" value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="0212 555 1234" className="h-10" />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Abonelik</Label>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Abonelik</Label>
                 <Select value={formPlan} onValueChange={setFormPlan}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="free">Ücretsiz</SelectItem>
                     <SelectItem value="starter">Başlangıç</SelectItem>
@@ -285,18 +303,20 @@ export default function SuperAdminSalonsPage() {
                 </Select>
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Adres</Label>
-              <Input value={formAddress} onChange={e => setFormAddress(e.target.value)} placeholder="İstanbul, Türkiye" />
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Adres</Label>
+              <Input value={formAddress} onChange={e => setFormAddress(e.target.value)} placeholder="İstanbul, Türkiye" className="h-10" />
             </div>
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-medium">Aktif</Label>
+            <div className="flex items-center justify-between py-1">
+              <Label className="text-xs font-semibold">Aktif</Label>
               <Switch checked={formActive} onCheckedChange={setFormActive} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}{editing ? 'Güncelle' : 'Oluştur'}</Button>
+            <Button onClick={handleSave} disabled={saving} className="btn-gradient">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}{editing ? 'Güncelle' : 'Oluştur'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
