@@ -69,11 +69,15 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg mb-4 btn-gradient">
-            <Sparkles className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold font-display text-foreground tracking-tight">SalonYönetim</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">Multi-Salon SaaS Platformu</p>
+          {branding.logo_url ? (
+            <img src={branding.logo_url} alt="Logo" className="h-16 w-16 rounded-2xl object-contain shadow-lg mb-4" />
+          ) : (
+            <div className="h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg mb-4 btn-gradient">
+              <Sparkles className="h-8 w-8 text-primary-foreground" />
+            </div>
+          )}
+          <h1 className="text-2xl font-bold font-display text-foreground tracking-tight">{branding.company_name}</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">{branding.app_name}</p>
         </div>
 
         <Card className="border-border/40 shadow-elevated backdrop-blur-sm">
