@@ -199,19 +199,18 @@ export default function AppointmentsPage() {
   };
 
   const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
-    await supabase.from('appointments').update({ session_status: sessionStatus } as any).eq('id', aptId);
+    await supabase.from('appointments').update({ session_status: sessionStatus }).eq('id', aptId);
     if (sessionStatus === 'completed') {
       await updateAppointment(aptId, { status: 'tamamlandi' });
     }
     toast.success('Durum güncellendi.');
     refetch();
-    // Refresh detail
     const updated = appointments.find(a => a.id === aptId);
-    if (updated) setDetailApt({ ...updated, session_status: sessionStatus } as any);
+    if (updated) setDetailApt({ ...updated, session_status: sessionStatus });
   };
 
   const updateRoomAssignment = async (aptId: string, roomId: string) => {
-    await supabase.from('appointments').update({ room_id: roomId === 'none' ? null : roomId } as any).eq('id', aptId);
+    await supabase.from('appointments').update({ room_id: roomId === 'none' ? null : roomId }).eq('id', aptId);
     toast.success('Oda güncellendi.');
     refetch();
   };
