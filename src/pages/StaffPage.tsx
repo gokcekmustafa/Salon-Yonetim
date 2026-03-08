@@ -55,8 +55,39 @@ export default function StaffPage() {
   return (
     <div className="page-container animate-in">
       <div className="page-header">
-        <div><h1 className="page-title">Personel</h1><p className="page-subtitle">{staff.filter(s => s.is_active).length} aktif personel</p></div>
-        <Button onClick={openAdd} size="sm" className="h-10 btn-gradient gap-1.5 rounded-xl px-4"><Plus className="h-4 w-4" /> Ekle</Button>
+        <div>
+          <h1 className="page-title">Personel</h1>
+          <p className="page-subtitle">{staff.filter(s => s.is_active).length} aktif personel</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <DataExportImport
+            title="Personel Listesi"
+            filePrefix="personel"
+            columns={STAFF_COLUMNS}
+            data={staff}
+            toExportRow={(s) => ({
+              'Ad Soyad': s.name,
+              'Telefon': s.phone || '',
+              'Aktif': s.is_active ? 'Evet' : 'Hayır',
+            })}
+            fromImportRow={(row) => ({
+              name: row['Ad Soyad'],
+              phone: row['Telefon'] || '',
+              is_active: (row['Aktif'] || 'Evet').toLowerCase() !== 'hayır',
+              branch_id: activeBranches[0]?.id || '',
+            })}
+            onImport={async (rows) => {
+              let success = 0, errors = 0;
+              for (const row of rows) {
+                const err = await addStaff(row as any);
+                if (err) errors++; else success++;
+              }
+              return { success, errors };
+            }}
+            summaryLines={[`Toplam: ${staff.length} personel`]}
+          />
+          <Button onClick={openAdd} size="sm" className="h-10 btn-gradient gap-1.5 rounded-xl px-4"><Plus className="h-4 w-4" /> Ekle</Button>
+        </div>
       </div>
 
       {/* Mobile Cards */}

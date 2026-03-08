@@ -116,14 +116,49 @@ export default function CustomersPage() {
           <h1 className="page-title">Müşteriler</h1>
           <p className="page-subtitle">{customers.length} kayıtlı müşteri</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-initial">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Müşteri ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-full sm:w-64 h-10" />
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <DataExportImport
+            title="Müşteri Listesi"
+            filePrefix="musteriler"
+            columns={CUSTOMER_COLUMNS}
+            data={customers}
+            toExportRow={(c) => ({
+              'Ad Soyad': c.name,
+              'Telefon': c.phone || '',
+              'TC Kimlik No': c.tc_kimlik_no || '',
+              'Doğum Tarihi': c.birth_date || '',
+              'Adres': c.address || '',
+              '2. Telefon': c.secondary_phone || '',
+              'Notlar': c.notes || '',
+            })}
+            fromImportRow={(row) => ({
+              name: row['Ad Soyad'],
+              phone: row['Telefon'],
+              tc_kimlik_no: row['TC Kimlik No'] || null,
+              birth_date: row['Doğum Tarihi'] || null,
+              address: row['Adres'] || null,
+              secondary_phone: row['2. Telefon'] || null,
+              notes: row['Notlar'] || null,
+            })}
+            onImport={async (rows) => {
+              let success = 0, errors = 0;
+              for (const row of rows) {
+                const res = await addCustomer(row as any);
+                if (res?.error) errors++; else success++;
+              }
+              return { success, errors };
+            }}
+            summaryLines={[`Toplam: ${customers.length} müşteri`]}
+          />
+          <div className="flex gap-2">
+            <div className="relative flex-1 sm:flex-initial">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Müşteri ara..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-full sm:w-64 h-10" />
+            </div>
+            <Button onClick={openAdd} size="sm" className="h-10 btn-gradient gap-1.5 rounded-xl px-4">
+              <Plus className="h-4 w-4" /> Ekle
+            </Button>
           </div>
-          <Button onClick={openAdd} size="sm" className="h-10 btn-gradient gap-1.5 rounded-xl px-4">
-            <Plus className="h-4 w-4" /> Ekle
-          </Button>
         </div>
       </div>
 
