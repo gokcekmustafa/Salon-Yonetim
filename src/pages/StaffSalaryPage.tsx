@@ -218,7 +218,7 @@ export default function StaffSalaryPage() {
 
   const openPayDialog = (staffId?: string) => {
     setPayStaffId(staffId || '');
-    setPayAmount(''); setPayDesc(''); setPayType('salary'); setPayMethod('cash'); setPayCashBoxId('');
+    setPayAmount(''); setPayDesc(''); setPayType('salary'); setPayMethod('cash'); setPayCashBoxId('none');
     setPayDialogOpen(true);
   };
 
