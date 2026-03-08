@@ -18,7 +18,7 @@ import WeekCalendarView from '@/components/calendar/WeekCalendarView';
 type ViewMode = 'day' | 'week';
 
 export default function AppointmentsPage() {
-  const { appointments, customers, staff, services, branches, addAppointment, updateAppointment, hasConflict, addPayment } = useSalon();
+  const { appointments, customers, staff, services, branches, addAppointment, updateAppointment, hasConflict, addPayment, sendReminder, salon, notificationSettings } = useSalon();
 
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [currentDate, setCurrentDate] = useState(new Date());
