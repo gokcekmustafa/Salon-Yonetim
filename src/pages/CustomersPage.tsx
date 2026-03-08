@@ -126,7 +126,12 @@ export default function CustomersPage() {
                   <span className="text-xs font-bold text-primary">{c.name.charAt(0)}</span>
                 </div>
                 <div className="space-y-0.5 min-w-0">
-                  <p className="font-semibold text-sm">{c.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm">{c.name}</p>
+                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : 'default'} className="text-[10px]">
+                      {c.customer_type === 'single_session' ? 'Tek Seans' : 'Taksitli'}
+                    </Badge>
+                  </div>
                   <p className="text-xs text-muted-foreground">{c.phone}</p>
                   {c.secondary_phone && <p className="text-xs text-muted-foreground">2. Tel: {c.secondary_phone}</p>}
                   {c.notes && <p className="text-xs text-muted-foreground/70 truncate max-w-[180px]">{c.notes}</p>}
