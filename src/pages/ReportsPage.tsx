@@ -302,6 +302,38 @@ export default function ReportsPage() {
           <h1 className="text-2xl font-bold">Raporlar</h1>
           <p className="text-muted-foreground text-sm">Detaylı analiz ve performans raporları</p>
         </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => {
+            const headers = ['Kasa', 'Gelir (₺)', 'Gider (₺)', 'Net (₺)', 'İşlem Sayısı'];
+            const rows = cashBoxSummaries.map(b => ({
+              Kasa: b.name,
+              'Gelir (₺)': b.income,
+              'Gider (₺)': b.expense,
+              'Net (₺)': b.balance,
+              'İşlem Sayısı': b.txCount,
+            }));
+            exportToExcel(rows, headers, `rapor-${periodLabel}`);
+          }} className="gap-1.5">
+            <FileSpreadsheet className="h-4 w-4" /> Excel
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            const headers = ['Kasa', 'Gelir (₺)', 'Gider (₺)', 'Net (₺)', 'İşlem'];
+            const rows = cashBoxSummaries.map(b => [
+              b.name,
+              b.income.toLocaleString('tr-TR'),
+              b.expense.toLocaleString('tr-TR'),
+              b.balance.toLocaleString('tr-TR'),
+              String(b.txCount),
+            ]);
+            const summary = [
+              `Dönem: ${periodLabel}  |  Toplam Gelir: ₺${totalRevenue.toLocaleString('tr-TR')}`,
+              `Tamamlanan: ${completedCount} randevu  |  İptal: ${cancelledCount}`,
+            ];
+            exportToPDF(rows, headers, 'Kasa & Performans Raporu', `rapor-${periodLabel}`, summary);
+          }} className="gap-1.5">
+            <FileText className="h-4 w-4" /> PDF
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
