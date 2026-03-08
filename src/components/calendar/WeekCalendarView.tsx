@@ -1,8 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { format, parseISO, isSameDay, addDays, startOfWeek, setHours, setMinutes, differenceInMinutes, addMinutes } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { useSalon } from '@/contexts/SalonContext';
-import { Appointment } from '@/types/salon';
+import { useSalonData, DbAppointment } from '@/hooks/useSalonData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -29,11 +28,11 @@ interface WeekCalendarViewProps {
   date: Date;
   filteredStaffId: string | null;
   filteredBranchId?: string | null;
-  onAppointmentClick: (apt: Appointment) => void;
+  onAppointmentClick: (apt: DbAppointment) => void;
 }
 
 export default function WeekCalendarView({ date, filteredStaffId, filteredBranchId, onAppointmentClick }: WeekCalendarViewProps) {
-  const { appointments, staff, customers, services, updateAppointment, hasConflict } = useSalon();
+  const { appointments, staff, customers, services, updateAppointment, hasConflict } = useSalonData();
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{ top: number } | null>(null);
 
@@ -52,16 +51,16 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
   const getAppointmentsForDay = (day: Date) =>
     appointments.filter(a => {
       try {
-        if (!isSameDay(parseISO(a.startTime), day)) return false;
-        if (filteredStaffId && a.staffId !== filteredStaffId) return false;
-        if (filteredBranchId && a.branchId !== filteredBranchId) return false;
+        if (!isSameDay(parseISO(a.start_time), day)) return false;
+        if (filteredStaffId && a.staff_id !== filteredStaffId) return false;
+        if (filteredBranchId && a.branch_id !== filteredBranchId) return false;
         return true;
       } catch { return false; }
     });
 
-  const getAppointmentStyle = (apt: Appointment) => {
-    const start = parseISO(apt.startTime);
-    const end = parseISO(apt.endTime);
+  const getAppointmentStyle = (apt: DbAppointment) => {
+    const start = parseISO(apt.start_time);
+    const end = parseISO(apt.end_time);
     const startMinutes = start.getHours() * 60 + start.getMinutes();
     const duration = differenceInMinutes(end, start);
     const top = ((startMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT;
@@ -79,7 +78,7 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
 
   const handleDragEnd = () => { setDragging(null); setDragPreview(null); };
 
-  const handleDrop = (e: React.DragEvent, targetDay: Date) => {
+  const handleDrop = async (e: React.DragEvent, targetDay: Date) => {
     e.preventDefault();
     const aptId = e.dataTransfer.getData('appointmentId');
     const apt = appointments.find(a => a.id === aptId);
@@ -90,20 +89,20 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
     const rawMinutes = START_HOUR * 60 + (y / HOUR_HEIGHT) * 60;
     const snappedMinutes = snapToGrid(rawMinutes);
 
-    const duration = differenceInMinutes(parseISO(apt.endTime), parseISO(apt.startTime));
+    const duration = differenceInMinutes(parseISO(apt.end_time), parseISO(apt.start_time));
     const newStart = setMinutes(setHours(targetDay, Math.floor(snappedMinutes / 60)), snappedMinutes % 60);
     const newEnd = addMinutes(newStart, duration);
 
-    if (hasConflict(apt.staffId, newStart.toISOString(), newEnd.toISOString(), aptId)) {
+    if (hasConflict(apt.staff_id, newStart.toISOString(), newEnd.toISOString(), aptId)) {
       toast.error('Çakışan randevu! Bu saatte personelin başka bir randevusu var.');
       setDragging(null);
       setDragPreview(null);
       return;
     }
 
-    updateAppointment(aptId, {
-      startTime: newStart.toISOString(),
-      endTime: newEnd.toISOString(),
+    await updateAppointment(aptId, {
+      start_time: newStart.toISOString(),
+      end_time: newEnd.toISOString(),
     });
     toast.success('Randevu taşındı.');
     setDragging(null);
@@ -129,7 +128,6 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
 
   return (
     <div className="border rounded-lg bg-card overflow-hidden shadow-sm">
-      {/* Legend */}
       <div className="border-b bg-muted/30 px-4 py-2 flex items-center justify-between">
         <p className="text-xs text-muted-foreground font-medium">
           {format(weekDays[0], 'd MMM', { locale: tr })} — {format(weekDays[6], 'd MMM yyyy', { locale: tr })}
@@ -143,7 +141,6 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
 
       <div className="overflow-x-auto">
         <div className="flex min-w-[800px]">
-          {/* Time gutter */}
           <div className="w-14 flex-shrink-0 border-r bg-muted/10">
             <div className="h-14 border-b" />
             {HOURS.map(hour => (
@@ -153,7 +150,6 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
             ))}
           </div>
 
-          {/* Day columns */}
           {weekDays.map(day => {
             const dayApts = getAppointmentsForDay(day);
             const isTodayCol = todayCheck(day);
@@ -181,7 +177,6 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
                     </div>
                   ))}
 
-                  {/* Current time line */}
                   {isTodayCol && currentTimeTop >= 0 && currentTimeTop <= totalHeight && (
                     <div className="absolute left-0 right-0 z-30 pointer-events-none" style={{ top: currentTimeTop }}>
                       <div className="flex items-center">
@@ -208,15 +203,15 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
                         className={cn(
                           'absolute left-0.5 right-0.5 rounded border border-l-[3px] px-1 py-0.5 overflow-hidden transition-all hover:shadow-md z-20 text-[10px]',
                           statusColor,
-                          getStaffAccent(apt.staffId),
+                          getStaffAccent(apt.staff_id),
                           apt.status === 'bekliyor' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
                           dragging === apt.id && 'opacity-40 scale-95',
                         )}
                         style={{ top: style.top, height: style.height }}
                       >
-                        <p className="font-semibold truncate leading-tight">{getCustomerName(apt.customerId)}</p>
-                        {style.height > 28 && <p className="truncate opacity-70">{getServiceName(apt.serviceId)}</p>}
-                        {style.height > 44 && <p className="opacity-50">{getStaffName(apt.staffId)}</p>}
+                        <p className="font-semibold truncate leading-tight">{getCustomerName(apt.customer_id)}</p>
+                        {style.height > 28 && <p className="truncate opacity-70">{getServiceName(apt.service_id)}</p>}
+                        {style.height > 44 && <p className="opacity-50">{getStaffName(apt.staff_id)}</p>}
                       </div>
                     );
                   })}
