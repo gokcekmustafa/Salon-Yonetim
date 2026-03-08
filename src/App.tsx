@@ -67,6 +67,7 @@ const App = () => (
               <Route path="/hizmetler" element={<AdminRoute><ServicesPage /></AdminRoute>} />
               <Route path="/personel" element={<AdminRoute><StaffPage /></AdminRoute>} />
               <Route path="/subeler" element={<AdminRoute><BranchesPage /></AdminRoute>} />
+              <Route path="/bildirimler" element={<AdminRoute><NotificationsPage /></AdminRoute>} />
 
               {/* Finance - admin only */}
               <Route path="/kasa" element={<FinanceRoute><PaymentsPage /></FinanceRoute>} />
