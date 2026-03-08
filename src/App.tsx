@@ -18,6 +18,7 @@ import PaymentsPage from "./pages/PaymentsPage";
 import SettingsPage from "./pages/SettingsPage";
 import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
+import CashPage from "./pages/CashPage";
 import AuthPage from "./pages/AuthPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
@@ -75,6 +76,7 @@ const App = () => (
 
               {/* Finance - admin only */}
               <Route path="/kasa" element={<FinanceRoute><PaymentsPage /></FinanceRoute>} />
+              <Route path="/kasa-yonetimi" element={<FinanceRoute><CashPage /></FinanceRoute>} />
               <Route path="/raporlar" element={<FinanceRoute><ReportsPage /></FinanceRoute>} />
 
               {/* Settings - admin only */}
