@@ -258,7 +258,7 @@ export default function AppointmentsPage() {
       {/* New Appointment Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Yeni Randevu</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Yeni Randevu</DialogTitle><DialogDescription>Randevu bilgilerini girin</DialogDescription></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>Müşteri</Label>
