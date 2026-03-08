@@ -78,7 +78,7 @@ const App = () => (
               <Route path="/bildirimler" element={<AdminRoute><NotificationsPage /></AdminRoute>} />
               <Route path="/izleme" element={<FinanceRoute><AuditPage /></FinanceRoute>} />
               <Route path="/adaylar" element={<AdminRoute><LeadsPage /></AdminRoute>} />
-              <Route path="/seanslar" element={<AdminRoute><SessionsPage /></AdminRoute>} />
+              {/* Sessions merged into /randevular */}
               <Route path="/sozlesmeler" element={<AdminRoute><ContractsPage /></AdminRoute>} />
               <Route path="/performans" element={<FinanceRoute><StaffPerformancePage /></FinanceRoute>} />
               <Route path="/maas" element={<FinanceRoute><StaffSalaryPage /></FinanceRoute>} />
