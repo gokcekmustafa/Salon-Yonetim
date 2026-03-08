@@ -330,6 +330,9 @@ export default function SuperAdminSalonsPage() {
         </Card>
       )}
 
+      {/* Subscription Alert Settings */}
+      <SubscriptionAlertSettings />
+
       {/* Announcements */}
       <AnnouncementManager mode="super_admin" />
 
