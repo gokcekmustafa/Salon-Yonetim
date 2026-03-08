@@ -179,7 +179,7 @@ export default function CashPage() {
     setTxDescription(tx.description || '');
     setTxDate(format(parseISO(tx.transaction_date), "yyyy-MM-dd'T'HH:mm"));
     setTxPaymentMethod(tx.payment_method || 'cash');
-    setTxCashBoxId(tx.cash_box_id || '');
+    setTxCashBoxId(tx.cash_box_id || 'none');
     setDialogOpen(true);
   };
 
