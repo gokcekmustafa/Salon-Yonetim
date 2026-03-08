@@ -161,8 +161,8 @@ export default function LeadsPage() {
     setSaving(false);
   };
 
-  const handleStatusChange = async (lead: Lead, newStatus: string) => {
-    const { error } = await supabase.from('leads').update({ status: newStatus }).eq('id', lead.id);
+  const handleStatusChange = async (lead: Lead, newStatus: LeadStatus) => {
+    const { error } = await supabase.from('leads').update({ status: newStatus as any }).eq('id', lead.id);
     if (!error) {
       fetchLeads();
       if (selectedLead?.id === lead.id) setSelectedLead({ ...lead, status: newStatus });
