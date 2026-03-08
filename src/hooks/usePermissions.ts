@@ -41,6 +41,7 @@ export const PERMISSION_LABELS: Record<keyof SalonPermissions, string> = {
   can_add_branches: 'Şube Ekleme',
   can_manage_services: 'Hizmet Yönetimi',
   can_manage_leads: 'Aday Müşteri Yönetimi',
+  can_manage_online_booking: 'Online Randevu Yönetimi',
 };
 
 export const PERMISSION_ICONS: Record<keyof SalonPermissions, string> = {
