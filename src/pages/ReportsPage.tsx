@@ -1,7 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSalonData } from '@/hooks/useSalonData';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -14,32 +17,59 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import {
   Building2, Users, UserCheck, TrendingUp, Wallet,
-  Calendar as CalendarIcon, BarChart3, Scissors,
+  Calendar as CalendarIcon, BarChart3, Scissors, Banknote, CreditCard, ArrowRightLeft,
 } from 'lucide-react';
 import {
-  format, subDays, subMonths, eachDayOfInterval, eachMonthOfInterval,
-  isSameDay, isSameMonth, parseISO, startOfMonth, endOfMonth,
-  startOfDay, isWithinInterval,
+  format, subDays, subMonths, subWeeks, eachDayOfInterval, eachMonthOfInterval, eachWeekOfInterval,
+  isSameDay, isSameMonth, isSameWeek, parseISO, startOfDay, startOfWeek, startOfYear, endOfYear,
+  isWithinInterval,
 } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
-type DateRange = '7d' | '30d' | '90d' | '12m';
+type DateRange = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 const PIE_COLORS = [
   'hsl(var(--primary))',
   'hsl(var(--accent))',
-  'hsl(var(--success))',
+  'hsl(142, 50%, 45%)',
   'hsl(340, 50%, 65%)',
   'hsl(220, 60%, 55%)',
   'hsl(160, 50%, 50%)',
 ];
 
+const CASH_BOX_ICONS: Record<string, React.ElementType> = {
+  cash: Banknote,
+  eft: ArrowRightLeft,
+  credit_card: CreditCard,
+};
+
+type CashBox = { id: string; name: string; payment_method: string; salon_id: string; is_active: boolean };
+type CashTx = { id: string; cash_box_id: string | null; amount: number; type: string; description: string | null; transaction_date: string; payment_method: string; salon_id: string };
+
 export default function ReportsPage() {
   const { appointments, payments, customers, staff, services, branches } = useSalonData();
+  const { currentSalonId } = useAuth();
 
-  const [dateRange, setDateRange] = useState<DateRange>('30d');
+  const [dateRange, setDateRange] = useState<DateRange>('monthly');
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+
+  // Cash box data
+  const [cashBoxes, setCashBoxes] = useState<CashBox[]>([]);
+  const [cashTransactions, setCashTransactions] = useState<CashTx[]>([]);
+
+  useEffect(() => {
+    if (!currentSalonId) return;
+    const fetchCash = async () => {
+      const [boxRes, txRes] = await Promise.all([
+        supabase.from('cash_boxes').select('*').eq('salon_id', currentSalonId),
+        supabase.from('cash_transactions').select('*').eq('salon_id', currentSalonId).order('transaction_date', { ascending: false }),
+      ]);
+      setCashBoxes((boxRes.data as CashBox[]) || []);
+      setCashTransactions((txRes.data as CashTx[]) || []);
+    };
+    fetchCash();
+  }, [currentSalonId]);
 
   const activeBranches = branches.filter(b => b.is_active);
   const activeStaff = selectedBranchId
@@ -50,11 +80,11 @@ export default function ReportsPage() {
     const end = new Date();
     let start: Date;
     switch (dateRange) {
-      case '7d': start = subDays(end, 6); break;
-      case '30d': start = subDays(end, 29); break;
-      case '90d': start = subDays(end, 89); break;
-      case '12m': start = subMonths(end, 11); break;
-      default: start = subDays(end, 29);
+      case 'daily': start = subDays(end, 6); break;
+      case 'weekly': start = subWeeks(end, 7); break;
+      case 'monthly': start = subMonths(end, 11); break;
+      case 'yearly': start = startOfYear(subMonths(end, 36)); break;
+      default: start = subMonths(end, 11);
     }
     return { startDate: startOfDay(start), endDate: end };
   }, [dateRange]);
@@ -87,27 +117,109 @@ export default function ReportsPage() {
     });
   }, [payments, appointments, startDate, endDate, selectedBranchId, selectedStaffId]);
 
-  const totalRevenue = filteredPayments.reduce((s, p) => s + p.amount, 0);
+  const filteredCashTx = useMemo(() => {
+    return cashTransactions.filter(tx => {
+      try {
+        const d = parseISO(tx.transaction_date);
+        return isWithinInterval(d, { start: startDate, end: endDate });
+      } catch { return false; }
+    });
+  }, [cashTransactions, startDate, endDate]);
+
+  const totalRevenue = filteredPayments.reduce((s, p) => s + Number(p.amount), 0);
   const completedCount = filteredAppointments.filter(a => a.status === 'tamamlandi').length;
   const cancelledCount = filteredAppointments.filter(a => a.status === 'iptal').length;
   const avgRevenue = completedCount > 0 ? Math.round(totalRevenue / completedCount) : 0;
 
+  // Cash box summaries
+  const cashBoxSummaries = useMemo(() => {
+    return cashBoxes.map(box => {
+      const txs = filteredCashTx.filter(tx => tx.cash_box_id === box.id);
+      const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+      const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+      return { ...box, income, expense, balance: income - expense, txCount: txs.length };
+    });
+  }, [cashBoxes, filteredCashTx]);
+
+  const totalCashIncome = cashBoxSummaries.reduce((s, b) => s + b.income, 0);
+  const totalCashExpense = cashBoxSummaries.reduce((s, b) => s + b.expense, 0);
+
+  // Cash over time per box
+  const cashOverTime = useMemo(() => {
+    if (dateRange === 'yearly') {
+      const years = [startDate.getFullYear(), startDate.getFullYear() + 1, startDate.getFullYear() + 2, new Date().getFullYear()];
+      const uniqueYears = [...new Set(years)];
+      return uniqueYears.map(y => {
+        const row: any = { label: String(y) };
+        cashBoxes.forEach(box => {
+          row[box.payment_method] = filteredCashTx
+            .filter(tx => tx.cash_box_id === box.id && tx.type === 'income' && parseISO(tx.transaction_date).getFullYear() === y)
+            .reduce((s, t) => s + Number(t.amount), 0);
+        });
+        return row;
+      });
+    }
+    if (dateRange === 'monthly') {
+      const months = eachMonthOfInterval({ start: startDate, end: endDate });
+      return months.map(m => {
+        const row: any = { label: format(m, 'MMM yy', { locale: tr }) };
+        cashBoxes.forEach(box => {
+          row[box.payment_method] = filteredCashTx
+            .filter(tx => tx.cash_box_id === box.id && tx.type === 'income' && isSameMonth(parseISO(tx.transaction_date), m))
+            .reduce((s, t) => s + Number(t.amount), 0);
+        });
+        return row;
+      });
+    }
+    if (dateRange === 'weekly') {
+      const weeks = eachWeekOfInterval({ start: startDate, end: endDate }, { weekStartsOn: 1 });
+      return weeks.map(w => {
+        const row: any = { label: format(w, 'd MMM', { locale: tr }) };
+        cashBoxes.forEach(box => {
+          row[box.payment_method] = filteredCashTx
+            .filter(tx => tx.cash_box_id === box.id && tx.type === 'income' && isSameWeek(parseISO(tx.transaction_date), w, { weekStartsOn: 1 }))
+            .reduce((s, t) => s + Number(t.amount), 0);
+        });
+        return row;
+      });
+    }
+    const days = eachDayOfInterval({ start: startDate, end: endDate });
+    return days.map(d => {
+      const row: any = { label: format(d, 'EEE', { locale: tr }) };
+      cashBoxes.forEach(box => {
+        row[box.payment_method] = filteredCashTx
+          .filter(tx => tx.cash_box_id === box.id && tx.type === 'income' && isSameDay(parseISO(tx.transaction_date), d))
+          .reduce((s, t) => s + Number(t.amount), 0);
+      });
+      return row;
+    });
+  }, [filteredCashTx, cashBoxes, startDate, endDate, dateRange]);
+
   const revenueOverTime = useMemo(() => {
-    if (dateRange === '12m') {
+    if (dateRange === 'monthly' || dateRange === 'yearly') {
       const months = eachMonthOfInterval({ start: startDate, end: endDate });
       return months.map(m => ({
         label: format(m, 'MMM yy', { locale: tr }),
         gelir: filteredPayments
           .filter(p => { try { return isSameMonth(parseISO(p.payment_date), m); } catch { return false; } })
-          .reduce((s, p) => s + p.amount, 0),
+          .reduce((s, p) => s + Number(p.amount), 0),
+      }));
+    }
+    if (dateRange === 'weekly') {
+      const weeks = eachWeekOfInterval({ start: startDate, end: endDate }, { weekStartsOn: 1 });
+      return weeks.map(w => ({
+        label: format(w, 'd MMM', { locale: tr }),
+        gelir: filteredPayments
+          .filter(p => { try { return isSameWeek(parseISO(p.payment_date), w, { weekStartsOn: 1 }); } catch { return false; } })
+          .reduce((s, p) => s + Number(p.amount), 0),
       }));
     }
     const days = eachDayOfInterval({ start: startDate, end: endDate });
     return days.map(d => ({
-      label: dateRange === '7d' ? format(d, 'EEE', { locale: tr }) : format(d, 'd MMM', { locale: tr }),
+      label: format(d, 'EEE', { locale: tr }),
       gelir: filteredPayments
         .filter(p => { try { return isSameDay(parseISO(p.payment_date), d); } catch { return false; } })
-        .reduce((s, p) => s + p.amount, 0),
+        .reduce((s, p) => s + Number(p.amount), 0),
     }));
   }, [filteredPayments, startDate, endDate, dateRange]);
 
@@ -164,13 +276,6 @@ export default function ReportsPage() {
       }));
   }, [filteredAppointments, staff, services, branches]);
 
-  const serviceDistribution = useMemo(() => {
-    return topServices.map((s, i) => ({
-      ...s,
-      fill: PIE_COLORS[i % PIE_COLORS.length],
-    }));
-  }, [topServices]);
-
   const revenueChartConfig: ChartConfig = { gelir: { label: 'Gelir (₺)', color: 'hsl(var(--primary))' } };
   const serviceBarConfig: ChartConfig = { adet: { label: 'Adet', color: 'hsl(var(--accent))' } };
   const customerBarConfig: ChartConfig = { ziyaret: { label: 'Ziyaret', color: 'hsl(var(--primary))' } };
@@ -178,8 +283,15 @@ export default function ReportsPage() {
     completed: { label: 'Tamamlanan', color: 'hsl(var(--primary))' },
     cancelled: { label: 'İptal', color: 'hsl(var(--destructive))' },
   };
+  const cashChartConfig: ChartConfig = {
+    cash: { label: 'Nakit', color: 'hsl(142, 50%, 45%)' },
+    eft: { label: 'EFT/Havale', color: 'hsl(220, 60%, 55%)' },
+    credit_card: { label: 'Kredi Kartı', color: 'hsl(340, 50%, 65%)' },
+  };
 
   const hasData = filteredPayments.length > 0 || filteredAppointments.length > 0;
+
+  const periodLabel = dateRange === 'daily' ? 'Günlük' : dateRange === 'weekly' ? 'Haftalık' : dateRange === 'monthly' ? 'Aylık' : 'Yıllık';
 
   return (
     <div className="page-container animate-in space-y-6">
@@ -190,18 +302,19 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      {/* Filters */}
       <Card>
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1">
-              <Label className="text-xs">Tarih Aralığı</Label>
+              <Label className="text-xs">Periyot</Label>
               <Select value={dateRange} onValueChange={v => setDateRange(v as DateRange)}>
                 <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7d">Son 7 Gün</SelectItem>
-                  <SelectItem value="30d">Son 30 Gün</SelectItem>
-                  <SelectItem value="90d">Son 90 Gün</SelectItem>
-                  <SelectItem value="12m">Son 12 Ay</SelectItem>
+                  <SelectItem value="daily">Günlük</SelectItem>
+                  <SelectItem value="weekly">Haftalık</SelectItem>
+                  <SelectItem value="monthly">Aylık</SelectItem>
+                  <SelectItem value="yearly">Yıllık</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -235,6 +348,7 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
+      {/* KPI Cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -270,24 +384,122 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      {!hasData ? (
+      {/* Cash Box Summary Cards */}
+      {cashBoxSummaries.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold mb-3">Kasa Özeti ({periodLabel})</h2>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Total card */}
+            <Card className="border-primary/30 bg-primary/5">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Toplam Kasa</CardTitle>
+                <Wallet className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-bold text-primary">₺{(totalCashIncome - totalCashExpense).toLocaleString('tr-TR')}</div>
+                <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                  <span className="text-green-600">+₺{totalCashIncome.toLocaleString('tr-TR')}</span>
+                  <span className="text-red-500">-₺{totalCashExpense.toLocaleString('tr-TR')}</span>
+                </div>
+              </CardContent>
+            </Card>
+            {cashBoxSummaries.map(box => {
+              const Icon = CASH_BOX_ICONS[box.payment_method] || Wallet;
+              return (
+                <Card key={box.id}>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{box.name}</CardTitle>
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-xl font-bold">₺{box.balance.toLocaleString('tr-TR')}</div>
+                    <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                      <span className="text-green-600">+₺{box.income.toLocaleString('tr-TR')}</span>
+                      <span className="text-red-500">-₺{box.expense.toLocaleString('tr-TR')}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!hasData && cashBoxSummaries.every(b => b.txCount === 0) ? (
         <Card>
           <CardContent className="py-16 text-center">
             <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
             <p className="text-muted-foreground">Bu filtreler için veri bulunamadı.</p>
-            <p className="text-xs text-muted-foreground mt-1">Randevu oluşturup tamamladığınızda raporlar burada görünecek.</p>
           </CardContent>
         </Card>
       ) : (
         <>
+          {/* Cash Box Chart */}
+          {cashBoxes.length > 0 && filteredCashTx.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Kasa Gelir Analizi</CardTitle>
+                <CardDescription>{periodLabel} kasa türüne göre gelir dağılımı</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="chart">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="chart">Grafik</TabsTrigger>
+                    <TabsTrigger value="table">Tablo</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="chart">
+                    <ChartContainer config={cashChartConfig} className="h-[300px] w-full">
+                      <BarChart data={cashOverTime} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis dataKey="label" className="text-xs" />
+                        <YAxis className="text-xs" />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        {cashBoxes.map(box => (
+                          <Bar key={box.id} dataKey={box.payment_method} stackId="a" fill={`var(--color-${box.payment_method})`} radius={[2, 2, 0, 0]} />
+                        ))}
+                      </BarChart>
+                    </ChartContainer>
+                  </TabsContent>
+                  <TabsContent value="table">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2 font-medium text-muted-foreground">Kasa</th>
+                            <th className="text-right py-2 font-medium text-muted-foreground">Gelir</th>
+                            <th className="text-right py-2 font-medium text-muted-foreground">Gider</th>
+                            <th className="text-right py-2 font-medium text-muted-foreground">Net</th>
+                            <th className="text-right py-2 font-medium text-muted-foreground">İşlem</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cashBoxSummaries.map(box => (
+                            <tr key={box.id} className="border-b last:border-0">
+                              <td className="py-2.5 font-medium">{box.name}</td>
+                              <td className="py-2.5 text-right text-green-600">₺{box.income.toLocaleString('tr-TR')}</td>
+                              <td className="py-2.5 text-right text-red-500">₺{box.expense.toLocaleString('tr-TR')}</td>
+                              <td className="py-2.5 text-right font-semibold">₺{box.balance.toLocaleString('tr-TR')}</td>
+                              <td className="py-2.5 text-right"><Badge variant="secondary">{box.txCount}</Badge></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Revenue over time */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Gelir Grafiği</CardTitle>
-              <CardDescription>{dateRange === '12m' ? 'Aylık' : 'Günlük'} gelir trendi</CardDescription>
+              <CardDescription>{periodLabel} gelir trendi</CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer config={revenueChartConfig} className="h-[300px] w-full">
-                {dateRange === '12m' || dateRange === '90d' ? (
+                {dateRange === 'monthly' || dateRange === 'yearly' ? (
                   <LineChart data={revenueOverTime} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                     <XAxis dataKey="label" className="text-xs" />
@@ -308,6 +520,7 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
 
+          {/* Services & Customers */}
           <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
             <Card>
               <CardHeader>
@@ -374,6 +587,7 @@ export default function ReportsPage() {
             </Card>
           </div>
 
+          {/* Staff Performance */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2"><UserCheck className="h-4 w-4" /> Personel Performans Raporu</CardTitle>
@@ -394,9 +608,7 @@ export default function ReportsPage() {
                       <Bar dataKey="cancelled" fill="var(--color-cancelled)" radius={[6, 6, 0, 0]} name="İptal" />
                     </BarChart>
                   </ChartContainer>
-
                   <Separator className="my-4" />
-
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
@@ -413,12 +625,8 @@ export default function ReportsPage() {
                           <tr key={i} className="border-b last:border-0">
                             <td className="py-2.5 font-medium">{sp.name}</td>
                             <td className="py-2.5 text-muted-foreground">{sp.branch}</td>
-                            <td className="py-2.5 text-right">
-                              <Badge variant="default" className="text-xs">{sp.completed}</Badge>
-                            </td>
-                            <td className="py-2.5 text-right">
-                              <Badge variant={sp.cancelled > 0 ? 'destructive' : 'secondary'} className="text-xs">{sp.cancelled}</Badge>
-                            </td>
+                            <td className="py-2.5 text-right"><Badge variant="default" className="text-xs">{sp.completed}</Badge></td>
+                            <td className="py-2.5 text-right"><Badge variant={sp.cancelled > 0 ? 'destructive' : 'secondary'} className="text-xs">{sp.cancelled}</Badge></td>
                             <td className="py-2.5 text-right font-semibold">₺{sp.revenue.toLocaleString('tr-TR')}</td>
                           </tr>
                         ))}
