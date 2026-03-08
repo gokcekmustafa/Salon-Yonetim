@@ -31,6 +31,9 @@ interface SalonContextType {
   updateAppointment: (id: string, a: Partial<Appointment>) => void;
   addPayment: (p: Omit<Payment, 'id'>) => void;
   hasConflict: (staffId: string, start: string, end: string, excludeId?: string) => boolean;
+  notificationSettings: NotificationSettings;
+  updateNotificationSettings: (s: Partial<NotificationSettings>) => void;
+  sendReminder: (appointmentId: string, channel: 'whatsapp' | 'sms') => void;
 }
 
 const SalonContext = createContext<SalonContextType | null>(null);
