@@ -27,6 +27,7 @@ import { PopupManager } from '@/components/popup/PopupManager';
 
 type Salon = {
   id: string; name: string; slug: string; phone: string | null; address: string | null;
+  logo_url: string | null;
   subscription_plan: 'free' | 'starter' | 'professional' | 'enterprise';
   is_active: boolean; created_at: string;
 };
