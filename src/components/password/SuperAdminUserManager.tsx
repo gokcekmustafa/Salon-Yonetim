@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Key, Loader2, Eye, EyeOff, Search, ShieldCheck, Plus, UserPlus, Trash2, Mail, Lock } from 'lucide-react';
+import { Users, Key, Loader2, Eye, EyeOff, Search, ShieldCheck, Plus, UserPlus, Trash2, Mail, Lock, Building2, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -75,6 +75,14 @@ export function SuperAdminUserManager() {
   const [createSalonRole, setCreateSalonRole] = useState<string>('salon_admin');
   const [showCreatePassword, setShowCreatePassword] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  // Membership/role management dialog
+  const [memberDialogOpen, setMemberDialogOpen] = useState(false);
+  const [memberUser, setMemberUser] = useState<EnrichedUser | null>(null);
+  const [memberGlobalRole, setMemberGlobalRole] = useState<string>('salon_admin');
+  const [memberSalonId, setMemberSalonId] = useState<string>('');
+  const [memberSalonRole, setMemberSalonRole] = useState<string>('salon_admin');
+  const [savingMember, setSavingMember] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -228,6 +236,59 @@ export function SuperAdminUserManager() {
     }
   };
 
+  // Membership management
+  const openMemberManage = (user: EnrichedUser) => {
+    setMemberUser(user);
+    setMemberGlobalRole(user.roles[0] || 'salon_admin');
+    setMemberSalonId(user.memberships[0]?.salon_id || '');
+    setMemberSalonRole(user.memberships[0]?.role || 'salon_admin');
+    setMemberDialogOpen(true);
+  };
+
+  const handleAssignMembership = async () => {
+    if (!memberUser) return;
+    setSavingMember(true);
+    try {
+      const body: Record<string, string> = {
+        action: 'assign_membership',
+        target_user_id: memberUser.id,
+        global_role: memberGlobalRole,
+      };
+      if (memberSalonId && memberGlobalRole !== 'super_admin') {
+        body.salon_id = memberSalonId;
+        body.salon_role = memberSalonRole;
+      }
+      const res = await supabase.functions.invoke('manage-passwords', { body });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || 'Atama başarısız');
+      } else {
+        toast.success(`${memberUser.full_name || memberUser.email} rol/salon ataması yapıldı`);
+        setMemberDialogOpen(false);
+        fetchUsers();
+      }
+    } catch {
+      toast.error('Atama başarısız');
+    }
+    setSavingMember(false);
+  };
+
+  const handleRemoveMembership = async (user: EnrichedUser, salonId: string) => {
+    if (!confirm('Bu salon üyeliğini kaldırmak istediğinizden emin misiniz?')) return;
+    try {
+      const res = await supabase.functions.invoke('manage-passwords', {
+        body: { action: 'remove_membership', target_user_id: user.id, salon_id: salonId },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || 'Üyelik kaldırılamadı');
+      } else {
+        toast.success('Salon üyeliği kaldırıldı');
+        fetchUsers();
+      }
+    } catch {
+      toast.error('Üyelik kaldırılamadı');
+    }
+  };
+
   const filtered = users.filter(u =>
     (u.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
     (u.email || '').toLowerCase().includes(search.toLowerCase())
@@ -353,6 +414,9 @@ export function SuperAdminUserManager() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" onClick={() => openMemberManage(user)} className="h-8 w-8" title="Rol & Salon Ata">
+                            <UserCog className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => openEmailUpdate(user)} className="h-8 w-8" title="E-posta güncelle">
                             <Mail className="h-4 w-4" />
                           </Button>
@@ -549,6 +613,96 @@ export function SuperAdminUserManager() {
             >
               {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Kullanıcı Oluştur
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Membership/Role Management Dialog */}
+      <Dialog open={memberDialogOpen} onOpenChange={setMemberDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCog className="h-5 w-5 text-primary" />
+              Rol & Salon Ataması
+            </DialogTitle>
+            <DialogDescription>
+              {memberUser?.full_name || memberUser?.email || 'Kullanıcı'} için rol ve salon üyeliği yönetin
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg bg-muted/50 border border-border text-sm">
+              <p className="font-medium">{memberUser?.full_name || '—'}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{memberUser?.email}</p>
+              {memberUser && memberUser.memberships.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground">Mevcut Salonlar:</p>
+                  {memberUser.memberships.map(m => (
+                    <div key={m.salon_id} className="flex items-center justify-between">
+                      <span className="text-xs">
+                        {m.salon_name} <Badge variant="outline" className="text-[9px] ml-1">{m.role === 'salon_admin' ? 'Admin' : 'Personel'}</Badge>
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive hover:text-destructive"
+                        onClick={() => memberUser && handleRemoveMembership(memberUser, m.salon_id)}
+                        title="Üyeliği kaldır"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Sistem Rolü</Label>
+              <Select value={memberGlobalRole} onValueChange={setMemberGlobalRole}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  <SelectItem value="salon_admin">Salon Admin</SelectItem>
+                  <SelectItem value="staff">Personel</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {memberGlobalRole !== 'super_admin' && (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Salon Ata</Label>
+                  <Select value={memberSalonId} onValueChange={setMemberSalonId}>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Salon seçin" /></SelectTrigger>
+                    <SelectContent>
+                      {salons.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {memberSalonId && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Salon İçi Rol</Label>
+                    <Select value={memberSalonRole} onValueChange={setMemberSalonRole}>
+                      <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="salon_admin">Salon Admin</SelectItem>
+                        <SelectItem value="staff">Personel</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMemberDialogOpen(false)}>İptal</Button>
+            <Button onClick={handleAssignMembership} disabled={savingMember} className="btn-gradient">
+              {savingMember && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Kaydet
             </Button>
           </DialogFooter>
         </DialogContent>

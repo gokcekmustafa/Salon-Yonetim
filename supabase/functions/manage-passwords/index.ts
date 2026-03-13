@@ -238,6 +238,57 @@ Deno.serve(async (req) => {
         return json({ success: true, message: 'E-posta güncellendi' })
       }
 
+      // ─── Assign salon membership & role ───
+      case 'assign_membership': {
+        if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
+        const { target_user_id: assignUserId, salon_id: assignSalonId2, salon_role: assignRole, global_role } = params
+        if (!assignUserId) return json({ error: 'target_user_id gerekli' }, 400)
+
+        // Assign global role if provided
+        if (global_role) {
+          // Remove existing roles first, then insert new one
+          await supabaseAdmin.from('user_roles').delete().eq('user_id', assignUserId)
+          await supabaseAdmin.from('user_roles').insert({ user_id: assignUserId, role: global_role })
+        }
+
+        // Assign salon membership if provided
+        if (assignSalonId2 && assignRole) {
+          // Check if membership already exists
+          const { data: existing } = await supabaseAdmin
+            .from('salon_members')
+            .select('id')
+            .eq('user_id', assignUserId)
+            .eq('salon_id', assignSalonId2)
+            .maybeSingle()
+
+          if (existing) {
+            // Update existing membership role
+            await supabaseAdmin.from('salon_members')
+              .update({ role: assignRole })
+              .eq('id', existing.id)
+          } else {
+            await supabaseAdmin.from('salon_members')
+              .insert({ user_id: assignUserId, salon_id: assignSalonId2, role: assignRole })
+          }
+        }
+
+        return json({ success: true, message: 'Rol ve üyelik atandı' })
+      }
+
+      // ─── Remove salon membership ───
+      case 'remove_membership': {
+        if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
+        const { target_user_id: rmUserId, salon_id: rmSalonId } = params
+        if (!rmUserId || !rmSalonId) return json({ error: 'target_user_id ve salon_id gerekli' }, 400)
+
+        await supabaseAdmin.from('salon_members')
+          .delete()
+          .eq('user_id', rmUserId)
+          .eq('salon_id', rmSalonId)
+
+        return json({ success: true, message: 'Salon üyeliği kaldırıldı' })
+      }
+
       // ─── List salon staff users ───
       case 'list_salon_staff_users': {
         const { salon_id } = params
