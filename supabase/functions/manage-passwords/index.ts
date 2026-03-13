@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     const { data: callerMemberships } = await supabaseAdmin
       .from('salon_members')
       .select('salon_id, role')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     const isSalonAdminOf = (salonId: string) =>
       callerMemberships?.some(m => m.salon_id === salonId && m.role === 'salon_admin') ?? false
