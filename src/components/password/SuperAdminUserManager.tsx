@@ -414,6 +414,9 @@ export function SuperAdminUserManager() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" onClick={() => openMemberManage(user)} className="h-8 w-8" title="Rol & Salon Ata">
+                            <UserCog className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => openEmailUpdate(user)} className="h-8 w-8" title="E-posta güncelle">
                             <Mail className="h-4 w-4" />
                           </Button>
