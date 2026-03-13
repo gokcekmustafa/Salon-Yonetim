@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -48,19 +48,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<AuthContextType['profile']>(null);
   const [currentSalonId, setCurrentSalonId] = useState<string | null>(null);
   const [currentBranchId, setCurrentBranchId] = useState<string | null>(null);
+  const fetchIdRef = useRef(0); // Track latest fetch to ignore stale results
 
-  const fetchUserData = useCallback(async (userId: string) => {
+  const fetchUserData = useCallback(async (userId: string, fetchId: number) => {
     try {
-      // Fetch roles and profile in parallel
       const [rolesRes, profileRes] = await Promise.all([
         supabase.from('user_roles').select('role').eq('user_id', userId),
         supabase.from('profiles').select('full_name, avatar_url, phone').eq('user_id', userId).maybeSingle(),
       ]);
 
+      // If a newer fetch started, discard this result
+      if (fetchId !== fetchIdRef.current) return;
+
       const roleSet = new Set<AppRole>((rolesRes.data || []).map(r => r.role as AppRole));
       setProfile(profileRes.data ?? null);
 
-      // Fetch all salon memberships for non-super-admin users
       if (!roleSet.has('super_admin')) {
         const { data: memberships } = await supabase
           .from('salon_members')
@@ -68,8 +70,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('user_id', userId)
           .order('created_at', { ascending: true });
 
-        const firstMembership = memberships?.[0];
+        if (fetchId !== fetchIdRef.current) return;
 
+        const firstMembership = memberships?.[0];
         if (firstMembership) {
           setCurrentSalonId(firstMembership.salon_id);
           setCurrentBranchId(firstMembership.branch_id);
@@ -84,9 +87,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCurrentBranchId(null);
       }
 
+      if (fetchId !== fetchIdRef.current) return;
       setRoles(Array.from(roleSet));
     } catch (err) {
       console.error('Error fetching user data:', err);
+      if (fetchId !== fetchIdRef.current) return;
       setRoles([]);
       setProfile(null);
       setCurrentSalonId(null);
@@ -96,25 +101,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
-    let initialSessionHandled = false;
 
-    // Set up auth state listener FIRST
+    // Single source of truth: onAuthStateChange handles both initial session and changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
         if (!mounted) return;
-        
+
         setSession(newSession);
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
+          // Increment fetch ID so any in-flight fetch is discarded
+          const id = ++fetchIdRef.current;
+          // Keep loading true until roles are fetched
+          setLoading(true);
           // Use setTimeout to avoid Supabase auth deadlock
           setTimeout(() => {
             if (!mounted) return;
-            fetchUserData(newSession.user.id).finally(() => {
-              if (mounted) setLoading(false);
+            fetchUserData(newSession.user.id, id).finally(() => {
+              if (mounted && id === fetchIdRef.current) {
+                setLoading(false);
+              }
             });
           }, 0);
         } else {
+          fetchIdRef.current++;
           setRoles([]);
           setProfile(null);
           setCurrentSalonId(null);
@@ -123,23 +134,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      if (!mounted || initialSessionHandled) return;
-      initialSessionHandled = true;
-      
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
-      
-      if (existingSession?.user) {
-        fetchUserData(existingSession.user.id).finally(() => {
-          if (mounted) setLoading(false);
-        });
-      } else {
-        if (mounted) setLoading(false);
-      }
-    });
 
     return () => {
       mounted = false;
