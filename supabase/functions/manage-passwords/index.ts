@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
         if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
         const { target_user_id: deleteUserId } = params
         if (!deleteUserId) return json({ error: 'target_user_id gerekli' }, 400)
-        if (deleteUserId === user.id) return json({ error: 'Kendinizi silemezsiniz' }, 400)
+        if (deleteUserId === userId) return json({ error: 'Kendinizi silemezsiniz' }, 400)
 
         await supabaseAdmin.from('user_roles').delete().eq('user_id', deleteUserId)
         await supabaseAdmin.from('salon_members').delete().eq('user_id', deleteUserId)
