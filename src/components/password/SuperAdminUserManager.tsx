@@ -76,6 +76,14 @@ export function SuperAdminUserManager() {
   const [showCreatePassword, setShowCreatePassword] = useState(false);
   const [creating, setCreating] = useState(false);
 
+  // Membership/role management dialog
+  const [memberDialogOpen, setMemberDialogOpen] = useState(false);
+  const [memberUser, setMemberUser] = useState<EnrichedUser | null>(null);
+  const [memberGlobalRole, setMemberGlobalRole] = useState<string>('salon_admin');
+  const [memberSalonId, setMemberSalonId] = useState<string>('');
+  const [memberSalonRole, setMemberSalonRole] = useState<string>('salon_admin');
+  const [savingMember, setSavingMember] = useState(false);
+
   useEffect(() => {
     fetchUsers();
     fetchSalons();
