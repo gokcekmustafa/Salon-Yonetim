@@ -19,6 +19,7 @@ interface EnrichedUser {
   full_name: string | null;
   phone: string | null;
   roles: string[];
+  stored_password: string | null;
   memberships: { salon_id: string; salon_name: string; role: string }[];
 }
 
