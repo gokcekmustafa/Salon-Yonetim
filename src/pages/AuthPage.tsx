@@ -12,6 +12,7 @@ import { useBranding } from '@/hooks/useBranding';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { branding } = useBranding();
