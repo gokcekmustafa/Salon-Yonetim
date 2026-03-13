@@ -85,41 +85,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
+    let initialSessionHandled = false;
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      (_event, newSession) => {
         if (!mounted) return;
         
         setSession(newSession);
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
-          // Fetch user data before setting loading to false
-          await fetchUserData(newSession.user.id);
+          // Use setTimeout to avoid Supabase auth deadlock
+          setTimeout(() => {
+            if (!mounted) return;
+            fetchUserData(newSession.user.id).finally(() => {
+              if (mounted) setLoading(false);
+            });
+          }, 0);
         } else {
           setRoles([]);
           setProfile(null);
           setCurrentSalonId(null);
           setCurrentBranchId(null);
+          if (mounted) setLoading(false);
         }
-        
-        if (mounted) setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
-      if (!mounted) return;
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      if (!mounted || initialSessionHandled) return;
+      initialSessionHandled = true;
       
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
       
       if (existingSession?.user) {
-        await fetchUserData(existingSession.user.id);
+        fetchUserData(existingSession.user.id).finally(() => {
+          if (mounted) setLoading(false);
+        });
+      } else {
+        if (mounted) setLoading(false);
       }
-      
-      if (mounted) setLoading(false);
     });
 
     return () => {
