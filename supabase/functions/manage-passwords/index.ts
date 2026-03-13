@@ -73,9 +73,9 @@ Deno.serve(async (req) => {
         const { new_password } = params
         if (!new_password || new_password.length < 6) return json({ error: 'Şifre en az 6 karakter olmalıdır' }, 400)
 
-        const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: new_password })
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { password: new_password })
         if (error) return json({ error: error.message }, 400)
-        await storePassword(user.id, new_password)
+        await storePassword(userId, new_password)
         return json({ success: true, message: 'Şifre başarıyla değiştirildi' })
       }
 
