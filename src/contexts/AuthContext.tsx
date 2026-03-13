@@ -54,32 +54,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Fetch roles and profile in parallel
       const [rolesRes, profileRes] = await Promise.all([
         supabase.from('user_roles').select('role').eq('user_id', userId),
-        supabase.from('profiles').select('full_name, avatar_url, phone').eq('user_id', userId).single(),
+        supabase.from('profiles').select('full_name, avatar_url, phone').eq('user_id', userId).maybeSingle(),
       ]);
 
-      const userRoles = (rolesRes.data || []).map(r => r.role as AppRole);
-      setRoles(userRoles);
-      setProfile(profileRes.data);
+      const roleSet = new Set<AppRole>((rolesRes.data || []).map(r => r.role as AppRole));
+      setProfile(profileRes.data ?? null);
 
-      // If not super_admin, fetch salon membership
-      if (!userRoles.includes('super_admin')) {
-        const { data: membership } = await supabase
+      // Fetch all salon memberships for non-super-admin users
+      if (!roleSet.has('super_admin')) {
+        const { data: memberships } = await supabase
           .from('salon_members')
           .select('salon_id, branch_id, role')
           .eq('user_id', userId)
-          .limit(1)
-          .single();
+          .order('created_at', { ascending: true });
 
-        if (membership) {
-          setCurrentSalonId(membership.salon_id);
-          setCurrentBranchId(membership.branch_id);
-          if (!userRoles.includes(membership.role as AppRole)) {
-            setRoles(prev => [...prev, membership.role as AppRole]);
-          }
+        const firstMembership = memberships?.[0];
+
+        if (firstMembership) {
+          setCurrentSalonId(firstMembership.salon_id);
+          setCurrentBranchId(firstMembership.branch_id);
+        } else {
+          setCurrentSalonId(null);
+          setCurrentBranchId(null);
         }
+
+        (memberships || []).forEach(m => roleSet.add(m.role as AppRole));
+      } else {
+        setCurrentSalonId(null);
+        setCurrentBranchId(null);
       }
+
+      setRoles(Array.from(roleSet));
     } catch (err) {
       console.error('Error fetching user data:', err);
+      setRoles([]);
+      setProfile(null);
+      setCurrentSalonId(null);
+      setCurrentBranchId(null);
     }
   }, []);
 
