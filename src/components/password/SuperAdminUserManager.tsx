@@ -302,6 +302,13 @@ export function SuperAdminUserManager() {
                       <TableCell className="hidden md:table-cell">
                         <span className="text-sm text-muted-foreground">{user.email}</span>
                       </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {user.stored_password ? (
+                          <PasswordReveal password={user.stored_password} />
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {user.roles.map(role => (
