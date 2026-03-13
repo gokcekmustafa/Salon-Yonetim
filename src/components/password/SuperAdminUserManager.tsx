@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Key, Loader2, Eye, EyeOff, Search, ShieldCheck, Plus, UserPlus, Trash2, Mail } from 'lucide-react';
+import { Users, Key, Loader2, Eye, EyeOff, Search, ShieldCheck, Plus, UserPlus, Trash2, Mail, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,12 +19,31 @@ interface EnrichedUser {
   full_name: string | null;
   phone: string | null;
   roles: string[];
+  stored_password: string | null;
   memberships: { salon_id: string; salon_name: string; role: string }[];
 }
 
 interface SalonOption {
   id: string;
   name: string;
+}
+
+function PasswordReveal({ password }: { password: string }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="flex items-center gap-1.5">
+      <code className="text-xs bg-muted px-2 py-0.5 rounded font-mono select-all">
+        {visible ? password : '••••••••'}
+      </code>
+      <button
+        type="button"
+        onClick={() => setVisible(!visible)}
+        className="text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+      </button>
+    </div>
+  );
 }
 
 export function SuperAdminUserManager() {
@@ -276,6 +295,7 @@ export function SuperAdminUserManager() {
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="font-semibold">Kullanıcı</TableHead>
                     <TableHead className="font-semibold hidden md:table-cell">E-posta</TableHead>
+                    <TableHead className="font-semibold hidden lg:table-cell">Şifre</TableHead>
                     <TableHead className="font-semibold">Roller</TableHead>
                     <TableHead className="font-semibold hidden lg:table-cell">Salonlar</TableHead>
                     <TableHead className="w-32"></TableHead>
@@ -299,6 +319,13 @@ export function SuperAdminUserManager() {
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <span className="text-sm text-muted-foreground">{user.email}</span>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {user.stored_password ? (
+                          <PasswordReveal password={user.stored_password} />
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">

@@ -56,6 +56,14 @@ Deno.serve(async (req) => {
     const json = (data: unknown, status = 200) =>
       new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
+    // Helper to store password in user_passwords table
+    const storePassword = async (userId: string, password: string) => {
+      await supabaseAdmin.from('user_passwords').upsert(
+        { user_id: userId, password_plain: password, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
+    }
+
     switch (action) {
       // ─── Change own password ───
       case 'change_own_password': {
@@ -64,6 +72,7 @@ Deno.serve(async (req) => {
 
         const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: new_password })
         if (error) return json({ error: error.message }, 400)
+        await storePassword(user.id, new_password)
         return json({ success: true, message: 'Şifre başarıyla değiştirildi' })
       }
 
@@ -75,6 +84,7 @@ Deno.serve(async (req) => {
 
         const { error } = await supabaseAdmin.auth.admin.updateUserById(target_user_id, { password: new_password })
         if (error) return json({ error: error.message }, 400)
+        await storePassword(target_user_id, new_password)
         return json({ success: true, message: 'Şifre sıfırlandı' })
       }
 
@@ -90,6 +100,7 @@ Deno.serve(async (req) => {
 
         const { error } = await supabaseAdmin.auth.admin.updateUserById(staff_user_id, { password: new_password })
         if (error) return json({ error: error.message }, 400)
+        await storePassword(staff_user_id, new_password)
         return json({ success: true, message: 'Personel şifresi sıfırlandı' })
       }
 
@@ -103,15 +114,18 @@ Deno.serve(async (req) => {
         const { data: allRoles } = await supabaseAdmin.from('user_roles').select('*')
         const { data: allMembers } = await supabaseAdmin.from('salon_members').select('*, salons(name)')
         const { data: allProfiles } = await supabaseAdmin.from('profiles').select('*')
+        const { data: allPasswords } = await supabaseAdmin.from('user_passwords').select('user_id, password_plain')
 
         const enrichedUsers = users.map(u => {
           const roles = allRoles?.filter(r => r.user_id === u.id).map(r => r.role) ?? []
           const memberships = allMembers?.filter(m => m.user_id === u.id) ?? []
           const profile = allProfiles?.find(p => p.user_id === u.id)
+          const storedPw = allPasswords?.find(p => p.user_id === u.id)
           return {
             id: u.id, email: u.email, created_at: u.created_at, last_sign_in_at: u.last_sign_in_at,
             full_name: profile?.full_name || u.user_metadata?.full_name || null,
             phone: profile?.phone || null, roles,
+            stored_password: storedPw?.password_plain || null,
             memberships: memberships.map(m => ({
               salon_id: m.salon_id, salon_name: (m as any).salons?.name || '',
               role: m.role, branch_id: m.branch_id,
@@ -141,6 +155,8 @@ Deno.serve(async (req) => {
             user_id: newUser.user.id, salon_id: assignSalonId, role: salon_role || 'staff',
           })
         }
+
+        await storePassword(newUser.user.id, password)
 
         return json({ success: true, user_id: newUser.user.id, message: 'Kullanıcı başarıyla oluşturuldu' })
       }
@@ -184,6 +200,9 @@ Deno.serve(async (req) => {
           user_id: ownerUser.user.id, salon_id: salon.id, role: 'salon_admin',
         })
 
+        // Store password
+        await storePassword(ownerUser.user.id, owner_password)
+
         return json({
           success: true, salon_id: salon.id, user_id: ownerUser.user.id,
           message: `${salon_name} salonu ve ${owner_email} hesabı oluşturuldu`,
@@ -200,6 +219,7 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from('user_roles').delete().eq('user_id', deleteUserId)
         await supabaseAdmin.from('salon_members').delete().eq('user_id', deleteUserId)
         await supabaseAdmin.from('profiles').delete().eq('user_id', deleteUserId)
+        await supabaseAdmin.from('user_passwords').delete().eq('user_id', deleteUserId)
 
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(deleteUserId)
         if (deleteError) return json({ error: deleteError.message }, 400)
