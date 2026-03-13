@@ -236,6 +236,59 @@ export function SuperAdminUserManager() {
     }
   };
 
+  // Membership management
+  const openMemberManage = (user: EnrichedUser) => {
+    setMemberUser(user);
+    setMemberGlobalRole(user.roles[0] || 'salon_admin');
+    setMemberSalonId(user.memberships[0]?.salon_id || '');
+    setMemberSalonRole(user.memberships[0]?.role || 'salon_admin');
+    setMemberDialogOpen(true);
+  };
+
+  const handleAssignMembership = async () => {
+    if (!memberUser) return;
+    setSavingMember(true);
+    try {
+      const body: Record<string, string> = {
+        action: 'assign_membership',
+        target_user_id: memberUser.id,
+        global_role: memberGlobalRole,
+      };
+      if (memberSalonId && memberGlobalRole !== 'super_admin') {
+        body.salon_id = memberSalonId;
+        body.salon_role = memberSalonRole;
+      }
+      const res = await supabase.functions.invoke('manage-passwords', { body });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || 'Atama başarısız');
+      } else {
+        toast.success(`${memberUser.full_name || memberUser.email} rol/salon ataması yapıldı`);
+        setMemberDialogOpen(false);
+        fetchUsers();
+      }
+    } catch {
+      toast.error('Atama başarısız');
+    }
+    setSavingMember(false);
+  };
+
+  const handleRemoveMembership = async (user: EnrichedUser, salonId: string) => {
+    if (!confirm('Bu salon üyeliğini kaldırmak istediğinizden emin misiniz?')) return;
+    try {
+      const res = await supabase.functions.invoke('manage-passwords', {
+        body: { action: 'remove_membership', target_user_id: user.id, salon_id: salonId },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || 'Üyelik kaldırılamadı');
+      } else {
+        toast.success('Salon üyeliği kaldırıldı');
+        fetchUsers();
+      }
+    } catch {
+      toast.error('Üyelik kaldırılamadı');
+    }
+  };
+
   const filtered = users.filter(u =>
     (u.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
     (u.email || '').toLowerCase().includes(search.toLowerCase())
