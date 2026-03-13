@@ -277,6 +277,7 @@ export function SuperAdminUserManager() {
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="font-semibold">Kullanıcı</TableHead>
                     <TableHead className="font-semibold hidden md:table-cell">E-posta</TableHead>
+                    <TableHead className="font-semibold hidden lg:table-cell">Şifre</TableHead>
                     <TableHead className="font-semibold">Roller</TableHead>
                     <TableHead className="font-semibold hidden lg:table-cell">Salonlar</TableHead>
                     <TableHead className="w-32"></TableHead>
