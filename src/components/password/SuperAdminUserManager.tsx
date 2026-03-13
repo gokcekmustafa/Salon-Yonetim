@@ -617,6 +617,96 @@ export function SuperAdminUserManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Membership/Role Management Dialog */}
+      <Dialog open={memberDialogOpen} onOpenChange={setMemberDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCog className="h-5 w-5 text-primary" />
+              Rol & Salon Ataması
+            </DialogTitle>
+            <DialogDescription>
+              {memberUser?.full_name || memberUser?.email || 'Kullanıcı'} için rol ve salon üyeliği yönetin
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg bg-muted/50 border border-border text-sm">
+              <p className="font-medium">{memberUser?.full_name || '—'}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{memberUser?.email}</p>
+              {memberUser && memberUser.memberships.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground">Mevcut Salonlar:</p>
+                  {memberUser.memberships.map(m => (
+                    <div key={m.salon_id} className="flex items-center justify-between">
+                      <span className="text-xs">
+                        {m.salon_name} <Badge variant="outline" className="text-[9px] ml-1">{m.role === 'salon_admin' ? 'Admin' : 'Personel'}</Badge>
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive hover:text-destructive"
+                        onClick={() => memberUser && handleRemoveMembership(memberUser, m.salon_id)}
+                        title="Üyeliği kaldır"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Sistem Rolü</Label>
+              <Select value={memberGlobalRole} onValueChange={setMemberGlobalRole}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  <SelectItem value="salon_admin">Salon Admin</SelectItem>
+                  <SelectItem value="staff">Personel</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {memberGlobalRole !== 'super_admin' && (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Salon Ata</Label>
+                  <Select value={memberSalonId} onValueChange={setMemberSalonId}>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Salon seçin" /></SelectTrigger>
+                    <SelectContent>
+                      {salons.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {memberSalonId && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Salon İçi Rol</Label>
+                    <Select value={memberSalonRole} onValueChange={setMemberSalonRole}>
+                      <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="salon_admin">Salon Admin</SelectItem>
+                        <SelectItem value="staff">Personel</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMemberDialogOpen(false)}>İptal</Button>
+            <Button onClick={handleAssignMembership} disabled={savingMember} className="btn-gradient">
+              {savingMember && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Kaydet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
