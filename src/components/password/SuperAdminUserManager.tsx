@@ -28,6 +28,24 @@ interface SalonOption {
   name: string;
 }
 
+function PasswordReveal({ password }: { password: string }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="flex items-center gap-1.5">
+      <code className="text-xs bg-muted px-2 py-0.5 rounded font-mono select-all">
+        {visible ? password : '••••••••'}
+      </code>
+      <button
+        type="button"
+        onClick={() => setVisible(!visible)}
+        className="text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+      </button>
+    </div>
+  );
+}
+
 export function SuperAdminUserManager() {
   const [users, setUsers] = useState<EnrichedUser[]>([]);
   const [salons, setSalons] = useState<SalonOption[]>([]);
