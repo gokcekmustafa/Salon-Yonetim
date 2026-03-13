@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
 Deno.serve(async (req) => {
@@ -20,16 +20,19 @@ Deno.serve(async (req) => {
 
     const supabaseUser = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     )
 
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
-    if (userError || !user) {
+    const token = authHeader.replace('Bearer ', '')
+    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token)
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
+
+    const userId = claimsData.claims.sub as string
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -41,14 +44,14 @@ Deno.serve(async (req) => {
     const { data: callerRoles } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     const isSuperAdmin = callerRoles?.some(r => r.role === 'super_admin') ?? false
 
     const { data: callerMemberships } = await supabaseAdmin
       .from('salon_members')
       .select('salon_id, role')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     const isSalonAdminOf = (salonId: string) =>
       callerMemberships?.some(m => m.salon_id === salonId && m.role === 'salon_admin') ?? false
@@ -70,9 +73,9 @@ Deno.serve(async (req) => {
         const { new_password } = params
         if (!new_password || new_password.length < 6) return json({ error: 'Şifre en az 6 karakter olmalıdır' }, 400)
 
-        const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: new_password })
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { password: new_password })
         if (error) return json({ error: error.message }, 400)
-        await storePassword(user.id, new_password)
+        await storePassword(userId, new_password)
         return json({ success: true, message: 'Şifre başarıyla değiştirildi' })
       }
 
@@ -214,7 +217,7 @@ Deno.serve(async (req) => {
         if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
         const { target_user_id: deleteUserId } = params
         if (!deleteUserId) return json({ error: 'target_user_id gerekli' }, 400)
-        if (deleteUserId === user.id) return json({ error: 'Kendinizi silemezsiniz' }, 400)
+        if (deleteUserId === userId) return json({ error: 'Kendinizi silemezsiniz' }, 400)
 
         await supabaseAdmin.from('user_roles').delete().eq('user_id', deleteUserId)
         await supabaseAdmin.from('salon_members').delete().eq('user_id', deleteUserId)
