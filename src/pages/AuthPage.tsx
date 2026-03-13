@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,16 +9,22 @@ import { Sparkles, Mail, Lock, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-r
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useBranding } from '@/hooks/useBranding';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const { branding } = useBranding();
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+
+  // If already logged in, redirect to home
+  if (!authLoading && user) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,9 +36,8 @@ export default function AuthPage() {
     setLoading(false);
     if (error) {
       toast({ title: 'Giriş başarısız', description: error.message, variant: 'destructive' });
-    } else {
-      navigate('/');
     }
+    // Navigation handled automatically by auth state change + ProtectedRoute
   };
 
 
