@@ -249,14 +249,14 @@ const handleComplete = async () => {
     setDetailApt(null);
   };
 
-  const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
+const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
     const current = appointments.find(a => a.id === aptId) || detailApt;
     const nextStatus = current?.status === 'iptal' ? 'iptal' : sessionStatus === 'completed' ? 'tamamlandi' : 'bekliyor';
 
-    const { error } = await supabase
-      .from('appointments')
-      .update({ session_status: sessionStatus, status: nextStatus })
-      .eq('id', aptId);
+    const error = await updateAppointment(aptId, {
+      session_status: sessionStatus,
+      status: nextStatus,
+    });
 
     if (error) {
       toast.error('Durum güncellenemedi.');
@@ -265,7 +265,6 @@ const handleComplete = async () => {
 
     setDetailApt(prev => (prev && prev.id === aptId ? { ...prev, session_status: sessionStatus, status: nextStatus } : prev));
     toast.success('Durum güncellendi.');
-    refetch();
   };
 
   const updateRoomAssignment = async (aptId: string, roomId: string) => {
