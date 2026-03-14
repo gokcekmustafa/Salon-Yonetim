@@ -179,10 +179,28 @@ export function useSalonData() {
     return error;
   };
 
-  const updateAppointment = async (id: string, data: Partial<DbAppointment>) => {
-    const { error } = await supabase.from('appointments').update(data).eq('id', id);
-    if (!error) fetchAll();
-    return error;
+const updateAppointment = async (id: string, data: Partial<DbAppointment>) => {
+    setAppointments(prev =>
+      prev.map(a => (a.id === id ? { ...a, ...data, updated_at: new Date().toISOString() } : a))
+    );
+
+    const { data: updatedRow, error } = await supabase
+      .from('appointments')
+      .update(data)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      fetchAll();
+      return error;
+    }
+
+    if (updatedRow) {
+      setAppointments(prev => prev.map(a => (a.id === id ? (updatedRow as DbAppointment) : a)));
+    }
+
+    return null;
   };
 
   const addPayment = async (data: { appointment_id: string; amount: number; payment_type: string }) => {

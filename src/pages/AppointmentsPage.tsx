@@ -199,10 +199,21 @@ export default function AppointmentsPage() {
     setCompleteDialogOpen(true);
   };
 
-  const handleComplete = async () => {
+const handleComplete = async () => {
     if (!detailApt || !user) return;
-    await updateAppointment(detailApt.id, { status: 'tamamlandi' });
-    await supabase.from('appointments').update({ session_status: 'completed' }).eq('id', detailApt.id);
+
+    const completeError = await updateAppointment(detailApt.id, {
+      status: 'tamamlandi',
+      session_status: 'completed',
+    });
+
+    if (completeError) {
+      toast.error('Randevu tamamlanamadı.');
+      return;
+    }
+
+    setDetailApt(prev => (prev ? { ...prev, status: 'tamamlandi', session_status: 'completed' } : prev));
+
     const service = services.find(s => s.id === detailApt.service_id);
     if (service) {
       // Create payment record
@@ -228,7 +239,6 @@ export default function AppointmentsPage() {
     setCompleteDialogOpen(false);
     setDetailOpen(false);
     setDetailApt(null);
-    refetch();
   };
 
   const handleCancel = async () => {
@@ -239,14 +249,14 @@ export default function AppointmentsPage() {
     setDetailApt(null);
   };
 
-  const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
+const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
     const current = appointments.find(a => a.id === aptId) || detailApt;
     const nextStatus = current?.status === 'iptal' ? 'iptal' : sessionStatus === 'completed' ? 'tamamlandi' : 'bekliyor';
 
-    const { error } = await supabase
-      .from('appointments')
-      .update({ session_status: sessionStatus, status: nextStatus })
-      .eq('id', aptId);
+    const error = await updateAppointment(aptId, {
+      session_status: sessionStatus,
+      status: nextStatus,
+    });
 
     if (error) {
       toast.error('Durum güncellenemedi.');
@@ -255,7 +265,6 @@ export default function AppointmentsPage() {
 
     setDetailApt(prev => (prev && prev.id === aptId ? { ...prev, session_status: sessionStatus, status: nextStatus } : prev));
     toast.success('Durum güncellendi.');
-    refetch();
   };
 
   const updateRoomAssignment = async (aptId: string, roomId: string) => {
@@ -280,7 +289,8 @@ export default function AppointmentsPage() {
   const statusVariant = (s: AppointmentUiStatus): 'default' | 'secondary' | 'destructive' =>
     s === 'tamamlandi' ? 'default' : s === 'iptal' ? 'destructive' : 'secondary';
 
-  const currentDetailApt = detailApt ? (appointments.find(a => a.id === detailApt.id) || detailApt) : null;
+const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) : null;
+  const currentDetailApt = detailApt ? ({ ...(liveDetailApt || {}), ...detailApt } as DbAppointment) : null;
   const currentDetailStatus = currentDetailApt ? getEffectiveAppointmentStatus(currentDetailApt) : 'bekliyor';
 
   // Room CRUD
