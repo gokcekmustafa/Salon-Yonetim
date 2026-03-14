@@ -738,11 +738,11 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             </div>
           )}
           <DialogFooter className="gap-2 sm:gap-0">
+            {canAdminManageAppointments && currentDetailApt?.status !== 'iptal' && (
+              <Button variant="outline" onClick={handleCancel}>İptal Et</Button>
+            )}
             {currentDetailApt?.status === 'bekliyor' && (
-              <>
-                <Button variant="outline" onClick={handleCancel}>İptal Et</Button>
-                <Button onClick={openCompleteDialog} className="btn-gradient">Tamamla & Ödeme Al</Button>
-              </>
+              <Button onClick={openCompleteDialog} className="btn-gradient">Tamamla & Ödeme Al</Button>
             )}
             <Button variant="ghost" onClick={() => setDetailOpen(false)}>Kapat</Button>
           </DialogFooter>
