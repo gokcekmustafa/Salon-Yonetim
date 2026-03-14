@@ -34,7 +34,7 @@ const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 
 export default function AppointmentsPage() {
   const { hasPermission } = usePermissions();
-  const { currentSalonId, user } = useAuth();
+  const { currentSalonId, user, isSalonAdmin, isSuperAdmin } = useAuth();
   const {
     appointments, customers, staff, services, branches,
     addAppointment, updateAppointment, addPayment, hasConflict, refetch,
@@ -47,6 +47,10 @@ export default function AppointmentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailApt, setDetailApt] = useState<DbAppointment | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const canAdminManageAppointments = isSalonAdmin || isSuperAdmin;
 
   // Payment method selection for completing
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
