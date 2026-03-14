@@ -358,7 +358,7 @@ const handleComplete = async () => {
     s === 'tamamlandi' ? 'default' : s === 'iptal' ? 'destructive' : 'secondary';
 
 const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) : null;
-  const currentDetailApt = detailApt ? ({ ...(liveDetailApt || {}), ...detailApt } as DbAppointment) : null;
+  const currentDetailApt = detailApt ? ({ ...detailApt, ...(liveDetailApt || {}) } as DbAppointment) : null;
   const currentDetailStatus = currentDetailApt ? getEffectiveAppointmentStatus(currentDetailApt) : 'bekliyor';
 
   // Room CRUD
