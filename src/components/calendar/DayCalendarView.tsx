@@ -11,8 +11,9 @@ const END_HOUR = 21;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
 const STATUS_COLORS: Record<string, string> = {
-  bekliyor: 'bg-primary/15 border-primary/60 text-primary',
-  tamamlandi: 'bg-muted border-muted-foreground/30 text-muted-foreground',
+  bekliyor: 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-600 dark:text-red-300',
+  in_session: 'bg-yellow-100 border-yellow-400 text-yellow-700 dark:bg-yellow-900/30 dark:border-yellow-600 dark:text-yellow-300',
+  tamamlandi: 'bg-green-100 border-green-400 text-green-700 dark:bg-green-900/30 dark:border-green-600 dark:text-green-300',
   iptal: 'bg-destructive/10 border-destructive/40 text-destructive',
 };
 
@@ -148,8 +149,9 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
           <p className="text-xs text-muted-foreground">{dayAppointments.length} randevu • {activeStaff.length} personel</p>
         </div>
         <div className="hidden sm:flex items-center gap-3 text-xs">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-primary/40" /> Bekliyor</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-muted-foreground/30" /> Tamamlandı</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-400" /> Bekliyor</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-yellow-400" /> Seansta</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-400" /> Tamamlandı</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-destructive/30" /> İptal</span>
         </div>
       </div>
@@ -201,7 +203,8 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
 
                   {getStaffAppointments(s.id).map(apt => {
                     const style = getAppointmentStyle(apt);
-                    const statusColor = STATUS_COLORS[apt.status] || STATUS_COLORS.bekliyor;
+                    const effectiveStatus = apt.session_status === 'in_session' ? 'in_session' : apt.status;
+                    const statusColor = STATUS_COLORS[effectiveStatus] || STATUS_COLORS.bekliyor;
                     return (
                       <div
                         key={apt.id}
