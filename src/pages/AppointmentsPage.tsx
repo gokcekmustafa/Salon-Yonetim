@@ -199,10 +199,21 @@ export default function AppointmentsPage() {
     setCompleteDialogOpen(true);
   };
 
-  const handleComplete = async () => {
+const handleComplete = async () => {
     if (!detailApt || !user) return;
-    await updateAppointment(detailApt.id, { status: 'tamamlandi' });
-    await supabase.from('appointments').update({ session_status: 'completed' }).eq('id', detailApt.id);
+
+    const completeError = await updateAppointment(detailApt.id, {
+      status: 'tamamlandi',
+      session_status: 'completed',
+    });
+
+    if (completeError) {
+      toast.error('Randevu tamamlanamadı.');
+      return;
+    }
+
+    setDetailApt(prev => (prev ? { ...prev, status: 'tamamlandi', session_status: 'completed' } : prev));
+
     const service = services.find(s => s.id === detailApt.service_id);
     if (service) {
       // Create payment record
@@ -228,7 +239,6 @@ export default function AppointmentsPage() {
     setCompleteDialogOpen(false);
     setDetailOpen(false);
     setDetailApt(null);
-    refetch();
   };
 
   const handleCancel = async () => {
