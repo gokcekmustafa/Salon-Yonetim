@@ -194,7 +194,8 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
 
                   {dayApts.map(apt => {
                     const style = getAppointmentStyle(apt);
-                    const statusColor = STATUS_COLORS[apt.status] || STATUS_COLORS.bekliyor;
+                    const effectiveStatus = apt.session_status === 'in_session' ? 'in_session' : apt.status;
+                    const statusColor = STATUS_COLORS[effectiveStatus] || STATUS_COLORS.bekliyor;
                     return (
                       <div
                         key={apt.id}
