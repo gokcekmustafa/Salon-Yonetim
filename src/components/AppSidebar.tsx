@@ -25,7 +25,7 @@ import {
   UserCheck,
   Wallet,
   Settings,
-  Sparkles,
+  
   Building2,
   BarChart3,
   Globe,
