@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { format, parseISO, isSameDay, addDays, startOfWeek, setHours, setMinutes, differenceInMinutes, addMinutes } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useSalonData, DbAppointment } from '@/hooks/useSalonData';
+import { getEffectiveAppointmentStatus, type AppointmentUiStatus } from '@/lib/appointmentStatus';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 

@@ -18,6 +18,7 @@ import DayCalendarView from '@/components/calendar/DayCalendarView';
 import WeekCalendarView from '@/components/calendar/WeekCalendarView';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import { getEffectiveAppointmentStatus, type AppointmentUiStatus } from '@/lib/appointmentStatus';
 import { useQuery } from '@tanstack/react-query';
 
 type ViewMode = 'day' | 'week';
