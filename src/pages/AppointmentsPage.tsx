@@ -239,15 +239,23 @@ export default function AppointmentsPage() {
     setDetailApt(null);
   };
 
-  const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
-    await supabase.from('appointments').update({ session_status: sessionStatus }).eq('id', aptId);
-    if (sessionStatus === 'completed') {
-      await updateAppointment(aptId, { status: 'tamamlandi' });
+const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
+    const current = appointments.find(a => a.id === aptId) || detailApt;
+    const nextStatus = current?.status === 'iptal' ? 'iptal' : sessionStatus === 'completed' ? 'tamamlandi' : 'bekliyor';
+
+    const { error } = await supabase
+      .from('appointments')
+      .update({ session_status: sessionStatus, status: nextStatus })
+      .eq('id', aptId);
+
+    if (error) {
+      toast.error('Durum güncellenemedi.');
+      return;
     }
+
+    setDetailApt(prev => (prev && prev.id === aptId ? { ...prev, session_status: sessionStatus, status: nextStatus } : prev));
     toast.success('Durum güncellendi.');
     refetch();
-    const updated = appointments.find(a => a.id === aptId);
-    if (updated) setDetailApt({ ...updated, session_status: sessionStatus });
   };
 
   const updateRoomAssignment = async (aptId: string, roomId: string) => {
