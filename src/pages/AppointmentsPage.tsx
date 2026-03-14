@@ -249,16 +249,18 @@ const handleComplete = async () => {
     setDetailApt(null);
   };
 
-  const handleCancel = async () => {
+  const handleCancelConfirm = async () => {
     if (!currentDetailApt || !canAdminManageAppointments) return;
 
     const error = await updateAppointment(currentDetailApt.id, { status: 'iptal' });
     if (error) {
       toast.error('Randevu iptal edilemedi.');
+      setCancelConfirmOpen(false);
       return;
     }
 
     setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'iptal' } : prev));
+    setCancelConfirmOpen(false);
     toast.info('Randevu iptal edildi.');
   };
 
