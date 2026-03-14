@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { format, parseISO, isSameDay, addDays, startOfWeek, setHours, setMinutes, differenceInMinutes, addMinutes } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { useSalonData, DbAppointment } from '@/hooks/useSalonData';
+import { DbAppointment, DbStaff, DbCustomer, DbService } from '@/hooks/useSalonData';
 import { getEffectiveAppointmentStatus, type AppointmentUiStatus } from '@/lib/appointmentStatus';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -31,10 +31,26 @@ interface WeekCalendarViewProps {
   filteredStaffId: string | null;
   filteredBranchId?: string | null;
   onAppointmentClick: (apt: DbAppointment) => void;
+  appointments: DbAppointment[];
+  staff: DbStaff[];
+  customers: DbCustomer[];
+  services: DbService[];
+  updateAppointment: (id: string, data: Partial<DbAppointment>) => Promise<unknown>;
+  hasConflict: (staffId: string, start: string, end: string, excludeId?: string) => boolean;
 }
 
-export default function WeekCalendarView({ date, filteredStaffId, filteredBranchId, onAppointmentClick }: WeekCalendarViewProps) {
-  const { appointments, staff, customers, services, updateAppointment, hasConflict } = useSalonData();
+export default function WeekCalendarView({
+  date,
+  filteredStaffId,
+  filteredBranchId,
+  onAppointmentClick,
+  appointments,
+  staff,
+  customers,
+  services,
+  updateAppointment,
+  hasConflict,
+}: WeekCalendarViewProps) {
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{ top: number } | null>(null);
 
@@ -193,7 +209,7 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
                     <div className="absolute left-0.5 right-0.5 rounded bg-primary/10 border-2 border-dashed border-primary/40 pointer-events-none z-10" style={{ top: dragPreview.top, height: 28 }} />
                   )}
 
-{dayApts.map(apt => {
+                  {dayApts.map(apt => {
                     const style = getAppointmentStyle(apt);
                     const effectiveStatus = getEffectiveAppointmentStatus(apt);
                     const statusColor = STATUS_COLORS[effectiveStatus];

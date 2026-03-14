@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2, Banknote, CreditCard, FileSpreadsheet, FileText } from 'lucide-react';
 import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
-import { format, addMinutes, addDays, subDays, addWeeks, subWeeks } from 'date-fns';
+import { format, addMinutes, addDays, subDays, addWeeks, subWeeks, differenceInMinutes } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import DayCalendarView from '@/components/calendar/DayCalendarView';
@@ -34,7 +34,7 @@ const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 
 export default function AppointmentsPage() {
   const { hasPermission } = usePermissions();
-  const { currentSalonId, user } = useAuth();
+  const { currentSalonId, user, isSalonAdmin, isSuperAdmin } = useAuth();
   const {
     appointments, customers, staff, services, branches,
     addAppointment, updateAppointment, addPayment, hasConflict, refetch,
@@ -47,6 +47,10 @@ export default function AppointmentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailApt, setDetailApt] = useState<DbAppointment | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const canAdminManageAppointments = isSalonAdmin || isSuperAdmin;
 
   // Payment method selection for completing
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
@@ -191,6 +195,8 @@ export default function AppointmentsPage() {
   const handleAppointmentClick = (apt: DbAppointment) => {
     const latest = appointments.find(a => a.id === apt.id) || apt;
     setDetailApt(latest);
+    setRescheduleDate(format(new Date(latest.start_time), 'yyyy-MM-dd'));
+    setRescheduleTime(format(new Date(latest.start_time), 'HH:mm'));
     setDetailOpen(true);
   };
 
@@ -242,14 +248,76 @@ const handleComplete = async () => {
   };
 
   const handleCancel = async () => {
-    if (!detailApt) return;
-    await updateAppointment(detailApt.id, { status: 'iptal' });
+    if (!currentDetailApt || !canAdminManageAppointments) return;
+
+    const error = await updateAppointment(currentDetailApt.id, { status: 'iptal' });
+    if (error) {
+      toast.error('Randevu iptal edilemedi.');
+      return;
+    }
+
+    setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'iptal' } : prev));
     toast.info('Randevu iptal edildi.');
-    setDetailOpen(false);
-    setDetailApt(null);
   };
 
-const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
+  const handleReschedule = async () => {
+    if (!currentDetailApt || !canAdminManageAppointments) return;
+    if (!rescheduleDate || !rescheduleTime) {
+      toast.error('Lütfen tarih ve saat seçin.');
+      return;
+    }
+
+    const start = new Date(`${rescheduleDate}T${rescheduleTime}`);
+    if (Number.isNaN(start.getTime())) {
+      toast.error('Geçerli bir tarih/saat girin.');
+      return;
+    }
+
+    const currentDuration = Math.max(
+      differenceInMinutes(new Date(currentDetailApt.end_time), new Date(currentDetailApt.start_time)),
+      15,
+    );
+    const end = addMinutes(start, currentDuration);
+
+    if (hasConflict(currentDetailApt.staff_id, start.toISOString(), end.toISOString(), currentDetailApt.id)) {
+      toast.error('Bu personelin seçilen saatte başka bir randevusu var!');
+      return;
+    }
+
+    if (currentDetailApt.room_id) {
+      const roomConflict = appointments.some(a => {
+        if (a.id === currentDetailApt.id || a.room_id !== currentDetailApt.room_id || a.status === 'iptal') return false;
+        return start < new Date(a.end_time) && end > new Date(a.start_time);
+      });
+
+      if (roomConflict) {
+        toast.error('Seçilen oda bu saatte dolu!');
+        return;
+      }
+    }
+
+    setIsRescheduling(true);
+    const error = await updateAppointment(currentDetailApt.id, {
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
+    });
+    setIsRescheduling(false);
+
+    if (error) {
+      toast.error('Randevu tarihi güncellenemedi.');
+      return;
+    }
+
+    setDetailApt(prev =>
+      prev && prev.id === currentDetailApt.id
+        ? { ...prev, start_time: start.toISOString(), end_time: end.toISOString() }
+        : prev,
+    );
+
+    toast.success('Randevu tarihi güncellendi.');
+  };
+
+  const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
     const current = appointments.find(a => a.id === aptId) || detailApt;
     const nextStatus = current?.status === 'iptal' ? 'iptal' : sessionStatus === 'completed' ? 'tamamlandi' : 'bekliyor';
 
@@ -290,7 +358,7 @@ const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
     s === 'tamamlandi' ? 'default' : s === 'iptal' ? 'destructive' : 'secondary';
 
 const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) : null;
-  const currentDetailApt = detailApt ? ({ ...(liveDetailApt || {}), ...detailApt } as DbAppointment) : null;
+  const currentDetailApt = detailApt ? ({ ...detailApt, ...(liveDetailApt || {}) } as DbAppointment) : null;
   const currentDetailStatus = currentDetailApt ? getEffectiveAppointmentStatus(currentDetailApt) : 'bekliyor';
 
   // Room CRUD
@@ -489,6 +557,13 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             filteredBranchId={filteredBranchId}
             onAppointmentClick={handleAppointmentClick}
             rooms={rooms}
+            appointments={appointments}
+            staff={staff}
+            customers={customers}
+            services={services}
+            branches={branches}
+            updateAppointment={updateAppointment}
+            hasConflict={hasConflict}
           />
         ) : (
           <WeekCalendarView
@@ -496,6 +571,12 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             filteredStaffId={filteredStaffId}
             filteredBranchId={filteredBranchId}
             onAppointmentClick={handleAppointmentClick}
+            appointments={appointments}
+            staff={staff}
+            customers={customers}
+            services={services}
+            updateAppointment={updateAppointment}
+            hasConflict={hasConflict}
           />
         )}
       </div>
@@ -604,6 +685,19 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
                 </div>
               </div>
 
+              {canAdminManageAppointments && currentDetailApt.status !== 'iptal' && (
+                <div className="space-y-2 rounded-lg border border-border/60 p-3">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase">Tarih & Saat Düzenle</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input type="date" value={rescheduleDate} onChange={e => setRescheduleDate(e.target.value)} />
+                    <Input type="time" value={rescheduleTime} onChange={e => setRescheduleTime(e.target.value)} />
+                  </div>
+                  <Button size="sm" variant="outline" onClick={handleReschedule} disabled={isRescheduling}>
+                    {isRescheduling && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Tarihi Güncelle
+                  </Button>
+                </div>
+              )}
+
               {/* Room Assignment */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase">Oda</Label>
@@ -644,11 +738,11 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             </div>
           )}
           <DialogFooter className="gap-2 sm:gap-0">
+            {canAdminManageAppointments && currentDetailApt?.status !== 'iptal' && (
+              <Button variant="outline" onClick={handleCancel}>İptal Et</Button>
+            )}
             {currentDetailApt?.status === 'bekliyor' && (
-              <>
-                <Button variant="outline" onClick={handleCancel}>İptal Et</Button>
-                <Button onClick={openCompleteDialog} className="btn-gradient">Tamamla & Ödeme Al</Button>
-              </>
+              <Button onClick={openCompleteDialog} className="btn-gradient">Tamamla & Ödeme Al</Button>
             )}
             <Button variant="ghost" onClick={() => setDetailOpen(false)}>Kapat</Button>
           </DialogFooter>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { format, parseISO, isSameDay, setHours, setMinutes, differenceInMinutes, addMinutes } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { useSalonData, DbAppointment } from '@/hooks/useSalonData';
+import { DbAppointment, DbStaff, DbCustomer, DbService, DbBranch } from '@/hooks/useSalonData';
 import { getEffectiveAppointmentStatus, type AppointmentUiStatus } from '@/lib/appointmentStatus';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -32,10 +32,29 @@ interface DayCalendarViewProps {
   filteredBranchId?: string | null;
   onAppointmentClick: (apt: DbAppointment) => void;
   rooms?: { id: string; name: string }[];
+  appointments: DbAppointment[];
+  staff: DbStaff[];
+  customers: DbCustomer[];
+  services: DbService[];
+  branches: DbBranch[];
+  updateAppointment: (id: string, data: Partial<DbAppointment>) => Promise<unknown>;
+  hasConflict: (staffId: string, start: string, end: string, excludeId?: string) => boolean;
 }
 
-export default function DayCalendarView({ date, filteredStaffId, filteredBranchId, onAppointmentClick, rooms = [] }: DayCalendarViewProps) {
-  const { appointments, staff, customers, services, updateAppointment, hasConflict, branches } = useSalonData();
+export default function DayCalendarView({
+  date,
+  filteredStaffId,
+  filteredBranchId,
+  onAppointmentClick,
+  rooms = [],
+  appointments,
+  staff,
+  customers,
+  services,
+  branches,
+  updateAppointment,
+  hasConflict,
+}: DayCalendarViewProps) {
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{ top: number } | null>(null);
 
@@ -202,7 +221,7 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
                     <div className="absolute left-1 right-1 rounded bg-primary/10 border-2 border-dashed border-primary/40 pointer-events-none z-10" style={{ top: dragPreview.top, height: 36 }} />
                   )}
 
-{getStaffAppointments(s.id).map(apt => {
+                  {getStaffAppointments(s.id).map(apt => {
                     const style = getAppointmentStyle(apt);
                     const effectiveStatus = getEffectiveAppointmentStatus(apt);
                     const statusColor = STATUS_COLORS[effectiveStatus];
