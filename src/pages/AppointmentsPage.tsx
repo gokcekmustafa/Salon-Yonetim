@@ -685,6 +685,19 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
                 </div>
               </div>
 
+              {canAdminManageAppointments && currentDetailApt.status !== 'iptal' && (
+                <div className="space-y-2 rounded-lg border border-border/60 p-3">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase">Tarih & Saat Düzenle</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input type="date" value={rescheduleDate} onChange={e => setRescheduleDate(e.target.value)} />
+                    <Input type="time" value={rescheduleTime} onChange={e => setRescheduleTime(e.target.value)} />
+                  </div>
+                  <Button size="sm" variant="outline" onClick={handleReschedule} disabled={isRescheduling}>
+                    {isRescheduling && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Tarihi Güncelle
+                  </Button>
+                </div>
+              )}
+
               {/* Room Assignment */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase">Oda</Label>
