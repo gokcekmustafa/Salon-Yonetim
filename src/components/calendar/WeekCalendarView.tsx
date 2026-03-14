@@ -134,8 +134,9 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
           {format(weekDays[0], 'd MMM', { locale: tr })} — {format(weekDays[6], 'd MMM yyyy', { locale: tr })}
         </p>
         <div className="hidden sm:flex items-center gap-3 text-xs">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-primary/40" /> Bekliyor</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-muted-foreground/30" /> Tamamlandı</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-400" /> Bekliyor</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-yellow-400" /> Seansta</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-400" /> Tamamlandı</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-destructive/30" /> İptal</span>
         </div>
       </div>
