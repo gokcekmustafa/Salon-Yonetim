@@ -557,6 +557,13 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             filteredBranchId={filteredBranchId}
             onAppointmentClick={handleAppointmentClick}
             rooms={rooms}
+            appointments={appointments}
+            staff={staff}
+            customers={customers}
+            services={services}
+            branches={branches}
+            updateAppointment={updateAppointment}
+            hasConflict={hasConflict}
           />
         ) : (
           <WeekCalendarView
@@ -564,6 +571,12 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             filteredStaffId={filteredStaffId}
             filteredBranchId={filteredBranchId}
             onAppointmentClick={handleAppointmentClick}
+            appointments={appointments}
+            staff={staff}
+            customers={customers}
+            services={services}
+            updateAppointment={updateAppointment}
+            hasConflict={hasConflict}
           />
         )}
       </div>
