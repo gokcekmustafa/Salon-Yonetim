@@ -134,13 +134,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4 pb-2">
         <div className="flex items-center gap-2.5">
-          {branding.logo_url ? (
-            <img src={branding.logo_url} alt="" className="h-9 w-9 rounded-lg object-contain shadow-sm" />
-          ) : (
-            <div className="h-9 w-9 rounded-lg flex items-center justify-center shadow-sm btn-gradient">
-              <Sparkles className="h-4.5 w-4.5 text-primary-foreground" />
-            </div>
-          )}
+          <img
+            src={branding.logo_url || salonumLogo}
+            alt=""
+            className="h-9 w-9 rounded-lg object-contain shadow-sm"
+          />
           {!collapsed && (
             <div>
               <span className="text-base font-bold text-sidebar-accent-foreground font-display tracking-tight">
