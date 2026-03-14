@@ -248,14 +248,76 @@ const handleComplete = async () => {
   };
 
   const handleCancel = async () => {
-    if (!detailApt) return;
-    await updateAppointment(detailApt.id, { status: 'iptal' });
+    if (!currentDetailApt || !canAdminManageAppointments) return;
+
+    const error = await updateAppointment(currentDetailApt.id, { status: 'iptal' });
+    if (error) {
+      toast.error('Randevu iptal edilemedi.');
+      return;
+    }
+
+    setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'iptal' } : prev));
     toast.info('Randevu iptal edildi.');
-    setDetailOpen(false);
-    setDetailApt(null);
   };
 
-const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
+  const handleReschedule = async () => {
+    if (!currentDetailApt || !canAdminManageAppointments) return;
+    if (!rescheduleDate || !rescheduleTime) {
+      toast.error('Lütfen tarih ve saat seçin.');
+      return;
+    }
+
+    const start = new Date(`${rescheduleDate}T${rescheduleTime}`);
+    if (Number.isNaN(start.getTime())) {
+      toast.error('Geçerli bir tarih/saat girin.');
+      return;
+    }
+
+    const currentDuration = Math.max(
+      differenceInMinutes(new Date(currentDetailApt.end_time), new Date(currentDetailApt.start_time)),
+      15,
+    );
+    const end = addMinutes(start, currentDuration);
+
+    if (hasConflict(currentDetailApt.staff_id, start.toISOString(), end.toISOString(), currentDetailApt.id)) {
+      toast.error('Bu personelin seçilen saatte başka bir randevusu var!');
+      return;
+    }
+
+    if (currentDetailApt.room_id) {
+      const roomConflict = appointments.some(a => {
+        if (a.id === currentDetailApt.id || a.room_id !== currentDetailApt.room_id || a.status === 'iptal') return false;
+        return start < new Date(a.end_time) && end > new Date(a.start_time);
+      });
+
+      if (roomConflict) {
+        toast.error('Seçilen oda bu saatte dolu!');
+        return;
+      }
+    }
+
+    setIsRescheduling(true);
+    const error = await updateAppointment(currentDetailApt.id, {
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
+    });
+    setIsRescheduling(false);
+
+    if (error) {
+      toast.error('Randevu tarihi güncellenemedi.');
+      return;
+    }
+
+    setDetailApt(prev =>
+      prev && prev.id === currentDetailApt.id
+        ? { ...prev, start_time: start.toISOString(), end_time: end.toISOString() }
+        : prev,
+    );
+
+    toast.success('Randevu tarihi güncellendi.');
+  };
+
+  const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
     const current = appointments.find(a => a.id === aptId) || detailApt;
     const nextStatus = current?.status === 'iptal' ? 'iptal' : sessionStatus === 'completed' ? 'tamamlandi' : 'bekliyor';
 
