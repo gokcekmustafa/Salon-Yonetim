@@ -631,7 +631,7 @@ const statusLabel: Record<AppointmentUiStatus, string> = {
 
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Randevu Durumu</p>
-                <Badge variant={statusVariant(currentDetailApt.status)}>{statusLabel[currentDetailApt.status]}</Badge>
+                <Badge variant={statusVariant(currentDetailStatus)}>{statusLabel[currentDetailStatus]}</Badge>
               </div>
             </div>
           )}

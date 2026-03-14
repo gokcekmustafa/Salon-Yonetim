@@ -204,8 +204,8 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
 
                   {getStaffAppointments(s.id).map(apt => {
                     const style = getAppointmentStyle(apt);
-                    const effectiveStatus = apt.session_status === 'in_session' ? 'in_session' : apt.status;
-                    const statusColor = STATUS_COLORS[effectiveStatus] || STATUS_COLORS.bekliyor;
+const effectiveStatus = getEffectiveAppointmentStatus(apt);
+                    const statusColor = STATUS_COLORS[effectiveStatus];
                     return (
                       <div
                         key={apt.id}
