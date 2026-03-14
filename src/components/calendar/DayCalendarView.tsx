@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { format, parseISO, isSameDay, setHours, setMinutes, differenceInMinutes, addMinutes } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useSalonData, DbAppointment } from '@/hooks/useSalonData';
+import { getEffectiveAppointmentStatus, type AppointmentUiStatus } from '@/lib/appointmentStatus';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -10,7 +11,7 @@ const START_HOUR = 8;
 const END_HOUR = 21;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_COLORS: Record<AppointmentUiStatus, string> = {
   bekliyor: 'bg-red-200 border-red-500 text-red-800 dark:bg-red-900/40 dark:border-red-500 dark:text-red-200',
   in_session: 'bg-yellow-200 border-yellow-500 text-yellow-800 dark:bg-yellow-900/40 dark:border-yellow-500 dark:text-yellow-200',
   tamamlandi: 'bg-green-200 border-green-500 text-green-800 dark:bg-green-900/40 dark:border-green-500 dark:text-green-200',
@@ -201,10 +202,10 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
                     <div className="absolute left-1 right-1 rounded bg-primary/10 border-2 border-dashed border-primary/40 pointer-events-none z-10" style={{ top: dragPreview.top, height: 36 }} />
                   )}
 
-                  {getStaffAppointments(s.id).map(apt => {
+{getStaffAppointments(s.id).map(apt => {
                     const style = getAppointmentStyle(apt);
-                    const effectiveStatus = apt.session_status === 'in_session' ? 'in_session' : apt.status;
-                    const statusColor = STATUS_COLORS[effectiveStatus] || STATUS_COLORS.bekliyor;
+                    const effectiveStatus = getEffectiveAppointmentStatus(apt);
+                    const statusColor = STATUS_COLORS[effectiveStatus];
                     return (
                       <div
                         key={apt.id}

@@ -18,6 +18,7 @@ import DayCalendarView from '@/components/calendar/DayCalendarView';
 import WeekCalendarView from '@/components/calendar/WeekCalendarView';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import { getEffectiveAppointmentStatus, type AppointmentUiStatus } from '@/lib/appointmentStatus';
 import { useQuery } from '@tanstack/react-query';
 
 type ViewMode = 'day' | 'week';
@@ -239,14 +240,22 @@ export default function AppointmentsPage() {
   };
 
   const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
-    await supabase.from('appointments').update({ session_status: sessionStatus }).eq('id', aptId);
-    if (sessionStatus === 'completed') {
-      await updateAppointment(aptId, { status: 'tamamlandi' });
+    const current = appointments.find(a => a.id === aptId) || detailApt;
+    const nextStatus = current?.status === 'iptal' ? 'iptal' : sessionStatus === 'completed' ? 'tamamlandi' : 'bekliyor';
+
+    const { error } = await supabase
+      .from('appointments')
+      .update({ session_status: sessionStatus, status: nextStatus })
+      .eq('id', aptId);
+
+    if (error) {
+      toast.error('Durum güncellenemedi.');
+      return;
     }
+
+    setDetailApt(prev => (prev && prev.id === aptId ? { ...prev, session_status: sessionStatus, status: nextStatus } : prev));
     toast.success('Durum güncellendi.');
     refetch();
-    const updated = appointments.find(a => a.id === aptId);
-    if (updated) setDetailApt({ ...updated, session_status: sessionStatus });
   };
 
   const updateRoomAssignment = async (aptId: string, roomId: string) => {
@@ -262,13 +271,17 @@ export default function AppointmentsPage() {
   const getBranchName = (id: string) => branches.find(b => b.id === id)?.name ?? '-';
   const getRoomName = (id: string | null) => rooms.find(r => r.id === id)?.name ?? '-';
 
-  const statusLabel: Record<string, string> = { bekliyor: 'Bekliyor', tamamlandi: 'Tamamlandı', iptal: 'İptal' };
-  const statusVariant = (s: string): 'default' | 'secondary' | 'destructive' =>
+  const statusLabel: Record<AppointmentUiStatus, string> = {
+    bekliyor: 'Bekliyor',
+    in_session: 'Seansta',
+    tamamlandi: 'Tamamlandı',
+    iptal: 'İptal',
+  };
+  const statusVariant = (s: AppointmentUiStatus): 'default' | 'secondary' | 'destructive' =>
     s === 'tamamlandi' ? 'default' : s === 'iptal' ? 'destructive' : 'secondary';
 
-  const sessionStatusLabel = (s: string) => SESSION_STATUSES.find(x => x.value === s)?.label || 'Bekliyor';
-
   const currentDetailApt = detailApt ? (appointments.find(a => a.id === detailApt.id) || detailApt) : null;
+  const currentDetailStatus = currentDetailApt ? getEffectiveAppointmentStatus(currentDetailApt) : 'bekliyor';
 
   // Room CRUD
   const handleSaveRoom = async () => {
@@ -616,7 +629,7 @@ export default function AppointmentsPage() {
 
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Randevu Durumu</p>
-                <Badge variant={statusVariant(currentDetailApt.status)}>{statusLabel[currentDetailApt.status]}</Badge>
+                <Badge variant={statusVariant(currentDetailStatus)}>{statusLabel[currentDetailStatus]}</Badge>
               </div>
             </div>
           )}
