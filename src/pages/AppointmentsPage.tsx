@@ -271,13 +271,19 @@ const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
   const getBranchName = (id: string) => branches.find(b => b.id === id)?.name ?? '-';
   const getRoomName = (id: string | null) => rooms.find(r => r.id === id)?.name ?? '-';
 
-  const statusLabel: Record<string, string> = { bekliyor: 'Bekliyor', tamamlandi: 'Tamamlandı', iptal: 'İptal' };
-  const statusVariant = (s: string): 'default' | 'secondary' | 'destructive' =>
+const statusLabel: Record<AppointmentUiStatus, string> = {
+    bekliyor: 'Bekliyor',
+    in_session: 'Seansta',
+    tamamlandi: 'Tamamlandı',
+    iptal: 'İptal',
+  };
+  const statusVariant = (s: AppointmentUiStatus): 'default' | 'secondary' | 'destructive' =>
     s === 'tamamlandi' ? 'default' : s === 'iptal' ? 'destructive' : 'secondary';
 
   const sessionStatusLabel = (s: string) => SESSION_STATUSES.find(x => x.value === s)?.label || 'Bekliyor';
 
   const currentDetailApt = detailApt ? (appointments.find(a => a.id === detailApt.id) || detailApt) : null;
+  const currentDetailStatus = currentDetailApt ? getEffectiveAppointmentStatus(currentDetailApt) : 'bekliyor';
 
   // Room CRUD
   const handleSaveRoom = async () => {
