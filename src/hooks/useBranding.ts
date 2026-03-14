@@ -8,8 +8,8 @@ export interface BrandingSettings {
 }
 
 const DEFAULTS: BrandingSettings = {
-  company_name: 'SalonYönetim',
-  app_name: 'SaaS Platform',
+  company_name: 'Salonum Online',
+  app_name: 'Salon Yönetim Paneli',
   logo_url: '',
 };
 
