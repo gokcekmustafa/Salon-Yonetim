@@ -289,7 +289,8 @@ const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
   const statusVariant = (s: AppointmentUiStatus): 'default' | 'secondary' | 'destructive' =>
     s === 'tamamlandi' ? 'default' : s === 'iptal' ? 'destructive' : 'secondary';
 
-  const currentDetailApt = detailApt ? (appointments.find(a => a.id === detailApt.id) || detailApt) : null;
+const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) : null;
+  const currentDetailApt = detailApt ? ({ ...(liveDetailApt || {}), ...detailApt } as DbAppointment) : null;
   const currentDetailStatus = currentDetailApt ? getEffectiveAppointmentStatus(currentDetailApt) : 'bekliyor';
 
   // Room CRUD
