@@ -239,7 +239,7 @@ export default function AppointmentsPage() {
     setDetailApt(null);
   };
 
-const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
+  const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
     const current = appointments.find(a => a.id === aptId) || detailApt;
     const nextStatus = current?.status === 'iptal' ? 'iptal' : sessionStatus === 'completed' ? 'tamamlandi' : 'bekliyor';
 
@@ -271,7 +271,7 @@ const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
   const getBranchName = (id: string) => branches.find(b => b.id === id)?.name ?? '-';
   const getRoomName = (id: string | null) => rooms.find(r => r.id === id)?.name ?? '-';
 
-const statusLabel: Record<AppointmentUiStatus, string> = {
+  const statusLabel: Record<AppointmentUiStatus, string> = {
     bekliyor: 'Bekliyor',
     in_session: 'Seansta',
     tamamlandi: 'Tamamlandı',
@@ -279,8 +279,6 @@ const statusLabel: Record<AppointmentUiStatus, string> = {
   };
   const statusVariant = (s: AppointmentUiStatus): 'default' | 'secondary' | 'destructive' =>
     s === 'tamamlandi' ? 'default' : s === 'iptal' ? 'destructive' : 'secondary';
-
-  const sessionStatusLabel = (s: string) => SESSION_STATUSES.find(x => x.value === s)?.label || 'Bekliyor';
 
   const currentDetailApt = detailApt ? (appointments.find(a => a.id === detailApt.id) || detailApt) : null;
   const currentDetailStatus = currentDetailApt ? getEffectiveAppointmentStatus(currentDetailApt) : 'bekliyor';

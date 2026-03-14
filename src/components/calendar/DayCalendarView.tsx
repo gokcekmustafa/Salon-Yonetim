@@ -202,9 +202,9 @@ export default function DayCalendarView({ date, filteredStaffId, filteredBranchI
                     <div className="absolute left-1 right-1 rounded bg-primary/10 border-2 border-dashed border-primary/40 pointer-events-none z-10" style={{ top: dragPreview.top, height: 36 }} />
                   )}
 
-                  {getStaffAppointments(s.id).map(apt => {
+{getStaffAppointments(s.id).map(apt => {
                     const style = getAppointmentStyle(apt);
-const effectiveStatus = getEffectiveAppointmentStatus(apt);
+                    const effectiveStatus = getEffectiveAppointmentStatus(apt);
                     const statusColor = STATUS_COLORS[effectiveStatus];
                     return (
                       <div

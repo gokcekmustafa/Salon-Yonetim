@@ -193,9 +193,9 @@ export default function WeekCalendarView({ date, filteredStaffId, filteredBranch
                     <div className="absolute left-0.5 right-0.5 rounded bg-primary/10 border-2 border-dashed border-primary/40 pointer-events-none z-10" style={{ top: dragPreview.top, height: 28 }} />
                   )}
 
-                  {dayApts.map(apt => {
+{dayApts.map(apt => {
                     const style = getAppointmentStyle(apt);
-const effectiveStatus = getEffectiveAppointmentStatus(apt);
+                    const effectiveStatus = getEffectiveAppointmentStatus(apt);
                     const statusColor = STATUS_COLORS[effectiveStatus];
                     return (
                       <div
