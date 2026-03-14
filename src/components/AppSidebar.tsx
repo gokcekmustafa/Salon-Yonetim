@@ -1,4 +1,5 @@
 import { NavLink } from '@/components/NavLink';
+import salonumLogo from '@/assets/salonum_logo.png';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
