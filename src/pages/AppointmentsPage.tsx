@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData, DbAppointment } from '@/hooks/useSalonData';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -54,6 +55,7 @@ export default function AppointmentsPage() {
 
   // Payment method selection for completing
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cash');
 
   // Fetch cash boxes for auto-routing payments
@@ -247,16 +249,18 @@ const handleComplete = async () => {
     setDetailApt(null);
   };
 
-  const handleCancel = async () => {
+  const handleCancelConfirm = async () => {
     if (!currentDetailApt || !canAdminManageAppointments) return;
 
     const error = await updateAppointment(currentDetailApt.id, { status: 'iptal' });
     if (error) {
       toast.error('Randevu iptal edilemedi.');
+      setCancelConfirmOpen(false);
       return;
     }
 
     setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'iptal' } : prev));
+    setCancelConfirmOpen(false);
     toast.info('Randevu iptal edildi.');
   };
 
@@ -739,7 +743,7 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
           )}
           <DialogFooter className="gap-2 sm:gap-0">
             {canAdminManageAppointments && currentDetailApt?.status !== 'iptal' && (
-              <Button variant="outline" onClick={handleCancel}>İptal Et</Button>
+              <Button variant="destructive" onClick={() => setCancelConfirmOpen(true)}>İptal Et</Button>
             )}
             {currentDetailApt?.status === 'bekliyor' && (
               <Button onClick={openCompleteDialog} className="btn-gradient">Tamamla & Ödeme Al</Button>
@@ -748,6 +752,24 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Randevuyu iptal et</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu randevuyu iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Evet, İptal Et
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Payment Method Selection Dialog */}
       <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
