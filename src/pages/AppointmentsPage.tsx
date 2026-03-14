@@ -195,6 +195,8 @@ export default function AppointmentsPage() {
   const handleAppointmentClick = (apt: DbAppointment) => {
     const latest = appointments.find(a => a.id === apt.id) || apt;
     setDetailApt(latest);
+    setRescheduleDate(format(new Date(latest.start_time), 'yyyy-MM-dd'));
+    setRescheduleTime(format(new Date(latest.start_time), 'HH:mm'));
     setDetailOpen(true);
   };
 
