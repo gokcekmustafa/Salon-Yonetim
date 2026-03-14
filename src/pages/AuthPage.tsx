@@ -55,7 +55,7 @@ export default function AuthPage() {
             alt="Logo"
             className="h-20 w-20 rounded-2xl object-contain shadow-lg mb-4"
           />
-          <h1 className="text-2xl font-bold font-display text-foreground tracking-tight">{branding.company_name}</h1>
+          <h1 className="text-2xl font-bold font-display tracking-tight gradient-text">{branding.company_name}</h1>
         </div>
 
         <Card className="border-border/40 shadow-elevated backdrop-blur-sm">
