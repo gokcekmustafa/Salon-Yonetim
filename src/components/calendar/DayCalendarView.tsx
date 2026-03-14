@@ -11,8 +11,9 @@ const END_HOUR = 21;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
 const STATUS_COLORS: Record<string, string> = {
-  bekliyor: 'bg-primary/15 border-primary/60 text-primary',
-  tamamlandi: 'bg-muted border-muted-foreground/30 text-muted-foreground',
+  bekliyor: 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-600 dark:text-red-300',
+  in_session: 'bg-yellow-100 border-yellow-400 text-yellow-700 dark:bg-yellow-900/30 dark:border-yellow-600 dark:text-yellow-300',
+  tamamlandi: 'bg-green-100 border-green-400 text-green-700 dark:bg-green-900/30 dark:border-green-600 dark:text-green-300',
   iptal: 'bg-destructive/10 border-destructive/40 text-destructive',
 };
 
