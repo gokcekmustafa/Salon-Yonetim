@@ -11,7 +11,7 @@ const START_HOUR = 8;
 const END_HOUR = 21;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_COLORS: Record<AppointmentUiStatus, string> = {
   bekliyor: 'bg-red-200 border-red-500 text-red-800 dark:bg-red-900/40 dark:border-red-500 dark:text-red-200',
   in_session: 'bg-yellow-200 border-yellow-500 text-yellow-800 dark:bg-yellow-900/40 dark:border-yellow-500 dark:text-yellow-200',
   tamamlandi: 'bg-green-200 border-green-500 text-green-800 dark:bg-green-900/40 dark:border-green-500 dark:text-green-200',
