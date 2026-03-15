@@ -764,11 +764,31 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Hizmet</Label>
-              <Select value={form.serviceId} onValueChange={v => setForm(f => ({ ...f, serviceId: v }))}>
-                <SelectTrigger><SelectValue placeholder="Hizmet seçin" /></SelectTrigger>
-                <SelectContent>{services.filter(s => s.is_active).map(s => <SelectItem key={s.id} value={s.id}>{s.name} — ₺{s.price} ({s.duration} dk)</SelectItem>)}</SelectContent>
-              </Select>
+              <Label>Hizmet {form.serviceIds.length > 0 && <span className="text-xs text-muted-foreground ml-1">({form.serviceIds.length} seçili)</span>}</Label>
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
+                {services.filter(s => s.is_active).map(s => (
+                  <label
+                    key={s.id}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors ${
+                      form.serviceIds.includes(s.id) ? 'bg-primary/10' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <Checkbox
+                      checked={form.serviceIds.includes(s.id)}
+                      onCheckedChange={() => toggleService(s.id)}
+                    />
+                    <span className="flex-1 text-sm">{s.name}</span>
+                    <span className="text-xs text-muted-foreground">{s.duration} dk</span>
+                    <span className="text-xs font-semibold">₺{s.price}</span>
+                  </label>
+                ))}
+              </div>
+              {form.serviceIds.length > 0 && (
+                <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">Toplam:</span>
+                  <span className="font-semibold">{totalDuration} dk • ₺{totalPrice.toLocaleString('tr-TR')}</span>
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Oda</Label>
