@@ -54,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<AuthContextType['profile']>(null);
   const [currentSalonId, setCurrentSalonId] = useState<string | null>(null);
   const [currentBranchId, setCurrentBranchId] = useState<string | null>(null);
+  const [isManagingSalon, setIsManagingSalon] = useState(false);
   const fetchIdRef = useRef(0); // Track latest fetch to ignore stale results
 
   const fetchUserData = useCallback(async (userId: string, fetchId: number) => {
