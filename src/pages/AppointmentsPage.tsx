@@ -96,6 +96,47 @@ export default function AppointmentsPage() {
   const activeBranches = branches.filter(b => b.is_active);
   const activeRooms = rooms.filter(r => r.is_active);
 
+  // Fetch service categories for accordion grouping
+  type ServiceCategory = { id: string; name: string; salon_id: string; sort_order: number | null };
+  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
+  useEffect(() => {
+    if (!currentSalonId) return;
+    supabase.from('service_categories').select('*').eq('salon_id', currentSalonId).order('sort_order')
+      .then(({ data }) => setServiceCategories((data as ServiceCategory[]) || []));
+  }, [currentSalonId]);
+
+  // Group active services by category
+  const categorizedServices = useMemo(() => {
+    const activeServices = services.filter(s => s.is_active);
+    const grouped: { category: ServiceCategory; services: typeof activeServices }[] = [];
+    const uncategorized: typeof activeServices = [];
+
+    for (const svc of activeServices) {
+      const catId = (svc as any).category_id;
+      if (catId) {
+        const existing = grouped.find(g => g.category.id === catId);
+        if (existing) {
+          existing.services.push(svc);
+        } else {
+          const cat = serviceCategories.find(c => c.id === catId);
+          if (cat) grouped.push({ category: cat, services: [svc] });
+          else uncategorized.push(svc);
+        }
+      } else {
+        uncategorized.push(svc);
+      }
+    }
+
+    // Sort groups by sort_order
+    grouped.sort((a, b) => (a.category.sort_order ?? 0) - (b.category.sort_order ?? 0));
+
+    if (uncategorized.length > 0) {
+      grouped.push({ category: { id: '__uncategorized', name: 'Diğer Hizmetler', salon_id: '', sort_order: 9999 }, services: uncategorized });
+    }
+
+    return grouped;
+  }, [services, serviceCategories]);
+
   const filteredStaffList = filteredBranchId
     ? activeStaff.filter(s => s.branch_id === filteredBranchId)
     : activeStaff;
