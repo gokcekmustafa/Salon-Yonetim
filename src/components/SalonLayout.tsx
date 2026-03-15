@@ -66,8 +66,21 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-[hsl(var(--salon-bg))]">
+      {isManagingSalon && (
+        <div className="sticky top-0 z-50 border-b border-warning/30 bg-warning/15 backdrop-blur-sm">
+          <div className="flex min-h-12 flex-col gap-2 px-4 py-2 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+            <p className="text-sm font-semibold text-warning-foreground">
+              ⚠️ {salon?.name || 'Salon'} adına yönetiyorsunuz
+            </p>
+            <Button variant="outline" size="sm" className="border-warning/40 bg-background/80 text-foreground hover:bg-background" onClick={handleExitManagedSalon}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Superadmin Paneline Dön
+            </Button>
+          </div>
+        </div>
+      )}
       {/* TopBar */}
-      <header className="sticky top-0 z-40 bg-card border-b" style={{ borderColor: '#e8e8e8' }}>
+      <header className={`sticky z-40 bg-card border-b ${isManagingSalon ? 'top-12' : 'top-0'}`} style={{ borderColor: '#e8e8e8' }}>
         <div className="flex items-center justify-between h-16 px-4 lg:px-6">
           {/* Left: Logo + Salon name + Date */}
           <div className="flex items-center gap-3 min-w-0">
