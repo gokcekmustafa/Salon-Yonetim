@@ -709,7 +709,7 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             />
           )}
         </div>
-      )
+      )}
 
       {/* New Appointment Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
