@@ -53,12 +53,12 @@ export default function Dashboard() {
 
   const getStatusConfig = (a: any) => {
     if (a.status === 'tamamlandi' || a.session_status === 'completed') {
-      return { label: 'Tamamlandı', dotClass: 'bg-emerald-500', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+      return { label: 'Tamamlandı', dotClass: 'bg-success', badgeClass: 'bg-success/10 text-success border-success/20' };
     }
     if (a.session_status === 'in_session') {
-      return { label: 'Şu an', dotClass: 'bg-pink-500', badgeClass: 'bg-pink-50 text-pink-700 border-pink-200' };
+      return { label: 'Şu an', dotClass: 'bg-accent', badgeClass: 'bg-accent/10 text-accent border-accent/20' };
     }
-    return { label: 'Bekliyor', dotClass: 'bg-violet-500', badgeClass: 'bg-violet-50 text-violet-700 border-violet-200' };
+    return { label: 'Bekliyor', dotClass: 'bg-primary', badgeClass: 'bg-primary/10 text-primary border-primary/20' };
   };
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Kullanıcı';
