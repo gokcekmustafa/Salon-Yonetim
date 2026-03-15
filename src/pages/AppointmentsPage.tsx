@@ -368,19 +368,21 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
   const currentDetailStatus = currentDetailApt ? getEffectiveAppointmentStatus(currentDetailApt) : 'bekliyor';
 
   // Room CRUD
+  const [roomNumber, setRoomNumber] = useState('');
   const handleSaveRoom = async () => {
     if (!roomName.trim() || !currentSalonId) return;
     setSavingRoom(true);
     if (editingRoom) {
-      await supabase.from('rooms').update({ name: roomName.trim() }).eq('id', editingRoom.id);
+      await supabase.from('rooms').update({ name: roomName.trim(), room_number: roomNumber.trim() || null } as any).eq('id', editingRoom.id);
       toast.success('Oda güncellendi');
     } else {
-      await supabase.from('rooms').insert({ name: roomName.trim(), salon_id: currentSalonId });
+      await supabase.from('rooms').insert({ name: roomName.trim(), salon_id: currentSalonId, room_number: roomNumber.trim() || null } as any);
       toast.success('Oda eklendi');
     }
     setSavingRoom(false);
     setRoomDialogOpen(false);
     setRoomName('');
+    setRoomNumber('');
     setEditingRoom(null);
     fetchRooms();
   };
