@@ -847,23 +847,54 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             </div>
             <div className="space-y-1.5">
               <Label>Hizmet {form.serviceIds.length > 0 && <span className="text-xs text-muted-foreground ml-1">({form.serviceIds.length} seçili)</span>}</Label>
-              <div className="max-h-48 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
-                {services.filter(s => s.is_active).map(s => (
-                  <label
-                    key={s.id}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors ${
-                      form.serviceIds.includes(s.id) ? 'bg-primary/10' : 'hover:bg-muted/50'
-                    }`}
-                  >
-                    <Checkbox
-                      checked={form.serviceIds.includes(s.id)}
-                      onCheckedChange={() => toggleService(s.id)}
-                    />
-                    <span className="flex-1 text-sm">{s.name}</span>
-                    <span className="text-xs text-muted-foreground">{s.duration} dk</span>
-                    <span className="text-xs font-semibold">₺{s.price}</span>
-                  </label>
-                ))}
+              <div className="max-h-56 overflow-y-auto rounded-lg border border-border p-1">
+                {categorizedServices.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Hizmet bulunamadı</p>
+                ) : (
+                  <Accordion type="multiple" className="w-full">
+                    {categorizedServices.map(group => (
+                      <AccordionItem key={group.category.id} value={group.category.id} className="border-b-0">
+                        <AccordionTrigger className="py-2 px-2 text-sm font-semibold hover:no-underline hover:bg-muted/50 rounded-md">
+                          <div className="flex items-center gap-2">
+                            {group.category.name}
+                            {group.services.some(s => form.serviceIds.includes(s.id)) && (
+                              <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                                {group.services.filter(s => form.serviceIds.includes(s.id)).length}
+                              </Badge>
+                            )}
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-1 pt-0 px-1">
+                          <div className="grid grid-cols-2 gap-1">
+                            {group.services.map(s => {
+                              const isSelected = form.serviceIds.includes(s.id);
+                              return (
+                                <label
+                                  key={s.id}
+                                  className="flex items-start gap-1.5 p-2 rounded-md cursor-pointer transition-colors border"
+                                  style={{
+                                    backgroundColor: isSelected ? '#EEEDFE' : 'transparent',
+                                    borderColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                                  }}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => toggleService(s.id)}
+                                    className="mt-0.5"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="truncate" style={{ fontSize: '12px', lineHeight: '1.3' }}>{s.name}</p>
+                                    <p className="text-muted-foreground" style={{ fontSize: '11px' }}>{s.duration} dk • ₺{s.price}</p>
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                )}
               </div>
               {form.serviceIds.length > 0 && (
                 <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
