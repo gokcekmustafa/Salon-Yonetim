@@ -100,11 +100,11 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {kpis.map(kpi => (
-          <div key={kpi.label} className="bg-card rounded-xl border border-border/60 p-5 shadow-sm">
+          <div key={kpi.label} className="bg-card p-5" style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8' }}>
             <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{kpi.label}</p>
-                <p className="text-2xl font-bold tracking-tight tabular-nums">{kpi.value}</p>
+                <p className="font-semibold text-muted-foreground uppercase tracking-wider" style={{ fontSize: '12px' }}>{kpi.label}</p>
+                <p className="font-bold tracking-tight tabular-nums" style={{ fontSize: '22px' }}>{kpi.value}</p>
               </div>
               <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${kpi.iconClass}`}>
                 <kpi.icon className="h-5 w-5" />
