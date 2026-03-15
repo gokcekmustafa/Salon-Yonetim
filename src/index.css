@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
+    --background: 252 50% 98%;
     --foreground: 224 24% 12%;
 
     --card: 0 0% 100%;
@@ -15,9 +15,9 @@
     --popover: 0 0% 100%;
     --popover-foreground: 224 24% 12%;
 
-    --primary: 338 65% 50%;
+    --primary: 244 52% 67%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 338 70% 60%;
+    --primary-glow: 244 55% 72%;
 
     --secondary: 220 16% 96%;
     --secondary-foreground: 224 20% 30%;
@@ -25,37 +25,42 @@
     --muted: 220 16% 96%;
     --muted-foreground: 220 10% 50%;
 
-    --accent: 338 65% 96%;
-    --accent-foreground: 338 65% 40%;
+    --accent: 340 60% 58%;
+    --accent-foreground: 340 60% 40%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
+    --border: 0 0% 91%;
     --input: 220 13% 91%;
-    --ring: 338 65% 50%;
+    --ring: 244 52% 67%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 224 28% 10%;
     --sidebar-foreground: 220 15% 75%;
-    --sidebar-primary: 338 65% 58%;
+    --sidebar-primary: 244 52% 67%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 224 25% 16%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 224 20% 16%;
-    --sidebar-ring: 338 65% 58%;
+    --sidebar-ring: 244 52% 67%;
 
-    --success: 152 60% 42%;
+    --success: 160 67% 37%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 37 87% 55%;
     --warning-foreground: 0 0% 100%;
     --info: 210 75% 55%;
     --info-foreground: 0 0% 100%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(338 65% 50%), hsl(338 70% 60%));
-    --gradient-hero: linear-gradient(135deg, hsl(338 65% 50% / 0.08), hsl(210 75% 55% / 0.05));
-    --shadow-primary: 0 4px 14px -3px hsl(338 65% 50% / 0.25);
+    /* Salon-specific tokens */
+    --salon-bg: 252 50% 98%;
+    --salon-nav-active-bg: 244 80% 96%;
+    --salon-nav-active-text: 244 37% 50%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(244 52% 67%), hsl(244 55% 72%));
+    --gradient-hero: linear-gradient(135deg, hsl(244 52% 67% / 0.08), hsl(340 60% 58% / 0.05));
+    --shadow-primary: 0 4px 14px -3px hsl(244 52% 67% / 0.25);
     --shadow-card-hover: 0 8px 30px -8px hsl(224 24% 12% / 0.12);
   }
 
