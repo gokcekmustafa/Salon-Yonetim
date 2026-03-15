@@ -130,7 +130,7 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
 
         {/* Mobile nav */}
         {mobileMenuOpen && (
-          <nav className="lg:hidden border-t border-border/60 px-4 py-3 flex flex-wrap gap-2">
+          <nav className="lg:hidden border-t px-4 py-3 flex flex-wrap gap-2" style={{ borderColor: '#e8e8e8' }}>
             {navItems.map(item => (
               <button
                 key={item.url}
@@ -138,9 +138,9 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
                   navigate(item.url);
                   setMobileMenuOpen(false);
                 }}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                className={`px-4 py-2 rounded-full text-[14px] font-medium transition-all duration-200 ${
                   isActive(item.url)
-                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-[hsl(var(--salon-nav-active-bg))] text-[hsl(var(--salon-nav-active-text))] font-semibold'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
