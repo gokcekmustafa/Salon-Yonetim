@@ -49,6 +49,7 @@ export default function CashPage() {
   const { hasPermission } = usePermissions();
   const { user, currentSalonId } = useAuth();
   const { loading: salonLoading } = useSalonData();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [dialogOpen, setDialogOpen] = useState(false);
