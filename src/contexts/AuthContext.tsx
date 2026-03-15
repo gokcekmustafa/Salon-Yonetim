@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         (memberships || []).forEach(m => roleSet.add(m.role as AppRole));
-      } else {
+      } else if (!isManagingSalon) {
         setCurrentSalonId(null);
         setCurrentBranchId(null);
       }
