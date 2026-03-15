@@ -5,7 +5,8 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PopupDisplay } from '@/components/popup/PopupDisplay';
 import { useOnlineHeartbeat } from '@/hooks/useOnlineStatus';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings, ArrowLeft } from 'lucide-react';
+import { useSalonNavigation } from '@/hooks/useSalonNavigation';
+import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,18 +21,10 @@ interface SalonLayoutProps {
   children: React.ReactNode;
 }
 
-const navItems = [
-  { title: 'Anasayfa', url: '/' },
-  { title: 'Randevular', url: '/randevular' },
-  { title: 'Müşteriler', url: '/musteriler' },
-  { title: 'Kasa Yönetimi', url: '/kasa-yonetimi' },
-  { title: 'Personel', url: '/personel' },
-  { title: 'Raporlar', url: '/raporlar' },
-];
-
 export default function SalonLayout({ children }: SalonLayoutProps) {
   const { profile, signOut, isManagingSalon, stopManagingSalon } = useAuth();
   const { salon } = useSalonData();
+  const { topbarItems, moreItems, hasMoreItems } = useSalonNavigation();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -59,9 +52,23 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
   const isActive = (url: string) =>
     url === '/' ? location.pathname === '/' : location.pathname.startsWith(url);
 
+  const hasActiveMoreItem = moreItems.some((item) => isActive(item.url));
+
+  const navButtonClass = (active: boolean) =>
+    `px-4 py-2 rounded-full text-[14px] font-medium transition-all duration-200 ${
+      active
+        ? 'bg-[hsl(var(--salon-nav-active-bg))] text-[hsl(var(--salon-nav-active-text))] font-semibold'
+        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+    }`;
+
   const handleExitManagedSalon = () => {
     stopManagingSalon();
     navigate('/admin/salonlar');
+  };
+
+  const handleNavigate = (url: string) => {
+    navigate(url);
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -79,10 +86,8 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
           </div>
         </div>
       )}
-      {/* TopBar */}
       <header className={`sticky z-40 bg-card border-b ${isManagingSalon ? 'top-12' : 'top-0'}`} style={{ borderColor: '#e8e8e8' }}>
         <div className="flex items-center justify-between h-16 px-4 lg:px-6">
-          {/* Left: Logo + Salon name + Date */}
           <div className="flex items-center gap-3 min-w-0">
             {salon?.logo_url ? (
               <img src={salon.logo_url} alt="" className="h-9 w-9 rounded-lg object-cover shadow-sm shrink-0" />
@@ -96,7 +101,6 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
               <p className="text-[11px] text-muted-foreground leading-none mt-0.5">{today}</p>
             </div>
 
-            {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden ml-2 p-1.5 rounded-md hover:bg-muted transition-colors"
@@ -105,24 +109,48 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
             </button>
           </div>
 
-          {/* Center: Nav links (desktop) */}
           <nav className="hidden lg:flex items-center gap-1">
-            {navItems.map(item => (
+            {topbarItems.map((item) => (
               <button
-                key={item.url}
+                key={item.key}
                 onClick={() => navigate(item.url)}
-                className={`px-4 py-2 rounded-full text-[14px] font-medium transition-all duration-200 ${
-                  isActive(item.url)
-                    ? 'bg-[hsl(var(--salon-nav-active-bg))] text-[hsl(var(--salon-nav-active-text))] font-semibold'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                }`}
+                className={navButtonClass(isActive(item.url))}
               >
                 {item.title}
               </button>
             ))}
+
+            {hasMoreItems && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className={`${navButtonClass(hasActiveMoreItem)} flex items-center gap-1.5`}>
+                    Daha Fazla
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={8}
+                  className="min-w-52 rounded-[10px] border border-border/60 bg-background p-1.5 shadow-md"
+                >
+                  {moreItems.map((item) => (
+                    <DropdownMenuItem
+                      key={item.key}
+                      onClick={() => navigate(item.url)}
+                      className={`rounded-lg px-2.5 py-2.5 text-sm ${
+                        isActive(item.url)
+                          ? 'bg-[hsl(var(--salon-nav-active-bg))] text-[hsl(var(--salon-nav-active-text))]'
+                          : 'focus:bg-[hsl(var(--salon-nav-active-bg))]'
+                      }`}
+                    >
+                      {item.title}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </nav>
 
-          {/* Right: Notification + Avatar */}
           <div className="flex items-center gap-1.5">
             <ThemeToggle />
             <NotificationBell />
@@ -132,58 +160,79 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
                   <span className="text-xs font-bold text-primary-foreground">{initials}</span>
                 </button>
               </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-3 py-2.5">
-                    <p className="text-sm font-semibold">{profile?.full_name || 'Kullanıcı'}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Salon Admin</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/destek')}>
-                    <LifeBuoy className="h-4 w-4 mr-2" />
-                    Destek & İletişim
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/izleme')}>
-                    <Activity className="h-4 w-4 mr-2" />
-                    İzleme & Günlük
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/ayarlar')}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    Ayarlar
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Çıkış Yap
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-3 py-2.5">
+                  <p className="text-sm font-semibold">{profile?.full_name || 'Kullanıcı'}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Salon Admin</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/destek')}>
+                  <LifeBuoy className="h-4 w-4 mr-2" />
+                  Destek & İletişim
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/izleme')}>
+                  <Activity className="h-4 w-4 mr-2" />
+                  İzleme & Günlük
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/ayarlar')}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Ayarlar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Çıkış Yap
+                </DropdownMenuItem>
+              </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
 
-        {/* Mobile nav */}
         {mobileMenuOpen && (
           <nav className="lg:hidden border-t px-4 py-3 flex flex-wrap gap-2" style={{ borderColor: '#e8e8e8' }}>
-            {navItems.map(item => (
+            {topbarItems.map((item) => (
               <button
-                key={item.url}
-                onClick={() => {
-                  navigate(item.url);
-                  setMobileMenuOpen(false);
-                }}
-                className={`px-4 py-2 rounded-full text-[14px] font-medium transition-all duration-200 ${
-                  isActive(item.url)
-                    ? 'bg-[hsl(var(--salon-nav-active-bg))] text-[hsl(var(--salon-nav-active-text))] font-semibold'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                }`}
+                key={item.key}
+                onClick={() => handleNavigate(item.url)}
+                className={navButtonClass(isActive(item.url))}
               >
                 {item.title}
               </button>
             ))}
+
+            {hasMoreItems && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className={`${navButtonClass(hasActiveMoreItem)} flex items-center gap-1.5`}>
+                    Daha Fazla
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  sideOffset={8}
+                  className="min-w-52 rounded-[10px] border border-border/60 bg-background p-1.5 shadow-md"
+                >
+                  {moreItems.map((item) => (
+                    <DropdownMenuItem
+                      key={item.key}
+                      onClick={() => handleNavigate(item.url)}
+                      className={`rounded-lg px-2.5 py-2.5 text-sm ${
+                        isActive(item.url)
+                          ? 'bg-[hsl(var(--salon-nav-active-bg))] text-[hsl(var(--salon-nav-active-text))]'
+                          : 'focus:bg-[hsl(var(--salon-nav-active-bg))]'
+                      }`}
+                    >
+                      {item.title}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </nav>
         )}
       </header>
 
-      {/* Content */}
       <main className="flex-1 p-5 overflow-auto">
         {children}
       </main>
