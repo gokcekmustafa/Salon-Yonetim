@@ -119,9 +119,9 @@ export default function Dashboard() {
         {/* Left: Today's Appointments (2/3) */}
         <Card className="lg:col-span-2" style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' }}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-violet-100 flex items-center justify-center">
-                <Clock className="h-3.5 w-3.5 text-violet-600" />
+            <CardTitle style={{ fontSize: '14px' }} className="font-semibold flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Clock className="h-3.5 w-3.5 text-primary" />
               </div>
               Bugünün Randevuları
               <Badge variant="secondary" className="ml-auto text-[10px]">{todayAppointments.length}</Badge>
