@@ -163,47 +163,60 @@ export default function AppointmentsPage() {
   };
 
   const handleSave = async () => {
-    if (!form.customerId || !form.staffId || !form.serviceId) {
-      toast.error('Lütfen müşteri, personel ve hizmet seçin.');
+    if (!form.customerId || !form.staffId || form.serviceIds.length === 0) {
+      toast.error('Lütfen müşteri, personel ve en az bir hizmet seçin.');
       return;
-    }
-    const duration = parseInt(form.duration) || 60;
-    const start = new Date(`${form.date}T${form.time}`);
-    const end = addMinutes(start, duration);
-
-    if (hasConflict(form.staffId, start.toISOString(), end.toISOString())) {
-      toast.error('Bu personelin seçilen saatte başka bir randevusu var!');
-      return;
-    }
-
-    // Check room conflict
-    if (form.roomId !== 'none') {
-      const roomConflict = appointments.some(a => {
-        if (a.room_id !== form.roomId || a.status === 'iptal') return false;
-        return new Date(start) < new Date(a.end_time) && new Date(end) > new Date(a.start_time);
-      });
-      if (roomConflict) {
-        toast.error('Seçilen oda bu saatte dolu!');
-        return;
-      }
     }
 
     const staffMember = staff.find(s => s.id === form.staffId);
-    const error = await addAppointment({
-      customer_id: form.customerId,
-      staff_id: form.staffId,
-      service_id: form.serviceId,
-      branch_id: staffMember?.branch_id || '',
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-      status: 'bekliyor',
-      room_id: form.roomId !== 'none' ? form.roomId : null,
-    });
+    let currentStart = new Date(`${form.date}T${form.time}`);
+    let hasError = false;
 
-    if (error) {
-      toast.error('Randevu oluşturulamadı: ' + error.message);
-    } else {
-      toast.success('Randevu oluşturuldu.');
+    for (const serviceId of form.serviceIds) {
+      const svc = services.find(s => s.id === serviceId);
+      const dur = svc?.duration || 60;
+      const end = addMinutes(currentStart, dur);
+
+      if (hasConflict(form.staffId, currentStart.toISOString(), end.toISOString())) {
+        toast.error(`Bu personelin ${format(currentStart, 'HH:mm')} saatinde başka bir randevusu var!`);
+        hasError = true;
+        break;
+      }
+
+      if (form.roomId !== 'none') {
+        const roomConflict = appointments.some(a => {
+          if (a.room_id !== form.roomId || a.status === 'iptal') return false;
+          return currentStart < new Date(a.end_time) && end > new Date(a.start_time);
+        });
+        if (roomConflict) {
+          toast.error(`Seçilen oda ${format(currentStart, 'HH:mm')} saatinde dolu!`);
+          hasError = true;
+          break;
+        }
+      }
+
+      const error = await addAppointment({
+        customer_id: form.customerId,
+        staff_id: form.staffId,
+        service_id: serviceId,
+        branch_id: staffMember?.branch_id || '',
+        start_time: currentStart.toISOString(),
+        end_time: end.toISOString(),
+        status: 'bekliyor',
+        room_id: form.roomId !== 'none' ? form.roomId : null,
+      });
+
+      if (error) {
+        toast.error('Randevu oluşturulamadı: ' + error.message);
+        hasError = true;
+        break;
+      }
+
+      currentStart = end; // next service starts where this one ends
+    }
+
+    if (!hasError) {
+      toast.success(`${form.serviceIds.length} randevu oluşturuldu.`);
       setDialogOpen(false);
       refetch();
     }
