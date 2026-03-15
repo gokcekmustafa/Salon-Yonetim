@@ -91,8 +91,8 @@ export default function Dashboard() {
 
       {/* Greeting */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{greeting}, {firstName} 👋</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="font-bold tracking-tight" style={{ fontSize: '22px' }}>{greeting}, {firstName} 👋</h1>
+        <p className="text-muted-foreground mt-1" style={{ fontSize: '14px' }}>
           Bugün {todayAppointments.length} randevunuz var{todayAppointments.length === 0 ? '.' : ` · ${format(new Date(), 'd MMMM yyyy, EEEE', { locale: tr })}`}
         </p>
       </div>
