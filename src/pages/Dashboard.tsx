@@ -73,10 +73,10 @@ export default function Dashboard() {
   ];
 
   const quickActions = [
-    { label: 'Randevu Al', icon: Calendar, onClick: () => navigate('/randevular'), color: 'text-violet-600 bg-violet-50 hover:bg-violet-100 border-violet-200' },
-    { label: 'Yeni Müşteri', icon: Plus, onClick: () => navigate('/musteriler'), color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' },
-    { label: 'Ödeme Al', icon: CreditCard, onClick: () => navigate('/kasa'), color: 'text-pink-600 bg-pink-50 hover:bg-pink-100 border-pink-200' },
-    { label: 'Rapor Gör', icon: BarChart3, onClick: () => navigate('/raporlar'), color: 'text-amber-600 bg-amber-50 hover:bg-amber-100 border-amber-200' },
+    { label: 'Randevu Al', icon: Calendar, onClick: () => navigate('/randevular'), color: 'text-primary bg-primary/5 hover:bg-primary/10 border-primary/20' },
+    { label: 'Yeni Müşteri', icon: Plus, onClick: () => navigate('/musteriler'), color: 'text-success bg-success/5 hover:bg-success/10 border-success/20' },
+    { label: 'Ödeme Al', icon: CreditCard, onClick: () => navigate('/kasa'), color: 'text-accent bg-accent/5 hover:bg-accent/10 border-accent/20' },
+    { label: 'Rapor Gör', icon: BarChart3, onClick: () => navigate('/raporlar'), color: 'text-warning bg-warning/5 hover:bg-warning/10 border-warning/20' },
   ];
 
   return (
