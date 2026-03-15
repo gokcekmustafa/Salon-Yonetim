@@ -248,7 +248,7 @@ export default function SuperAdminSalonsPage() {
   };
 
   const manageSalon = (salon: Salon) => {
-    setCurrentSalonId(salon.id);
+    startManagingSalon(salon.id);
     navigate('/');
   };
 
