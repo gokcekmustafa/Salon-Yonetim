@@ -26,6 +26,7 @@ import InstallmentsPage from "./pages/InstallmentsPage";
 import ContractsPage from "./pages/ContractsPage";
 import StaffPerformancePage from "./pages/StaffPerformancePage";
 import StaffSalaryPage from "./pages/StaffSalaryPage";
+import RoomsPage from "./pages/RoomsPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
 import NotificationsPage from "./pages/NotificationsPage";
