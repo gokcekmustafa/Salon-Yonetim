@@ -59,6 +59,11 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
   const isActive = (url: string) =>
     url === '/' ? location.pathname === '/' : location.pathname.startsWith(url);
 
+  const handleExitManagedSalon = () => {
+    stopManagingSalon();
+    navigate('/admin/salonlar');
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[hsl(var(--salon-bg))]">
       {/* TopBar */}
