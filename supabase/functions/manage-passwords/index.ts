@@ -153,6 +153,15 @@ Deno.serve(async (req) => {
         if (createError) return json({ error: createError.message }, 400)
 
         if (role) await supabaseAdmin.from('user_roles').insert({ user_id: newUser.user.id, role })
+        
+        // If creating a super_admin, mark them as a helper with a platform_staff_permissions row
+        if (role === 'super_admin') {
+          await supabaseAdmin.from('platform_staff_permissions').insert({
+            user_id: newUser.user.id,
+            is_helper: true,
+          })
+        }
+        
         if (assignSalonId) {
           await supabaseAdmin.from('salon_members').insert({
             user_id: newUser.user.id, salon_id: assignSalonId, role: salon_role || 'staff',
