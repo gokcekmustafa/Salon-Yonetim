@@ -42,7 +42,6 @@ export default function Dashboard() {
     .filter(p => { try { return isSameMonth(parseISO(p.payment_date), new Date()); } catch { return false; } })
     .reduce((s, p) => s + Number(p.amount), 0);
 
-  // Staff with today's appointments
   const staffTodayCounts: Record<string, number> = {};
   todayAppointments.forEach(a => {
     staffTodayCounts[a.staff_id] = (staffTodayCounts[a.staff_id] || 0) + 1;
@@ -79,9 +78,14 @@ export default function Dashboard() {
     { label: 'Rapor Gör', icon: BarChart3, onClick: () => navigate('/raporlar'), color: 'text-warning bg-warning/5 hover:bg-warning/10 border-warning/20' },
   ];
 
+  // Salon-specific inline styles only for salon users
+  const isSalon = !isSuperAdmin;
+  const salonCard = isSalon
+    ? { borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' } as React.CSSProperties
+    : undefined;
+
   return (
-    <div className="space-y-6 animate-in">
-      {/* Subscription Alert */}
+    <div className={isSalon ? 'space-y-6 animate-in' : 'page-container animate-in'}>
       {salon && (
         <SubscriptionAlert
           expiresAt={salon.subscription_expires_at}
@@ -89,22 +93,22 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Greeting */}
       <div>
-        <h1 className="font-bold tracking-tight" style={{ fontSize: '22px' }}>{greeting}, {firstName} 👋</h1>
-        <p className="text-muted-foreground mt-1" style={{ fontSize: '14px' }}>
+        <h1 className={isSalon ? 'font-bold tracking-tight' : 'page-title'} style={isSalon ? { fontSize: '22px' } : undefined}>
+          {greeting}, {firstName} 👋
+        </h1>
+        <p className={isSalon ? 'text-muted-foreground mt-1' : 'page-subtitle mt-1'} style={isSalon ? { fontSize: '14px' } : undefined}>
           Bugün {todayAppointments.length} randevunuz var{todayAppointments.length === 0 ? '.' : ` · ${format(new Date(), 'd MMMM yyyy, EEEE', { locale: tr })}`}
         </p>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {kpis.map(kpi => (
-          <div key={kpi.label} className="bg-card p-5" style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8' }}>
+          <div key={kpi.label} className={isSalon ? 'bg-card p-5' : 'stat-card p-5'} style={salonCard}>
             <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <p className="font-semibold text-muted-foreground uppercase tracking-wider" style={{ fontSize: '12px' }}>{kpi.label}</p>
-                <p className="font-bold tracking-tight tabular-nums" style={{ fontSize: '22px' }}>{kpi.value}</p>
+                <p className="font-semibold text-muted-foreground uppercase tracking-wider" style={{ fontSize: isSalon ? '12px' : '11px' }}>{kpi.label}</p>
+                <p className={isSalon ? 'font-bold tracking-tight tabular-nums' : 'text-2xl font-bold tracking-tight tabular-nums'} style={isSalon ? { fontSize: '22px' } : undefined}>{kpi.value}</p>
               </div>
               <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${kpi.iconClass}`}>
                 <kpi.icon className="h-5 w-5" />
@@ -114,10 +118,8 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Main Content: 2 columns */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        {/* Left: Today's Appointments (2/3) */}
-        <Card className="lg:col-span-2" style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' }}>
+        <Card className={isSalon ? 'lg:col-span-2' : 'lg:col-span-2 shadow-soft border-border/60'} style={salonCard}>
           <CardHeader className="pb-3">
             <CardTitle style={{ fontSize: '14px' }} className="font-semibold flex items-center gap-2">
               <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -139,20 +141,16 @@ export default function Dashboard() {
                 const status = getStatusConfig(apt);
                 return (
                   <div key={apt.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors">
-                    {/* Time */}
                     <div className="w-14 text-right shrink-0">
                       <span className="text-sm font-bold tabular-nums">{format(parseISO(apt.start_time), 'HH:mm')}</span>
                     </div>
-                    {/* Colored dot */}
                     <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${status.dotClass}`} />
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{getName(customers, apt.customer_id)}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {getName(services, apt.service_id)} · {getName(staff, apt.staff_id)}
                       </p>
                     </div>
-                    {/* Status badge */}
                     <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border shrink-0 ${status.badgeClass}`}>
                       {status.label}
                     </span>
@@ -162,8 +160,10 @@ export default function Dashboard() {
             )}
             <Button
               variant="outline"
-              className="w-full mt-3 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 border-0"
-              style={{ fontSize: '14px' }}
+              className={isSalon
+                ? 'w-full mt-3 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 border-0'
+                : 'w-full mt-3 gap-2'}
+              style={isSalon ? { fontSize: '14px' } : undefined}
               onClick={() => navigate('/randevular')}
             >
               <Plus className="h-4 w-4" />
@@ -172,10 +172,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Right column (1/3) */}
         <div className="space-y-6">
-          {/* Quick Actions 2x2 */}
-          <Card style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' }}>
+          <Card className={isSalon ? '' : 'shadow-soft border-border/60'} style={salonCard}>
             <CardHeader className="pb-3">
               <CardTitle style={{ fontSize: '14px' }} className="font-semibold">Hızlı İşlemler</CardTitle>
             </CardHeader>
@@ -196,8 +194,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Staff Status */}
-          <Card style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' }}>
+          <Card className={isSalon ? '' : 'shadow-soft border-border/60'} style={salonCard}>
             <CardHeader className="pb-3">
               <CardTitle style={{ fontSize: '14px' }} className="font-semibold flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-success/10 flex items-center justify-center">
