@@ -945,8 +945,14 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             <DialogDescription>Seans odası adını girin</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <Label className="text-xs font-semibold">Oda Adı</Label>
-            <Input value={roomName} onChange={e => setRoomName(e.target.value)} placeholder="Ör: Oda 1" />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Oda Adı</Label>
+              <Input value={roomName} onChange={e => setRoomName(e.target.value)} placeholder="Ör: Oda 1" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Oda Numarası</Label>
+              <Input value={roomNumber} onChange={e => setRoomNumber(e.target.value)} placeholder="Ör: 101" />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRoomDialogOpen(false)}>İptal</Button>
