@@ -66,10 +66,10 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
 
   const kpis = [
-    { label: 'Bugünün Randevuları', value: todayAppointments.length, icon: Calendar, iconClass: 'text-violet-600 bg-violet-100' },
-    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, iconClass: 'text-emerald-600 bg-emerald-100' },
-    { label: 'Aylık Gelir', value: `₺${monthlyTotal.toLocaleString('tr-TR')}`, icon: TrendingUp, iconClass: 'text-pink-600 bg-pink-100' },
-    { label: 'Toplam Müşteri', value: customers.length, icon: Users, iconClass: 'text-amber-600 bg-amber-100' },
+    { label: 'Bugünün Randevuları', value: todayAppointments.length, icon: Calendar, iconClass: 'text-primary bg-primary/10' },
+    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, iconClass: 'text-success bg-success/10' },
+    { label: 'Aylık Gelir', value: `₺${monthlyTotal.toLocaleString('tr-TR')}`, icon: TrendingUp, iconClass: 'text-accent bg-accent/10' },
+    { label: 'Toplam Müşteri', value: customers.length, icon: Users, iconClass: 'text-warning bg-warning/10' },
   ];
 
   const quickActions = [
