@@ -113,17 +113,30 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
                   <span className="text-xs font-bold text-primary-foreground">{initials}</span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <div className="px-3 py-2.5">
-                  <p className="text-sm font-semibold">{profile?.full_name || 'Kullanıcı'}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Salon Admin</p>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Çıkış Yap
-                </DropdownMenuItem>
-              </DropdownMenuContent>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-3 py-2.5">
+                    <p className="text-sm font-semibold">{profile?.full_name || 'Kullanıcı'}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Salon Admin</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/destek')}>
+                    <LifeBuoy className="h-4 w-4 mr-2" />
+                    Destek & İletişim
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/izleme')}>
+                    <Activity className="h-4 w-4 mr-2" />
+                    İzleme & Günlük
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/ayarlar')}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Ayarlar
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Çıkış
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
