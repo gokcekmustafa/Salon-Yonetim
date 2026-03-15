@@ -403,6 +403,9 @@ export default function SuperAdminSalonsPage() {
       {/* Platform Staff Manager - only for non-helper super admins */}
       {!isHelper && <PlatformStaffManager />}
 
+      {/* Ticket Manager */}
+      <TicketManager />
+
       {/* Create/Edit Salon Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
