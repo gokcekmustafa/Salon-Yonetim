@@ -25,6 +25,8 @@ import { AnnouncementManager } from '@/components/notifications/AnnouncementMana
 import { SubscriptionAlertSettings } from '@/components/notifications/SubscriptionAlertSettings';
 import { PopupManager } from '@/components/popup/PopupManager';
 import { PermissionManager } from '@/components/permissions/PermissionManager';
+import { PlatformStaffManager } from '@/components/admin/PlatformStaffManager';
+import { usePlatformPermissions } from '@/hooks/usePlatformPermissions';
 
 type Salon = {
   id: string; name: string; slug: string; phone: string | null; address: string | null;
@@ -45,6 +47,7 @@ const planLabels: Record<string, string> = {
 
 export default function SuperAdminSalonsPage() {
   const { isSuperAdmin, setCurrentSalonId } = useAuth();
+  const { hasPlatformPermission, isHelper } = usePlatformPermissions();
   const navigate = useNavigate();
 
   const [salons, setSalons] = useState<Salon[]>([]);
@@ -385,16 +388,19 @@ export default function SuperAdminSalonsPage() {
       )}
 
       {/* Subscription Alert Settings */}
-      <SubscriptionAlertSettings />
+      {hasPlatformPermission('can_manage_settings') && <SubscriptionAlertSettings />}
 
       {/* Announcements */}
-      <AnnouncementManager mode="super_admin" />
+      {hasPlatformPermission('can_manage_announcements') && <AnnouncementManager mode="super_admin" />}
 
       {/* Popup Announcements */}
-      <PopupManager mode="super_admin" />
+      {hasPlatformPermission('can_manage_popups') && <PopupManager mode="super_admin" />}
 
       {/* User Management */}
-      <SuperAdminUserManager />
+      {hasPlatformPermission('can_manage_users') && <SuperAdminUserManager />}
+
+      {/* Platform Staff Manager - only for non-helper super admins */}
+      {!isHelper && <PlatformStaffManager />}
 
       {/* Create/Edit Salon Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

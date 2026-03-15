@@ -3,6 +3,7 @@ import salonumLogo from '@/assets/salonum_logo.png';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { usePlatformPermissions, type PlatformPermissions } from '@/hooks/usePlatformPermissions';
 import { useBranding } from '@/hooks/useBranding';
 import {
   Sidebar,
@@ -48,6 +49,7 @@ interface MenuItem {
   icon: LucideIcon;
   roles?: ('super_admin' | 'salon_admin' | 'staff')[];
   permissionKey?: keyof SalonPermissions;
+  platformPermKey?: keyof PlatformPermissions;
 }
 
 const mainMenu: MenuItem[] = [
@@ -77,8 +79,8 @@ const otherMenu: MenuItem[] = [
 ];
 
 const superAdminMenu: MenuItem[] = [
-  { title: 'Platform Yönetimi', url: '/admin/salonlar', icon: Shield, roles: ['super_admin'] },
-  { title: 'Tüm Veriler', url: '/admin/veriler', icon: BarChart3, roles: ['super_admin'] },
+  { title: 'Platform Yönetimi', url: '/admin/salonlar', icon: Shield, roles: ['super_admin'], platformPermKey: 'can_manage_salons' },
+  { title: 'Tüm Veriler', url: '/admin/veriler', icon: BarChart3, roles: ['super_admin'], platformPermKey: 'can_manage_data' },
 ];
 
 export function AppSidebar() {
@@ -87,14 +89,17 @@ export function AppSidebar() {
   const location = useLocation();
   const { roles, isSuperAdmin } = useAuth();
   const { hasPermission } = usePermissions();
+  const { hasPlatformPermission } = usePlatformPermissions();
   const { branding } = useBranding();
 
   const filterByRole = (items: MenuItem[]) =>
     items.filter(item => {
       // Role check
       if (item.roles && !item.roles.some(r => roles.includes(r))) return false;
-      // Permission check (super admin bypasses)
+      // Permission check (super admin bypasses salon permissions)
       if (item.permissionKey && !isSuperAdmin && !hasPermission(item.permissionKey)) return false;
+      // Platform permission check for super admin helpers
+      if (item.platformPermKey && isSuperAdmin && !hasPlatformPermission(item.platformPermKey)) return false;
       return true;
     });
 
