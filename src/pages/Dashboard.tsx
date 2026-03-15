@@ -95,10 +95,10 @@ export default function Dashboard() {
 
       <div>
         <h1 className={isSalon ? 'font-bold tracking-tight' : 'page-title'} style={isSalon ? { fontSize: '22px' } : undefined}>
-          {greeting}, {firstName} 👋
+          Anasayfa
         </h1>
         <p className={isSalon ? 'text-muted-foreground mt-1' : 'page-subtitle mt-1'} style={isSalon ? { fontSize: '14px' } : undefined}>
-          Bugün {todayAppointments.length} randevunuz var{todayAppointments.length === 0 ? '.' : ` · ${format(new Date(), 'd MMMM yyyy, EEEE', { locale: tr })}`}
+          {greeting}, {firstName} 👋 · Bugün {todayAppointments.length} randevunuz var{todayAppointments.length === 0 ? '.' : ` · ${format(new Date(), 'd MMMM yyyy, EEEE', { locale: tr })}`}
         </p>
       </div>
 
