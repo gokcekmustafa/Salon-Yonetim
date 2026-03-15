@@ -131,7 +131,7 @@ export default function AppointmentsPage() {
     setForm({
       customerId: '',
       staffId: filteredStaffId || '',
-      serviceId: '',
+      serviceIds: [],
       roomId: 'none',
       date: format(currentDate, 'yyyy-MM-dd'),
       time: '09:00',
