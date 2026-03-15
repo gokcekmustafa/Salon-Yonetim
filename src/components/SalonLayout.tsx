@@ -25,6 +25,7 @@ const navItems = [
   { title: 'Müşteriler', url: '/musteriler' },
   { title: 'Kasa', url: '/kasa' },
   { title: 'Personel', url: '/personel' },
+  { title: 'Odalar', url: '/odalar' },
   { title: 'Raporlar', url: '/raporlar' },
 ];
 
