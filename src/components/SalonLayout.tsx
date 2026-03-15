@@ -5,8 +5,9 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PopupDisplay } from '@/components/popup/PopupDisplay';
 import { useOnlineHeartbeat } from '@/hooks/useOnlineStatus';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings } from 'lucide-react';
+import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,

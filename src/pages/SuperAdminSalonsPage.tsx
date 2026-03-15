@@ -47,7 +47,7 @@ const planLabels: Record<string, string> = {
 };
 
 export default function SuperAdminSalonsPage() {
-  const { isSuperAdmin, setCurrentSalonId } = useAuth();
+  const { isSuperAdmin, startManagingSalon } = useAuth();
   const { hasPlatformPermission, isHelper } = usePlatformPermissions();
   const navigate = useNavigate();
 

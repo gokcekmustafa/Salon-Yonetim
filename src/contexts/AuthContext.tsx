@@ -15,7 +15,10 @@ interface AuthContextType {
   isSuperAdmin: boolean;
   isSalonAdmin: boolean;
   isStaff: boolean;
+  isManagingSalon: boolean;
   setCurrentSalonId: (id: string | null) => void;
+  startManagingSalon: (id: string) => void;
+  stopManagingSalon: () => void;
   signOut: () => Promise<void>;
 }
 
@@ -30,7 +33,10 @@ const defaultAuthContext: AuthContextType = {
   isSuperAdmin: false,
   isSalonAdmin: false,
   isStaff: false,
+  isManagingSalon: false,
   setCurrentSalonId: () => {},
+  startManagingSalon: () => {},
+  stopManagingSalon: () => {},
   signOut: async () => {},
 };
 
