@@ -39,6 +39,7 @@ import {
   BadgeDollarSign,
   CreditCard,
   TrendingUp,
+  LifeBuoy,
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
@@ -74,6 +75,7 @@ const financeMenu: MenuItem[] = [
 
 const otherMenu: MenuItem[] = [
   { title: 'Bildirimler', url: '/bildirimler', icon: Bell },
+  { title: 'Destek & İletişim', url: '/destek', icon: LifeBuoy, roles: ['salon_admin', 'super_admin'] },
   { title: 'İzleme & Günlük', url: '/izleme', icon: Activity, roles: ['super_admin', 'salon_admin'] },
   { title: 'Ayarlar', url: '/ayarlar', icon: Settings, roles: ['super_admin', 'salon_admin'] },
 ];

@@ -29,6 +29,7 @@ import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AuditPage from "./pages/AuditPage";
+import SupportPage from "./pages/SupportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/subeler" element={<AdminRoute><BranchesPage /></AdminRoute>} />
               <Route path="/bildirimler" element={<AdminRoute><NotificationsPage /></AdminRoute>} />
               <Route path="/izleme" element={<FinanceRoute><AuditPage /></FinanceRoute>} />
+              <Route path="/destek" element={<AdminRoute><SupportPage /></AdminRoute>} />
               <Route path="/adaylar" element={<AdminRoute><LeadsPage /></AdminRoute>} />
               {/* Sessions merged into /randevular */}
               <Route path="/sozlesmeler" element={<AdminRoute><ContractsPage /></AdminRoute>} />

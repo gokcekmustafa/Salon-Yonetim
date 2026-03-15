@@ -26,6 +26,7 @@ import { SubscriptionAlertSettings } from '@/components/notifications/Subscripti
 import { PopupManager } from '@/components/popup/PopupManager';
 import { PermissionManager } from '@/components/permissions/PermissionManager';
 import { PlatformStaffManager } from '@/components/admin/PlatformStaffManager';
+import { TicketManager } from '@/components/admin/TicketManager';
 import { usePlatformPermissions } from '@/hooks/usePlatformPermissions';
 
 type Salon = {
@@ -401,6 +402,9 @@ export default function SuperAdminSalonsPage() {
 
       {/* Platform Staff Manager - only for non-helper super admins */}
       {!isHelper && <PlatformStaffManager />}
+
+      {/* Ticket Manager */}
+      <TicketManager />
 
       {/* Create/Edit Salon Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

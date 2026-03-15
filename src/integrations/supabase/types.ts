@@ -1459,6 +1459,94 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_by: string
+          id: string
+          message: string
+          priority: string
+          salon_id: string
+          status: Database["public"]["Enums"]["ticket_status"]
+          title: string
+          type: Database["public"]["Enums"]["ticket_type"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          message: string
+          priority?: string
+          salon_id: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          title: string
+          type?: Database["public"]["Enums"]["ticket_type"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          message?: string
+          priority?: string
+          salon_id?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["ticket_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_replies: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          ticket_id: string
+          user_id: string
+          user_name: string | null
+          user_role: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          ticket_id: string
+          user_id: string
+          user_name?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          ticket_id?: string
+          user_id?: string
+          user_name?: string | null
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_replies_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_online_status: {
         Row: {
           id: string
@@ -1566,6 +1654,8 @@ export type Database = {
         | "won"
         | "lost"
       subscription_plan: "free" | "starter" | "professional" | "enterprise"
+      ticket_status: "pending" | "in_progress" | "resolved"
+      ticket_type: "support" | "suggestion" | "complaint"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1703,6 +1793,8 @@ export const Constants = {
         "lost",
       ],
       subscription_plan: ["free", "starter", "professional", "enterprise"],
+      ticket_status: ["pending", "in_progress", "resolved"],
+      ticket_type: ["support", "suggestion", "complaint"],
     },
   },
 } as const
