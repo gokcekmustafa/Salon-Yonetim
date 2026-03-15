@@ -3,6 +3,7 @@ import salonumLogo from '@/assets/salonum_logo.png';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { usePlatformPermissions, type PlatformPermissions } from '@/hooks/usePlatformPermissions';
 import { useBranding } from '@/hooks/useBranding';
 import {
   Sidebar,
