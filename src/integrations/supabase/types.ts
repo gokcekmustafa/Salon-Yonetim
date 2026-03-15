@@ -1083,6 +1083,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          room_number: string | null
           salon_id: string
         }
         Insert: {
@@ -1090,6 +1091,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          room_number?: string | null
           salon_id: string
         }
         Update: {
@@ -1097,6 +1099,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          room_number?: string | null
           salon_id?: string
         }
         Relationships: [
@@ -1261,8 +1264,41 @@ export type Database = {
         }
         Relationships: []
       }
+      service_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          salon_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          salon_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          salon_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_categories_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
+          category_id: string | null
           created_at: string
           duration: number
           id: string
@@ -1273,6 +1309,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           duration: number
           id?: string
@@ -1283,6 +1320,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           duration?: number
           id?: string
@@ -1293,6 +1331,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "services_salon_id_fkey"
             columns: ["salon_id"]
@@ -1349,6 +1394,96 @@ export type Database = {
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_details: {
+        Row: {
+          address: string | null
+          birth_date: string | null
+          bonus_rate: number | null
+          bonus_type: string | null
+          created_at: string | null
+          department: string | null
+          experiences: string[] | null
+          gender: string | null
+          id: string
+          offered_services: string[] | null
+          payment_period: string | null
+          permissions: Json | null
+          reward_description: string | null
+          salary_notes: string | null
+          salon_id: string
+          secondary_phone: string | null
+          staff_id: string
+          start_date: string | null
+          surname: string | null
+          tc_no: string | null
+          updated_at: string | null
+          working_hours: Json | null
+        }
+        Insert: {
+          address?: string | null
+          birth_date?: string | null
+          bonus_rate?: number | null
+          bonus_type?: string | null
+          created_at?: string | null
+          department?: string | null
+          experiences?: string[] | null
+          gender?: string | null
+          id?: string
+          offered_services?: string[] | null
+          payment_period?: string | null
+          permissions?: Json | null
+          reward_description?: string | null
+          salary_notes?: string | null
+          salon_id: string
+          secondary_phone?: string | null
+          staff_id: string
+          start_date?: string | null
+          surname?: string | null
+          tc_no?: string | null
+          updated_at?: string | null
+          working_hours?: Json | null
+        }
+        Update: {
+          address?: string | null
+          birth_date?: string | null
+          bonus_rate?: number | null
+          bonus_type?: string | null
+          created_at?: string | null
+          department?: string | null
+          experiences?: string[] | null
+          gender?: string | null
+          id?: string
+          offered_services?: string[] | null
+          payment_period?: string | null
+          permissions?: Json | null
+          reward_description?: string | null
+          salary_notes?: string | null
+          salon_id?: string
+          secondary_phone?: string | null
+          staff_id?: string
+          start_date?: string | null
+          surname?: string | null
+          tc_no?: string | null
+          updated_at?: string | null
+          working_hours?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_details_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_details_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: true
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]

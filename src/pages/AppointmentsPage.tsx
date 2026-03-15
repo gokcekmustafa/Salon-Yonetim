@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2, Banknote, CreditCard, FileSpreadsheet, FileText } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2, Banknote, CreditCard, FileSpreadsheet, FileText, List, LayoutGrid } from 'lucide-react';
 import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { format, addMinutes, addDays, subDays, addWeeks, subWeeks, differenceInMinutes } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -23,7 +23,8 @@ import { getEffectiveAppointmentStatus, type AppointmentUiStatus } from '@/lib/a
 import { useQuery } from '@tanstack/react-query';
 
 type ViewMode = 'day' | 'week';
-type Room = { id: string; salon_id: string; name: string; is_active: boolean };
+type ListGroupMode = 'room' | 'staff' | 'list' | null;
+type Room = { id: string; salon_id: string; name: string; is_active: boolean; room_number: string | null };
 
 const SESSION_STATUSES = [
   { value: 'waiting', label: 'Bekliyor' },
@@ -42,6 +43,7 @@ export default function AppointmentsPage() {
   } = useSalonData();
 
   const [viewMode, setViewMode] = useState<ViewMode>('day');
+  const [listGroupMode, setListGroupMode] = useState<ListGroupMode>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filteredStaffId, setFilteredStaffId] = useState<string | null>(null);
   const [filteredBranchId, setFilteredBranchId] = useState<string | null>(null);
@@ -366,19 +368,21 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
   const currentDetailStatus = currentDetailApt ? getEffectiveAppointmentStatus(currentDetailApt) : 'bekliyor';
 
   // Room CRUD
+  const [roomNumber, setRoomNumber] = useState('');
   const handleSaveRoom = async () => {
     if (!roomName.trim() || !currentSalonId) return;
     setSavingRoom(true);
     if (editingRoom) {
-      await supabase.from('rooms').update({ name: roomName.trim() }).eq('id', editingRoom.id);
+      await supabase.from('rooms').update({ name: roomName.trim(), room_number: roomNumber.trim() || null } as any).eq('id', editingRoom.id);
       toast.success('Oda güncellendi');
     } else {
-      await supabase.from('rooms').insert({ name: roomName.trim(), salon_id: currentSalonId });
+      await supabase.from('rooms').insert({ name: roomName.trim(), salon_id: currentSalonId, room_number: roomNumber.trim() || null } as any);
       toast.success('Oda eklendi');
     }
     setSavingRoom(false);
     setRoomDialogOpen(false);
     setRoomName('');
+    setRoomNumber('');
     setEditingRoom(null);
     fetchRooms();
   };
@@ -445,7 +449,7 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
                   <DoorOpen className="h-5 w-5 text-primary" />
                   <div><CardTitle className="text-base">Seans Odaları</CardTitle><CardDescription>Seans odalarını yönetin</CardDescription></div>
                 </div>
-                <Button size="sm" onClick={() => { setEditingRoom(null); setRoomName(''); setRoomDialogOpen(true); }} className="gap-1.5 h-8">
+                <Button size="sm" onClick={() => { setEditingRoom(null); setRoomName(''); setRoomNumber(''); setRoomDialogOpen(true); }} className="gap-1.5 h-8">
                   <Plus className="h-3.5 w-3.5" /> Oda Ekle
                 </Button>
               </div>
@@ -459,7 +463,8 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
                     <div key={r.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-muted/30">
                       <DoorOpen className="h-4 w-4 text-primary" />
                       <span className="text-sm font-medium">{r.name}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingRoom(r); setRoomName(r.name); setRoomDialogOpen(true); }}>
+                      {r.room_number && <span className="text-xs text-muted-foreground">#{r.room_number}</span>}
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingRoom(r); setRoomName(r.name); setRoomNumber(r.room_number || ''); setRoomDialogOpen(true); }}>
                         <Pencil className="h-3 w-3" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteRoom(r.id)}>
@@ -478,20 +483,44 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
           <div className="flex items-center gap-2">
             <div className="flex border rounded-lg overflow-hidden shrink-0">
               <button
-                onClick={() => setViewMode('day')}
+                onClick={() => { setViewMode('day'); setListGroupMode(null); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  viewMode === 'day' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                  !listGroupMode && viewMode === 'day' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
                 }`}
               >
                 <CalendarDays className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Günlük</span>
               </button>
               <button
-                onClick={() => setViewMode('week')}
+                onClick={() => { setViewMode('week'); setListGroupMode(null); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  viewMode === 'week' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                  !listGroupMode && viewMode === 'week' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
                 }`}
               >
                 <CalendarRange className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Haftalık</span>
+              </button>
+              <button
+                onClick={() => setListGroupMode('room')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                  listGroupMode === 'room' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                }`}
+              >
+                <DoorOpen className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Odaya Göre</span>
+              </button>
+              <button
+                onClick={() => setListGroupMode('staff')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                  listGroupMode === 'staff' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Personele Göre</span>
+              </button>
+              <button
+                onClick={() => setListGroupMode('list')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                  listGroupMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                }`}
+              >
+                <List className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Liste</span>
               </button>
             </div>
 
@@ -552,38 +581,135 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
         </div>
       </div>
 
-      {/* Calendar View */}
-      <div className="overflow-auto max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-240px)]">
-        {viewMode === 'day' ? (
-          <DayCalendarView
-            date={currentDate}
-            filteredStaffId={filteredStaffId}
-            filteredBranchId={filteredBranchId}
-            onAppointmentClick={handleAppointmentClick}
-            rooms={rooms}
-            appointments={appointments}
-            staff={staff}
-            customers={customers}
-            services={services}
-            branches={branches}
-            updateAppointment={updateAppointment}
-            hasConflict={hasConflict}
-          />
-        ) : (
-          <WeekCalendarView
-            date={currentDate}
-            filteredStaffId={filteredStaffId}
-            filteredBranchId={filteredBranchId}
-            onAppointmentClick={handleAppointmentClick}
-            appointments={appointments}
-            staff={staff}
-            customers={customers}
-            services={services}
-            updateAppointment={updateAppointment}
-            hasConflict={hasConflict}
-          />
-        )}
-      </div>
+      {/* Calendar or List View */}
+      {listGroupMode ? (
+        <div className="overflow-auto max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-240px)]">
+          {(() => {
+            const filtered = appointments.filter(a => {
+              if (filteredStaffId && a.staff_id !== filteredStaffId) return false;
+              if (filteredBranchId && a.branch_id !== filteredBranchId) return false;
+              return true;
+            });
+
+            if (listGroupMode === 'list') {
+              return (
+                <Card className="shadow-soft border-border/60">
+                  <CardContent className="p-0">
+                    <div className="divide-y">
+                      {filtered.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-8">Randevu bulunamadı</p>
+                      ) : filtered.map(a => {
+                        const effStatus = getEffectiveAppointmentStatus(a);
+                        return (
+                          <div key={a.id} className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer" onClick={() => handleAppointmentClick(a)}>
+                            <Badge variant={statusVariant(effStatus)} className="text-[10px] w-20 justify-center">{statusLabel[effStatus]}</Badge>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{getCustomerName(a.customer_id)}</p>
+                              <p className="text-xs text-muted-foreground">{getServiceName(a.service_id)} • {getStaffName(a.staff_id)}</p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-sm font-medium">{format(new Date(a.start_time), 'HH:mm', { locale: tr })}</p>
+                              <p className="text-xs text-muted-foreground">{format(new Date(a.start_time), 'd MMM', { locale: tr })}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            // Group by room or staff
+            const groups: Record<string, typeof filtered> = {};
+            filtered.forEach(a => {
+              const key = listGroupMode === 'room' ? (a.room_id || 'unassigned') : a.staff_id;
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(a);
+            });
+
+            const getGroupLabel = (key: string) => {
+              if (listGroupMode === 'room') return key === 'unassigned' ? 'Oda Atanmamış' : getRoomName(key);
+              return getStaffName(key);
+            };
+
+            return (
+              <div className="space-y-4">
+                {Object.entries(groups).map(([key, apts]) => (
+                  <Card key={key} className="shadow-soft border-border/60">
+                    <CardHeader className="pb-2 pt-3 px-4">
+                      <div className="flex items-center gap-2">
+                        {listGroupMode === 'room' ? <DoorOpen className="h-4 w-4 text-primary" /> : <Users className="h-4 w-4 text-primary" />}
+                        <CardTitle className="text-sm">{getGroupLabel(key)}</CardTitle>
+                        <Badge variant="secondary" className="text-[10px]">{apts.length}</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="divide-y">
+                        {apts.map(a => {
+                          const effStatus = getEffectiveAppointmentStatus(a);
+                          return (
+                            <div key={a.id} className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer" onClick={() => handleAppointmentClick(a)}>
+                              <Badge variant={statusVariant(effStatus)} className="text-[10px] w-20 justify-center">{statusLabel[effStatus]}</Badge>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{getCustomerName(a.customer_id)}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {getServiceName(a.service_id)}
+                                  {listGroupMode === 'room' && ` • ${getStaffName(a.staff_id)}`}
+                                  {listGroupMode === 'staff' && a.room_id && ` • ${getRoomName(a.room_id)}`}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-sm font-medium">{format(new Date(a.start_time), 'HH:mm', { locale: tr })}</p>
+                                <p className="text-xs text-muted-foreground">{format(new Date(a.start_time), 'd MMM', { locale: tr })}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {Object.keys(groups).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-8">Randevu bulunamadı</p>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      ) : (
+        <div className="overflow-auto max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-240px)]">
+          {viewMode === 'day' ? (
+            <DayCalendarView
+              date={currentDate}
+              filteredStaffId={filteredStaffId}
+              filteredBranchId={filteredBranchId}
+              onAppointmentClick={handleAppointmentClick}
+              rooms={rooms}
+              appointments={appointments}
+              staff={staff}
+              customers={customers}
+              services={services}
+              branches={branches}
+              updateAppointment={updateAppointment}
+              hasConflict={hasConflict}
+            />
+          ) : (
+            <WeekCalendarView
+              date={currentDate}
+              filteredStaffId={filteredStaffId}
+              filteredBranchId={filteredBranchId}
+              onAppointmentClick={handleAppointmentClick}
+              appointments={appointments}
+              staff={staff}
+              customers={customers}
+              services={services}
+              updateAppointment={updateAppointment}
+              hasConflict={hasConflict}
+            />
+          )}
+        </div>
+      )}
 
       {/* New Appointment Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -819,8 +945,14 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             <DialogDescription>Seans odası adını girin</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <Label className="text-xs font-semibold">Oda Adı</Label>
-            <Input value={roomName} onChange={e => setRoomName(e.target.value)} placeholder="Ör: Oda 1" />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Oda Adı</Label>
+              <Input value={roomName} onChange={e => setRoomName(e.target.value)} placeholder="Ör: Oda 1" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Oda Numarası</Label>
+              <Input value={roomNumber} onChange={e => setRoomNumber(e.target.value)} placeholder="Ör: 101" />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRoomDialogOpen(false)}>İptal</Button>

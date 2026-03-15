@@ -1,154 +1,345 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData, DbService } from '@/hooks/useSalonData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Clock, Scissors, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Pencil, Trash2, Scissors, Loader2, ChevronDown, ChevronRight, FolderPlus, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
-import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
 
-const SERVICE_COLUMNS: ColumnMapping[] = [
-  { excelHeader: 'Hizmet Adı', dbKey: 'name', required: true },
-  { excelHeader: 'Süre (dk)', dbKey: 'duration', required: true },
-  { excelHeader: 'Fiyat (₺)', dbKey: 'price', required: true },
+type ServiceCategory = {
+  id: string; salon_id: string; name: string; sort_order: number; created_at: string;
+};
+
+const DEFAULT_CATEGORIES = [
+  { name: 'LAZER EPİLASYON', services: ['BEL','ENSE','ALIN','SIRT','POPO ÜSTÜ','ÜST BACAK','TÜM KOL','YARIM KOL','TÜM BACAK','YARIM BACAK','KOLTUK ALTI','GENİTAL','TÜM YÜZ','FAUL','BIYIK','ÇENE','BOYUN','GÖĞÜS ARASI','GÖĞÜS UCU','GÖBEK','GÖBEK ÇİZGİSİ','POPO ARASI','GÖĞÜS'] },
+  { name: 'CİLT BAKIMI', services: ['CİLT BAKIMI','PRENSES BAKIM','GENÇLİK VİTAMİN','MİCROBLADİNG','COLLEGAN İP','YOSUN PEELİNG','MASAJ','PUMPKİN BAKIM'] },
+  { name: 'BÖLGESEL ZAYIFLAMA', services: ['G5 - BACAK','G5 - BASEN','G5 - GÖBEK','PASİF JİMNASTİK - GÖBEK','PASİF JİMNASTİK - BASEN','PASİF JİMNASTİK - BACAK'] },
+  { name: 'KİRPİK LİFTİNG', services: ['KİRPİK LİFTİNG'] },
+  { name: 'ÇATLAK BAKIMI', services: ['GÖBEK'] },
 ];
 
 export default function ServicesPage() {
   const { hasPermission } = usePermissions();
-  const { services, addService, updateService, deleteService, loading } = useSalonData();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<DbService | null>(null);
-  const [form, setForm] = useState({ name: '', duration: '', price: '' });
+  const { currentSalonId } = useAuth();
+  const { services, addService, updateService, deleteService, loading, refetch } = useSalonData();
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
+  const [catDialogOpen, setCatDialogOpen] = useState(false);
+  const [editingCat, setEditingCat] = useState<ServiceCategory | null>(null);
+  const [catName, setCatName] = useState('');
+  const [svcDialogOpen, setSvcDialogOpen] = useState(false);
+  const [editingSvc, setEditingSvc] = useState<DbService | null>(null);
+  const [svcCatId, setSvcCatId] = useState<string | null>(null);
+  const [svcForm, setSvcForm] = useState({ name: '', duration: '60', price: '0' });
   const [saving, setSaving] = useState(false);
+  const [loadingDefaults, setLoadingDefaults] = useState(false);
+
+  const fetchCategories = useCallback(async () => {
+    if (!currentSalonId) return;
+    const { data } = await supabase.from('service_categories').select('*').eq('salon_id', currentSalonId).order('sort_order');
+    setCategories((data as ServiceCategory[]) || []);
+  }, [currentSalonId]);
+
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+
+  // Auto expand all categories
+  useEffect(() => {
+    if (categories.length > 0 && expandedCats.size === 0) {
+      setExpandedCats(new Set(categories.map(c => c.id)));
+    }
+  }, [categories]);
 
   if (!hasPermission('can_manage_services')) return <NoPermission feature="Hizmet Yönetimi" />;
-
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <div className="flex flex-col items-center gap-3"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="text-sm text-muted-foreground">Yükleniyor...</p></div>
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>
   );
 
-  const openAdd = () => { setEditing(null); setForm({ name: '', duration: '', price: '' }); setDialogOpen(true); };
-  const openEdit = (s: DbService) => { setEditing(s); setForm({ name: s.name, duration: String(s.duration), price: String(s.price) }); setDialogOpen(true); };
-
-  const handleSave = async () => {
-    if (!form.name.trim()) { toast.error('Hizmet adı zorunludur.'); return; }
-    setSaving(true);
-    const data = { name: form.name, duration: Number(form.duration) || 0, price: Number(form.price) || 0 };
-    if (editing) { await updateService(editing.id, data); toast.success('Hizmet güncellendi.'); }
-    else { await addService(data); toast.success('Hizmet eklendi.'); }
-    setSaving(false);
-    setDialogOpen(false);
+  const toggleCat = (id: string) => {
+    setExpandedCats(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   };
 
-  const handleDelete = async (id: string) => { await deleteService(id); toast.success('Hizmet silindi.'); };
+  const toggleService = (id: string) => {
+    setSelectedServices(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleCategory = (catId: string) => {
+    const catServices = services.filter(s => (s as any).category_id === catId);
+    const allSelected = catServices.every(s => selectedServices.has(s.id));
+    setSelectedServices(prev => {
+      const next = new Set(prev);
+      catServices.forEach(s => allSelected ? next.delete(s.id) : next.add(s.id));
+      return next;
+    });
+  };
+
+  const getServicesByCategory = (catId: string) => services.filter(s => (s as any).category_id === catId);
+  const uncategorizedServices = services.filter(s => !(s as any).category_id);
+
+  // Category CRUD
+  const handleSaveCat = async () => {
+    if (!catName.trim() || !currentSalonId) return;
+    setSaving(true);
+    if (editingCat) {
+      await supabase.from('service_categories').update({ name: catName.trim() }).eq('id', editingCat.id);
+      toast.success('Kategori güncellendi');
+    } else {
+      await supabase.from('service_categories').insert({ name: catName.trim(), salon_id: currentSalonId, sort_order: categories.length });
+      toast.success('Kategori eklendi');
+    }
+    setSaving(false);
+    setCatDialogOpen(false);
+    setCatName('');
+    setEditingCat(null);
+    fetchCategories();
+  };
+
+  const deleteCat = async (id: string) => {
+    await supabase.from('service_categories').delete().eq('id', id);
+    toast.success('Kategori silindi');
+    fetchCategories();
+  };
+
+  // Service CRUD
+  const openAddService = (catId: string) => {
+    setSvcCatId(catId);
+    setEditingSvc(null);
+    setSvcForm({ name: '', duration: '60', price: '0' });
+    setSvcDialogOpen(true);
+  };
+
+  const openEditService = (svc: DbService) => {
+    setEditingSvc(svc);
+    setSvcCatId((svc as any).category_id || null);
+    setSvcForm({ name: svc.name, duration: String(svc.duration), price: String(svc.price) });
+    setSvcDialogOpen(true);
+  };
+
+  const handleSaveService = async () => {
+    if (!svcForm.name.trim()) { toast.error('Hizmet adı zorunludur.'); return; }
+    setSaving(true);
+    const data = { name: svcForm.name, duration: Number(svcForm.duration) || 60, price: Number(svcForm.price) || 0 };
+    if (editingSvc) {
+      await updateService(editingSvc.id, { ...data, category_id: svcCatId } as any);
+      toast.success('Hizmet güncellendi.');
+    } else {
+      if (!currentSalonId) return;
+      await supabase.from('services').insert({ ...data, salon_id: currentSalonId, category_id: svcCatId });
+      toast.success('Hizmet eklendi.');
+      refetch();
+    }
+    setSaving(false);
+    setSvcDialogOpen(false);
+  };
+
+  const handleDeleteService = async (id: string) => {
+    await deleteService(id);
+    toast.success('Hizmet silindi.');
+  };
+
+  // Load default categories and services
+  const loadDefaults = async () => {
+    if (!currentSalonId) return;
+    setLoadingDefaults(true);
+    try {
+      for (const cat of DEFAULT_CATEGORIES) {
+        const { data: catData } = await supabase.from('service_categories')
+          .insert({ name: cat.name, salon_id: currentSalonId, sort_order: DEFAULT_CATEGORIES.indexOf(cat) })
+          .select('id').single();
+        if (catData) {
+          const serviceRows = cat.services.map(name => ({
+            name, salon_id: currentSalonId, category_id: catData.id, duration: 60, price: 0,
+          }));
+          await supabase.from('services').insert(serviceRows);
+        }
+      }
+      toast.success('Varsayılan hizmetler yüklendi.');
+      fetchCategories();
+      refetch();
+    } catch (e) {
+      toast.error('Hata oluştu.');
+    }
+    setLoadingDefaults(false);
+  };
 
   return (
     <div className="page-container animate-in">
       <div className="page-header">
         <div>
           <h1 className="page-title">Hizmetler</h1>
-          <p className="page-subtitle">{services.length} hizmet tanımlı</p>
+          <p className="page-subtitle">{categories.length} kategori, {services.length} hizmet</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <DataExportImport
-            title="Hizmet Listesi"
-            filePrefix="hizmetler"
-            columns={SERVICE_COLUMNS}
-            data={services}
-            toExportRow={(s) => ({
-              'Hizmet Adı': s.name,
-              'Süre (dk)': s.duration,
-              'Fiyat (₺)': s.price,
-            })}
-            fromImportRow={(row) => ({
-              name: row['Hizmet Adı'],
-              duration: Number(row['Süre (dk)']) || 60,
-              price: Number(row['Fiyat (₺)']) || 0,
-            })}
-            onImport={async (rows) => {
-              let success = 0, errors = 0;
-              for (const row of rows) {
-                const err = await addService(row as any);
-                if (err) errors++; else success++;
-              }
-              return { success, errors };
-            }}
-            summaryLines={[`Toplam: ${services.length} hizmet`]}
-          />
-          <Button onClick={openAdd} size="sm" className="h-10 btn-gradient gap-1.5 rounded-xl px-4"><Plus className="h-4 w-4" /> Ekle</Button>
+        <div className="flex flex-wrap gap-2">
+          {categories.length === 0 && (
+            <Button variant="outline" size="sm" onClick={loadDefaults} disabled={loadingDefaults} className="gap-1.5">
+              {loadingDefaults ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Varsayılan Hizmetleri Yükle
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => { setEditingCat(null); setCatName(''); setCatDialogOpen(true); }} className="gap-1.5">
+            <FolderPlus className="h-4 w-4" /> Kategori Ekle
+          </Button>
         </div>
       </div>
 
-      {/* Mobile Cards */}
-      <div className="block md:hidden space-y-3">
-        {services.length === 0 ? (
-          <Card className="shadow-soft border-border/60"><CardContent className="empty-state"><Scissors className="empty-state-icon" /><p className="empty-state-title">Hizmet bulunamadı</p><p className="empty-state-description">İlk hizmetinizi ekleyerek başlayın.</p></CardContent></Card>
-        ) : services.map(s => (
-          <div key={s.id} className="card-interactive p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Scissors className="h-4.5 w-4.5 text-primary" /></div>
-                <div>
-                  <p className="font-semibold text-sm">{s.name}</p>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {s.duration} dk</span>
-                    <span className="font-bold text-foreground">₺{Number(s.price).toLocaleString('tr-TR')}</span>
+      {/* Categories with services */}
+      <div className="space-y-3">
+        {categories.map(cat => {
+          const catServices = getServicesByCategory(cat.id);
+          const isExpanded = expandedCats.has(cat.id);
+          const allSelected = catServices.length > 0 && catServices.every(s => selectedServices.has(s.id));
+          const someSelected = catServices.some(s => selectedServices.has(s.id));
+
+          return (
+            <Card key={cat.id} className="shadow-soft border-border/60 overflow-hidden">
+              <CardHeader className="pb-2 pt-3 px-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={allSelected}
+                    // @ts-ignore
+                    indeterminate={someSelected && !allSelected}
+                    onCheckedChange={() => toggleCategory(cat.id)}
+                  />
+                  <button onClick={() => toggleCat(cat.id)} className="flex items-center gap-2 flex-1 text-left">
+                    {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                    <CardTitle className="text-sm font-bold">{cat.name}</CardTitle>
+                    <span className="text-xs text-muted-foreground">({catServices.length})</span>
+                  </button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openAddService(cat.id)}>
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingCat(cat); setCatName(cat.name); setCatDialogOpen(true); }}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteCat(cat.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 </div>
+              </CardHeader>
+              {isExpanded && (
+                <CardContent className="px-4 pb-3 pt-0">
+                  {catServices.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2 pl-8">Henüz alt hizmet eklenmemiş</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {catServices.map(svc => (
+                        <div key={svc.id} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-muted/50 group">
+                          <Checkbox
+                            checked={selectedServices.has(svc.id)}
+                            onCheckedChange={() => toggleService(svc.id)}
+                          />
+                          <Scissors className="h-3.5 w-3.5 text-primary/60 shrink-0" />
+                          <span className="text-sm font-medium flex-1">{svc.name}</span>
+                          <span className="text-xs text-muted-foreground">{svc.duration} dk</span>
+                          <span className="text-xs font-bold tabular-nums">₺{Number(svc.price).toLocaleString('tr-TR')}</span>
+                          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditService(svc)}>
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDeleteService(svc.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
+
+        {/* Uncategorized services */}
+        {uncategorizedServices.length > 0 && (
+          <Card className="shadow-soft border-border/60">
+            <CardHeader className="pb-2 pt-3 px-4">
+              <CardTitle className="text-sm font-bold text-muted-foreground">Kategorisiz Hizmetler</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3 pt-0">
+              <div className="space-y-1">
+                {uncategorizedServices.map(svc => (
+                  <div key={svc.id} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-muted/50 group">
+                    <Checkbox checked={selectedServices.has(svc.id)} onCheckedChange={() => toggleService(svc.id)} />
+                    <Scissors className="h-3.5 w-3.5 text-primary/60 shrink-0" />
+                    <span className="text-sm font-medium flex-1">{svc.name}</span>
+                    <span className="text-xs text-muted-foreground">{svc.duration} dk</span>
+                    <span className="text-xs font-bold tabular-nums">₺{Number(svc.price).toLocaleString('tr-TR')}</span>
+                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditService(svc)}>
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDeleteService(svc.id)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex gap-0.5">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openEdit(s)}><Pencil className="h-3.5 w-3.5" /></Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(s.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-              </div>
-            </div>
-          </div>
-        ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {categories.length === 0 && uncategorizedServices.length === 0 && (
+          <Card className="shadow-soft border-border/60">
+            <CardContent className="empty-state">
+              <Scissors className="empty-state-icon" />
+              <p className="empty-state-title">Hizmet bulunamadı</p>
+              <p className="empty-state-description">Varsayılan hizmetleri yükleyerek veya yeni kategori ekleyerek başlayın.</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Desktop Table */}
-      <Card className="hidden md:block shadow-soft border-border/60 overflow-hidden">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="font-semibold">Hizmet Adı</TableHead><TableHead className="font-semibold">Süre</TableHead><TableHead className="font-semibold">Fiyat</TableHead><TableHead className="text-right font-semibold">İşlem</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {services.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground text-sm">Hizmet bulunamadı.</TableCell></TableRow>
-              ) : services.map(s => (
-                <TableRow key={s.id} className="group">
-                  <TableCell><div className="flex items-center gap-3"><div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center"><Scissors className="h-4 w-4 text-primary" /></div><span className="font-medium">{s.name}</span></div></TableCell>
-                  <TableCell className="text-muted-foreground">{s.duration} dk</TableCell>
-                  <TableCell className="font-bold tabular-nums">₺{Number(s.price).toLocaleString('tr-TR')}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => openEdit(s)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={() => handleDelete(s.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editing ? 'Hizmet Düzenle' : 'Yeni Hizmet'}</DialogTitle><DialogDescription>{editing ? 'Hizmet bilgilerini güncelleyin' : 'Yeni hizmet ekleyin'}</DialogDescription></DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2"><Label className="text-xs font-semibold">Hizmet Adı</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Saç Kesimi" className="h-10" /></div>
-            <div className="space-y-2"><Label className="text-xs font-semibold">Süre (dakika)</Label><Input type="number" value={form.duration} onChange={e => setForm(f => ({ ...f, duration: e.target.value }))} placeholder="45" className="h-10" /></div>
-            <div className="space-y-2"><Label className="text-xs font-semibold">Fiyat (₺)</Label><Input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="250" className="h-10" /></div>
+      {/* Category Dialog */}
+      <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{editingCat ? 'Kategori Düzenle' : 'Yeni Kategori'}</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label className="text-xs font-semibold">Kategori Adı</Label>
+            <Input value={catName} onChange={e => setCatName(e.target.value)} placeholder="Örn: Lazer Epilasyon" className="h-10" />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
-            <Button onClick={handleSave} disabled={saving} className="btn-gradient">{saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Kaydet</Button>
+            <Button variant="outline" onClick={() => setCatDialogOpen(false)}>İptal</Button>
+            <Button onClick={handleSaveCat} disabled={saving} className="btn-gradient">Kaydet</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Service Dialog */}
+      <Dialog open={svcDialogOpen} onOpenChange={setSvcDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingSvc ? 'Hizmet Düzenle' : 'Yeni Alt Hizmet'}</DialogTitle>
+            <DialogDescription>{editingSvc ? 'Hizmet bilgilerini güncelleyin' : 'Yeni alt hizmet ekleyin'}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2"><Label className="text-xs font-semibold">Hizmet Adı</Label><Input value={svcForm.name} onChange={e => setSvcForm(f => ({ ...f, name: e.target.value }))} placeholder="Alt hizmet adı" className="h-10" /></div>
+            <div className="space-y-2"><Label className="text-xs font-semibold">Süre (dakika)</Label><Input type="number" value={svcForm.duration} onChange={e => setSvcForm(f => ({ ...f, duration: e.target.value }))} className="h-10" /></div>
+            <div className="space-y-2"><Label className="text-xs font-semibold">Fiyat (₺)</Label><Input type="number" value={svcForm.price} onChange={e => setSvcForm(f => ({ ...f, price: e.target.value }))} className="h-10" /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSvcDialogOpen(false)}>İptal</Button>
+            <Button onClick={handleSaveService} disabled={saving} className="btn-gradient">{saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Kaydet</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
