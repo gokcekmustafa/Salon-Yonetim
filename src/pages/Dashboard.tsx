@@ -117,7 +117,7 @@ export default function Dashboard() {
       {/* Main Content: 2 columns */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Left: Today's Appointments (2/3) */}
-        <Card className="lg:col-span-2 shadow-sm border-border/60">
+        <Card className="lg:col-span-2" style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <div className="h-7 w-7 rounded-lg bg-violet-100 flex items-center justify-center">
