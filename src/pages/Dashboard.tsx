@@ -53,12 +53,12 @@ export default function Dashboard() {
 
   const getStatusConfig = (a: any) => {
     if (a.status === 'tamamlandi' || a.session_status === 'completed') {
-      return { label: 'Tamamlandı', dotClass: 'bg-emerald-500', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+      return { label: 'Tamamlandı', dotClass: 'bg-success', badgeClass: 'bg-success/10 text-success border-success/20' };
     }
     if (a.session_status === 'in_session') {
-      return { label: 'Şu an', dotClass: 'bg-pink-500', badgeClass: 'bg-pink-50 text-pink-700 border-pink-200' };
+      return { label: 'Şu an', dotClass: 'bg-accent', badgeClass: 'bg-accent/10 text-accent border-accent/20' };
     }
-    return { label: 'Bekliyor', dotClass: 'bg-violet-500', badgeClass: 'bg-violet-50 text-violet-700 border-violet-200' };
+    return { label: 'Bekliyor', dotClass: 'bg-primary', badgeClass: 'bg-primary/10 text-primary border-primary/20' };
   };
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Kullanıcı';
@@ -66,17 +66,17 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
 
   const kpis = [
-    { label: 'Bugünün Randevuları', value: todayAppointments.length, icon: Calendar, iconClass: 'text-violet-600 bg-violet-100' },
-    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, iconClass: 'text-emerald-600 bg-emerald-100' },
-    { label: 'Aylık Gelir', value: `₺${monthlyTotal.toLocaleString('tr-TR')}`, icon: TrendingUp, iconClass: 'text-pink-600 bg-pink-100' },
-    { label: 'Toplam Müşteri', value: customers.length, icon: Users, iconClass: 'text-amber-600 bg-amber-100' },
+    { label: 'Bugünün Randevuları', value: todayAppointments.length, icon: Calendar, iconClass: 'text-primary bg-primary/10' },
+    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, iconClass: 'text-success bg-success/10' },
+    { label: 'Aylık Gelir', value: `₺${monthlyTotal.toLocaleString('tr-TR')}`, icon: TrendingUp, iconClass: 'text-accent bg-accent/10' },
+    { label: 'Toplam Müşteri', value: customers.length, icon: Users, iconClass: 'text-warning bg-warning/10' },
   ];
 
   const quickActions = [
-    { label: 'Randevu Al', icon: Calendar, onClick: () => navigate('/randevular'), color: 'text-violet-600 bg-violet-50 hover:bg-violet-100 border-violet-200' },
-    { label: 'Yeni Müşteri', icon: Plus, onClick: () => navigate('/musteriler'), color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' },
-    { label: 'Ödeme Al', icon: CreditCard, onClick: () => navigate('/kasa'), color: 'text-pink-600 bg-pink-50 hover:bg-pink-100 border-pink-200' },
-    { label: 'Rapor Gör', icon: BarChart3, onClick: () => navigate('/raporlar'), color: 'text-amber-600 bg-amber-50 hover:bg-amber-100 border-amber-200' },
+    { label: 'Randevu Al', icon: Calendar, onClick: () => navigate('/randevular'), color: 'text-primary bg-primary/5 hover:bg-primary/10 border-primary/20' },
+    { label: 'Yeni Müşteri', icon: Plus, onClick: () => navigate('/musteriler'), color: 'text-success bg-success/5 hover:bg-success/10 border-success/20' },
+    { label: 'Ödeme Al', icon: CreditCard, onClick: () => navigate('/kasa'), color: 'text-accent bg-accent/5 hover:bg-accent/10 border-accent/20' },
+    { label: 'Rapor Gör', icon: BarChart3, onClick: () => navigate('/raporlar'), color: 'text-warning bg-warning/5 hover:bg-warning/10 border-warning/20' },
   ];
 
   return (
@@ -91,8 +91,8 @@ export default function Dashboard() {
 
       {/* Greeting */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{greeting}, {firstName} 👋</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="font-bold tracking-tight" style={{ fontSize: '22px' }}>{greeting}, {firstName} 👋</h1>
+        <p className="text-muted-foreground mt-1" style={{ fontSize: '14px' }}>
           Bugün {todayAppointments.length} randevunuz var{todayAppointments.length === 0 ? '.' : ` · ${format(new Date(), 'd MMMM yyyy, EEEE', { locale: tr })}`}
         </p>
       </div>
@@ -100,11 +100,11 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {kpis.map(kpi => (
-          <div key={kpi.label} className="bg-card rounded-xl border border-border/60 p-5 shadow-sm">
+          <div key={kpi.label} className="bg-card p-5" style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8' }}>
             <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{kpi.label}</p>
-                <p className="text-2xl font-bold tracking-tight tabular-nums">{kpi.value}</p>
+                <p className="font-semibold text-muted-foreground uppercase tracking-wider" style={{ fontSize: '12px' }}>{kpi.label}</p>
+                <p className="font-bold tracking-tight tabular-nums" style={{ fontSize: '22px' }}>{kpi.value}</p>
               </div>
               <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${kpi.iconClass}`}>
                 <kpi.icon className="h-5 w-5" />
@@ -117,11 +117,11 @@ export default function Dashboard() {
       {/* Main Content: 2 columns */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Left: Today's Appointments (2/3) */}
-        <Card className="lg:col-span-2 shadow-sm border-border/60">
+        <Card className="lg:col-span-2" style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' }}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-violet-100 flex items-center justify-center">
-                <Clock className="h-3.5 w-3.5 text-violet-600" />
+            <CardTitle style={{ fontSize: '14px' }} className="font-semibold flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Clock className="h-3.5 w-3.5 text-primary" />
               </div>
               Bugünün Randevuları
               <Badge variant="secondary" className="ml-auto text-[10px]">{todayAppointments.length}</Badge>
@@ -162,7 +162,8 @@ export default function Dashboard() {
             )}
             <Button
               variant="outline"
-              className="w-full mt-3 gap-2"
+              className="w-full mt-3 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 border-0"
+              style={{ fontSize: '14px' }}
               onClick={() => navigate('/randevular')}
             >
               <Plus className="h-4 w-4" />
@@ -174,9 +175,9 @@ export default function Dashboard() {
         {/* Right column (1/3) */}
         <div className="space-y-6">
           {/* Quick Actions 2x2 */}
-          <Card className="shadow-sm border-border/60">
+          <Card style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' }}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">Hızlı İşlemler</CardTitle>
+              <CardTitle style={{ fontSize: '14px' }} className="font-semibold">Hızlı İşlemler</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
@@ -184,10 +185,11 @@ export default function Dashboard() {
                   <button
                     key={action.label}
                     onClick={action.onClick}
-                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all duration-200 ${action.color}`}
+                    className={`flex flex-col items-center justify-center gap-2 p-4 border transition-all duration-200 ${action.color}`}
+                    style={{ borderRadius: '12px' }}
                   >
                     <action.icon className="h-5 w-5" />
-                    <span className="text-xs font-semibold">{action.label}</span>
+                    <span style={{ fontSize: '12px' }} className="font-semibold">{action.label}</span>
                   </button>
                 ))}
               </div>
@@ -195,18 +197,18 @@ export default function Dashboard() {
           </Card>
 
           {/* Staff Status */}
-          <Card className="shadow-sm border-border/60">
+          <Card style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' }}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <CardTitle style={{ fontSize: '14px' }} className="font-semibold flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-success/10 flex items-center justify-center">
+                  <UserCheck className="h-3.5 w-3.5 text-success" />
                 </div>
                 Personel Durumu
               </CardTitle>
             </CardHeader>
             <CardContent>
               {activeStaffToday.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Bugün aktif personel yok</p>
+                <p className="text-muted-foreground text-center py-4" style={{ fontSize: '13px' }}>Bugün aktif personel yok</p>
               ) : (
                 <div className="space-y-2">
                   {activeStaffToday.map(s => (
@@ -215,7 +217,7 @@ export default function Dashboard() {
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-xs font-bold text-primary">{s.name.charAt(0)}</span>
                         </div>
-                        <span className="text-sm font-medium">{s.name}</span>
+                        <span className="font-medium" style={{ fontSize: '14px' }}>{s.name}</span>
                       </div>
                       <Badge variant="secondary" className="text-[10px]">{s.count} randevu</Badge>
                     </div>
