@@ -26,6 +26,7 @@ import InstallmentsPage from "./pages/InstallmentsPage";
 import ContractsPage from "./pages/ContractsPage";
 import StaffPerformancePage from "./pages/StaffPerformancePage";
 import StaffSalaryPage from "./pages/StaffSalaryPage";
+import RoomsPage from "./pages/RoomsPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -85,6 +86,7 @@ const App = () => (
               <Route path="/hizmetler" element={<AdminRoute><ServicesPage /></AdminRoute>} />
               <Route path="/personel" element={<AdminRoute><StaffPage /></AdminRoute>} />
               <Route path="/subeler" element={<AdminRoute><BranchesPage /></AdminRoute>} />
+              <Route path="/odalar" element={<FinanceRoute><RoomsPage /></FinanceRoute>} />
               <Route path="/bildirimler" element={<AdminRoute><NotificationsPage /></AdminRoute>} />
               <Route path="/izleme" element={<FinanceRoute><AuditPage /></FinanceRoute>} />
               <Route path="/destek" element={<AdminRoute><SupportPage /></AdminRoute>} />
