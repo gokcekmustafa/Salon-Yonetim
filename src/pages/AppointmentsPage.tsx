@@ -594,44 +594,56 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
 
           {/* Filters */}
           <div className="flex items-center gap-2 sm:ml-auto">
-            <div className="flex items-center gap-1.5">
-              <Building2 className="h-4 w-4 text-muted-foreground hidden sm:block" />
-              <Select
-                value={filteredBranchId || 'all'}
-                onValueChange={v => {
-                  setFilteredBranchId(v === 'all' ? null : v);
-                  setFilteredStaffId(null);
-                }}
-              >
-                <SelectTrigger className="h-8 w-32 sm:w-36 text-xs">
-                  <SelectValue placeholder="Tüm Şubeler" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Şubeler</SelectItem>
-                  {activeBranches.map(b => (
-                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                    <Select
+                      value={filteredBranchId || 'all'}
+                      onValueChange={v => {
+                        setFilteredBranchId(v === 'all' ? null : v);
+                        setFilteredStaffId(null);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-32 sm:w-36 text-xs">
+                        <SelectValue placeholder="Tüm Şubeler" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tüm Şubeler</SelectItem>
+                        {activeBranches.map(b => (
+                          <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Randevuları şubeye göre filtrele</TooltipContent>
+              </Tooltip>
 
-            <div className="flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-muted-foreground hidden sm:block" />
-              <Select
-                value={filteredStaffId || 'all'}
-                onValueChange={v => setFilteredStaffId(v === 'all' ? null : v)}
-              >
-                <SelectTrigger className="h-8 w-32 sm:w-36 text-xs">
-                  <SelectValue placeholder="Tüm Personel" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Personel</SelectItem>
-                  {filteredStaffList.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                    <Select
+                      value={filteredStaffId || 'all'}
+                      onValueChange={v => setFilteredStaffId(v === 'all' ? null : v)}
+                    >
+                      <SelectTrigger className="h-8 w-32 sm:w-36 text-xs">
+                        <SelectValue placeholder="Tüm Personel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tüm Personel</SelectItem>
+                        {filteredStaffList.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Randevuları personele göre filtrele</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>
