@@ -59,9 +59,9 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
     url === '/' ? location.pathname === '/' : location.pathname.startsWith(url);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f5ff' }}>
+    <div className="min-h-screen flex flex-col bg-[hsl(var(--salon-bg))]">
       {/* TopBar */}
-      <header className="sticky top-0 z-40 bg-card border-b border-border/60 shadow-sm">
+      <header className="sticky top-0 z-40 bg-card border-b" style={{ borderColor: '#e8e8e8' }}>
         <div className="flex items-center justify-between h-16 px-4 lg:px-6">
           {/* Left: Logo + Salon name + Date */}
           <div className="flex items-center gap-3 min-w-0">
