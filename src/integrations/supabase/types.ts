@@ -1079,7 +1079,9 @@ export type Database = {
       }
       rooms: {
         Row: {
+          capacity: number | null
           created_at: string
+          description: string | null
           id: string
           is_active: boolean
           name: string
@@ -1087,7 +1089,9 @@ export type Database = {
           salon_id: string
         }
         Insert: {
+          capacity?: number | null
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -1095,7 +1099,9 @@ export type Database = {
           salon_id: string
         }
         Update: {
+          capacity?: number | null
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean
           name?: string
