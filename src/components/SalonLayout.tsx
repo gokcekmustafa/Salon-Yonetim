@@ -109,7 +109,7 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="h-9 w-9 rounded-full btn-gradient flex items-center justify-center transition-transform hover:scale-105 active:scale-95 ml-1">
+                <button className="h-9 w-9 rounded-full bg-primary flex items-center justify-center transition-transform hover:scale-105 active:scale-95 ml-1">
                   <span className="text-xs font-bold text-primary-foreground">{initials}</span>
                 </button>
               </DropdownMenuTrigger>
