@@ -29,6 +29,7 @@ import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AuditPage from "./pages/AuditPage";
+import SupportPage from "./pages/SupportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
