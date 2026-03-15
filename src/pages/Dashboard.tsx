@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Wallet, TrendingUp, Loader2, Clock, Plus, CreditCard, BarChart3, UserCheck, CircleDot } from 'lucide-react';
+import { Calendar, Users, Wallet, TrendingUp, Loader2, Clock, Plus, BarChart3, UserCheck, CircleDot } from 'lucide-react';
 import { format, isToday, parseISO, isSameMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
