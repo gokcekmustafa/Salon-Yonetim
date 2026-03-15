@@ -162,7 +162,8 @@ export default function Dashboard() {
             )}
             <Button
               variant="outline"
-              className="w-full mt-3 gap-2"
+              className="w-full mt-3 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 border-0"
+              style={{ fontSize: '14px' }}
               onClick={() => navigate('/randevular')}
             >
               <Plus className="h-4 w-4" />
