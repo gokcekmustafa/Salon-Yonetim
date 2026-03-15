@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData } from '@/hooks/useSalonData';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import { format, parseISO, isSameMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Loader2, ArrowUpCircle, ArrowDownCircle,
-  Receipt, Pencil, Trash2, Banknote, CreditCard, Building2, Send, Download, FileSpreadsheet, FileText,
+  Receipt, Pencil, Trash2, Banknote, CreditCard, Building2, Send, FileSpreadsheet, FileText,
 } from 'lucide-react';
 import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
