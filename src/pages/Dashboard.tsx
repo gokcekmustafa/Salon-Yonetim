@@ -197,18 +197,18 @@ export default function Dashboard() {
           </Card>
 
           {/* Staff Status */}
-          <Card className="shadow-sm border-border/60">
+          <Card style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' }}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <CardTitle style={{ fontSize: '14px' }} className="font-semibold flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-success/10 flex items-center justify-center">
+                  <UserCheck className="h-3.5 w-3.5 text-success" />
                 </div>
                 Personel Durumu
               </CardTitle>
             </CardHeader>
             <CardContent>
               {activeStaffToday.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Bugün aktif personel yok</p>
+                <p className="text-muted-foreground text-center py-4" style={{ fontSize: '13px' }}>Bugün aktif personel yok</p>
               ) : (
                 <div className="space-y-2">
                   {activeStaffToday.map(s => (
@@ -217,7 +217,7 @@ export default function Dashboard() {
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-xs font-bold text-primary">{s.name.charAt(0)}</span>
                         </div>
-                        <span className="text-sm font-medium">{s.name}</span>
+                        <span className="font-medium" style={{ fontSize: '14px' }}>{s.name}</span>
                       </div>
                       <Badge variant="secondary" className="text-[10px]">{s.count} randevu</Badge>
                     </div>
