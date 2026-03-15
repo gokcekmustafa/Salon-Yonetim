@@ -131,8 +131,6 @@ export default function CashPage() {
   const monthlyIncome = useMemo(() => tabTransactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0), [tabTransactions]);
   const monthlyExpense = useMemo(() => tabTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0), [tabTransactions]);
 
-  const currentBoxBalance = boxBalances.find(b => b.payment_method === activeTab);
-
   const resetForm = useCallback(() => {
     setTxType('income'); setTxAmount(''); setTxDescription('');
     setTxDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));

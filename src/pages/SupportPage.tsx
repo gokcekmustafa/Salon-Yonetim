@@ -77,7 +77,7 @@ const statusIcons: Record<TicketStatus, React.ReactNode> = {
 };
 
 export default function SupportPage() {
-  const { user, currentSalonId, profile, isSalonAdmin } = useAuth();
+  const { user, currentSalonId, profile } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
