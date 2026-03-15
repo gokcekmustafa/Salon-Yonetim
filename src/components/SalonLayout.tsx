@@ -30,7 +30,7 @@ const navItems = [
 ];
 
 export default function SalonLayout({ children }: SalonLayoutProps) {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isManagingSalon, stopManagingSalon } = useAuth();
   const { salon } = useSalonData();
   const navigate = useNavigate();
   const location = useLocation();
