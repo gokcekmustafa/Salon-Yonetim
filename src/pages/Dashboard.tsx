@@ -72,9 +72,9 @@ export default function Dashboard() {
   ];
 
   const quickActions = [
-    { label: 'Randevu Al', icon: Calendar, onClick: () => navigate('/randevular'), color: 'text-primary bg-primary/5 hover:bg-primary/10 border-primary/20' },
+    { label: 'Randevular', icon: Calendar, onClick: () => navigate('/randevular'), color: 'text-primary bg-primary/5 hover:bg-primary/10 border-primary/20' },
     { label: 'Yeni Müşteri', icon: Plus, onClick: () => navigate('/musteriler'), color: 'text-success bg-success/5 hover:bg-success/10 border-success/20' },
-    { label: 'Ödeme Al', icon: CreditCard, onClick: () => navigate('/kasa'), color: 'text-accent bg-accent/5 hover:bg-accent/10 border-accent/20' },
+    { label: 'Personel', icon: CreditCard, onClick: () => navigate('/personel'), color: 'text-accent bg-accent/5 hover:bg-accent/10 border-accent/20' },
     { label: 'Rapor Gör', icon: BarChart3, onClick: () => navigate('/raporlar'), color: 'text-warning bg-warning/5 hover:bg-warning/10 border-warning/20' },
   ];
 
