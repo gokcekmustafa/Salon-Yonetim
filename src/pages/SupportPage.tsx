@@ -95,6 +95,7 @@ export default function SupportPage() {
   const [creating, setCreating] = useState(false);
 
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [createTab, setCreateTab] = useState<TicketType>('support');
 
   const fetchTickets = async () => {
     if (!currentSalonId) return;
