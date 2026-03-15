@@ -449,7 +449,7 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
                   <DoorOpen className="h-5 w-5 text-primary" />
                   <div><CardTitle className="text-base">Seans Odaları</CardTitle><CardDescription>Seans odalarını yönetin</CardDescription></div>
                 </div>
-                <Button size="sm" onClick={() => { setEditingRoom(null); setRoomName(''); setRoomDialogOpen(true); }} className="gap-1.5 h-8">
+                <Button size="sm" onClick={() => { setEditingRoom(null); setRoomName(''); setRoomNumber(''); setRoomDialogOpen(true); }} className="gap-1.5 h-8">
                   <Plus className="h-3.5 w-3.5" /> Oda Ekle
                 </Button>
               </div>
@@ -463,7 +463,8 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
                     <div key={r.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-muted/30">
                       <DoorOpen className="h-4 w-4 text-primary" />
                       <span className="text-sm font-medium">{r.name}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingRoom(r); setRoomName(r.name); setRoomDialogOpen(true); }}>
+                      {r.room_number && <span className="text-xs text-muted-foreground">#{r.room_number}</span>}
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingRoom(r); setRoomName(r.name); setRoomNumber(r.room_number || ''); setRoomDialogOpen(true); }}>
                         <Pencil className="h-3 w-3" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteRoom(r.id)}>
