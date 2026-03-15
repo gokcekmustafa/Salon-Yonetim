@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2, Banknote, CreditCard, FileSpreadsheet, FileText, List, LayoutGrid } from 'lucide-react';
@@ -509,46 +510,73 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="flex items-center gap-2">
             <div className="flex border rounded-lg overflow-hidden shrink-0">
-              <button
-                onClick={() => { setViewMode('day'); setListGroupMode(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  !listGroupMode && viewMode === 'day' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
-                }`}
-              >
-                <CalendarDays className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Günlük</span>
-              </button>
-              <button
-                onClick={() => { setViewMode('week'); setListGroupMode(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  !listGroupMode && viewMode === 'week' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
-                }`}
-              >
-                <CalendarRange className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Haftalık</span>
-              </button>
-              <button
-                onClick={() => setListGroupMode('room')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  listGroupMode === 'room' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
-                }`}
-              >
-                <DoorOpen className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Odaya Göre</span>
-              </button>
-              <button
-                onClick={() => setListGroupMode('staff')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  listGroupMode === 'staff' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
-                }`}
-              >
-                <Users className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Personele Göre</span>
-              </button>
-              <button
-                onClick={() => setListGroupMode('list')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  listGroupMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
-                }`}
-              >
-                <List className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Liste</span>
-              </button>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => { setViewMode('day'); setListGroupMode(null); }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                        !listGroupMode && viewMode === 'day' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      <CalendarDays className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Günlük</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Seçili günün saatlik takvim görünümü</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => { setViewMode('week'); setListGroupMode(null); }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                        !listGroupMode && viewMode === 'week' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      <CalendarRange className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Haftalık</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>7 günlük haftalık takvim görünümü</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setListGroupMode('room')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                        listGroupMode === 'room' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      <DoorOpen className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Odaya Göre</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Randevuları seans odalarına göre grupla</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setListGroupMode('staff')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                        listGroupMode === 'staff' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      <Users className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Personele Göre</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Randevuları personele göre grupla</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setListGroupMode('list')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                        listGroupMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      <List className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Liste</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Tüm randevuları düz liste olarak görüntüle</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <div className="flex items-center gap-1">
@@ -566,44 +594,56 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
 
           {/* Filters */}
           <div className="flex items-center gap-2 sm:ml-auto">
-            <div className="flex items-center gap-1.5">
-              <Building2 className="h-4 w-4 text-muted-foreground hidden sm:block" />
-              <Select
-                value={filteredBranchId || 'all'}
-                onValueChange={v => {
-                  setFilteredBranchId(v === 'all' ? null : v);
-                  setFilteredStaffId(null);
-                }}
-              >
-                <SelectTrigger className="h-8 w-32 sm:w-36 text-xs">
-                  <SelectValue placeholder="Tüm Şubeler" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Şubeler</SelectItem>
-                  {activeBranches.map(b => (
-                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                    <Select
+                      value={filteredBranchId || 'all'}
+                      onValueChange={v => {
+                        setFilteredBranchId(v === 'all' ? null : v);
+                        setFilteredStaffId(null);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-32 sm:w-36 text-xs">
+                        <SelectValue placeholder="Tüm Şubeler" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tüm Şubeler</SelectItem>
+                        {activeBranches.map(b => (
+                          <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Randevuları şubeye göre filtrele</TooltipContent>
+              </Tooltip>
 
-            <div className="flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-muted-foreground hidden sm:block" />
-              <Select
-                value={filteredStaffId || 'all'}
-                onValueChange={v => setFilteredStaffId(v === 'all' ? null : v)}
-              >
-                <SelectTrigger className="h-8 w-32 sm:w-36 text-xs">
-                  <SelectValue placeholder="Tüm Personel" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Personel</SelectItem>
-                  {filteredStaffList.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                    <Select
+                      value={filteredStaffId || 'all'}
+                      onValueChange={v => setFilteredStaffId(v === 'all' ? null : v)}
+                    >
+                      <SelectTrigger className="h-8 w-32 sm:w-36 text-xs">
+                        <SelectValue placeholder="Tüm Personel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tüm Personel</SelectItem>
+                        {filteredStaffList.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Randevuları personele göre filtrele</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>
