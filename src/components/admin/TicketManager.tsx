@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import {
   LifeBuoy, MessageSquare, Lightbulb, AlertTriangle,
-  Loader2, Clock, CheckCircle2, ArrowRight, Send, Search, Users,
+  Loader2, Clock, CheckCircle2, ArrowRight, Send, Search,
 } from 'lucide-react';
 
 type TicketType = 'support' | 'suggestion' | 'complaint';
@@ -66,29 +66,52 @@ export function TicketManager() {
   const [sending, setSending] = useState(false);
 
   const fetchTickets = async () => {
-    setLoading(true);
-    // Fetch all tickets with salon name
-    const { data: ticketsData } = await supabase
-      .from('support_tickets')
-      .select('*, salons(name)')
-      .order('created_at', { ascending: false });
+    try {
+      setLoading(true);
+      const { data: ticketsData, error } = await supabase
+        .from('support_tickets')
+        .select('*, salons(name)')
+        .order('created_at', { ascending: false });
 
-    if (ticketsData) {
+      if (error) {
+        console.error('Ticket fetch error:', error);
+        setTickets([]);
+        setLoading(false);
+        return;
+      }
+
+      if (!ticketsData || ticketsData.length === 0) {
+        setTickets([]);
+        setLoading(false);
+        return;
+      }
+
       // Get creator profiles
       const creatorIds = [...new Set(ticketsData.map((t: any) => t.created_by))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .in('user_id', creatorIds);
+      let profilesMap: Record<string, string> = {};
+      
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', creatorIds);
+        if (profiles) {
+          profiles.forEach((p: any) => { profilesMap[p.user_id] = p.full_name || '—'; });
+        }
+      }
 
       const enriched = ticketsData.map((t: any) => ({
         ...t,
         salon_name: t.salons?.name || '—',
-        creator_name: profiles?.find((p: any) => p.user_id === t.created_by)?.full_name || '—',
+        creator_name: profilesMap[t.created_by] || '—',
       }));
       setTickets(enriched);
+    } catch (err) {
+      console.error('Ticket fetch exception:', err);
+      setTickets([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => { fetchTickets(); }, []);
@@ -137,7 +160,6 @@ export function TicketManager() {
       toast.error('Yanıt gönderilemedi');
     } else {
       setReplyText('');
-      // Auto-set to in_progress if pending
       if (selectedTicket.status === 'pending') {
         await handleStatusChange(selectedTicket.id, 'in_progress');
       }
