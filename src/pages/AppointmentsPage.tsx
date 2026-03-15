@@ -510,46 +510,73 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="flex items-center gap-2">
             <div className="flex border rounded-lg overflow-hidden shrink-0">
-              <button
-                onClick={() => { setViewMode('day'); setListGroupMode(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  !listGroupMode && viewMode === 'day' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
-                }`}
-              >
-                <CalendarDays className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Günlük</span>
-              </button>
-              <button
-                onClick={() => { setViewMode('week'); setListGroupMode(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  !listGroupMode && viewMode === 'week' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
-                }`}
-              >
-                <CalendarRange className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Haftalık</span>
-              </button>
-              <button
-                onClick={() => setListGroupMode('room')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  listGroupMode === 'room' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
-                }`}
-              >
-                <DoorOpen className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Odaya Göre</span>
-              </button>
-              <button
-                onClick={() => setListGroupMode('staff')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  listGroupMode === 'staff' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
-                }`}
-              >
-                <Users className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Personele Göre</span>
-              </button>
-              <button
-                onClick={() => setListGroupMode('list')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                  listGroupMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
-                }`}
-              >
-                <List className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Liste</span>
-              </button>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => { setViewMode('day'); setListGroupMode(null); }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                        !listGroupMode && viewMode === 'day' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      <CalendarDays className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Günlük</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Seçili günün saatlik takvim görünümü</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => { setViewMode('week'); setListGroupMode(null); }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                        !listGroupMode && viewMode === 'week' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      <CalendarRange className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Haftalık</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>7 günlük haftalık takvim görünümü</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setListGroupMode('room')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                        listGroupMode === 'room' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      <DoorOpen className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Odaya Göre</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Randevuları seans odalarına göre grupla</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setListGroupMode('staff')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                        listGroupMode === 'staff' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      <Users className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Personele Göre</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Randevuları personele göre grupla</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setListGroupMode('list')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                        listGroupMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      <List className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Liste</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-foreground text-background text-xs rounded-md px-3 py-1.5" style={{ borderRadius: '6px', fontSize: '12px' }}>Tüm randevuları düz liste olarak görüntüle</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <div className="flex items-center gap-1">
