@@ -58,7 +58,7 @@ const mainMenu: MenuItem[] = [
   { title: 'Randevular', url: '/randevular', icon: Calendar, permissionKey: 'can_manage_appointments' },
   { title: 'Müşteriler', url: '/musteriler', icon: Users, permissionKey: 'can_manage_customers' },
   { title: 'Hizmetler', url: '/hizmetler', icon: Scissors, permissionKey: 'can_manage_services' },
-  { title: 'Personel', url: '/personel', icon: UserCheck, permissionKey: 'can_manage_staff' },
+  { title: 'Personel Yönetimi', url: '/personel', icon: UserCheck, permissionKey: 'can_manage_staff' },
   { title: 'Şubeler', url: '/subeler', icon: Building2, permissionKey: 'can_add_branches' },
   { title: 'Aday Müşteriler', url: '/adaylar', icon: Users, permissionKey: 'can_manage_leads' },
   { title: 'Sözleşmeler', url: '/sozlesmeler', icon: FileText, permissionKey: 'can_manage_customers' },
