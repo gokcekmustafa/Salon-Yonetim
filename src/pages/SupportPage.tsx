@@ -124,11 +124,12 @@ export default function SupportPage() {
     if (error) {
       toast.error('Talep oluşturulamadı: ' + error.message);
     } else {
-      toast.success(formType === 'support' ? 'Destek talebi oluşturuldu' : formType === 'suggestion' ? 'Öneriniz iletildi' : 'Şikayetiniz iletildi');
+      toast.success(formType === 'support' ? 'Destek talebiniz gönderildi' : formType === 'suggestion' ? 'Öneriniz başarıyla iletildi' : 'Şikayetiniz başarıyla iletildi');
       setCreateOpen(false);
       setFormTitle('');
       setFormMessage('');
       setFormType('support');
+      setCreateTab('support');
       fetchTickets();
     }
     setCreating(false);
