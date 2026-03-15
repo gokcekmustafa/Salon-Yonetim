@@ -39,6 +39,7 @@ import {
   BadgeDollarSign,
   CreditCard,
   TrendingUp,
+  LifeBuoy,
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
