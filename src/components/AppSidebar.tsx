@@ -49,6 +49,7 @@ interface MenuItem {
   icon: LucideIcon;
   roles?: ('super_admin' | 'salon_admin' | 'staff')[];
   permissionKey?: keyof SalonPermissions;
+  platformPermKey?: keyof PlatformPermissions;
 }
 
 const mainMenu: MenuItem[] = [
