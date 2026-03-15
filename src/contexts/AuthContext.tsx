@@ -15,7 +15,10 @@ interface AuthContextType {
   isSuperAdmin: boolean;
   isSalonAdmin: boolean;
   isStaff: boolean;
+  isManagingSalon: boolean;
   setCurrentSalonId: (id: string | null) => void;
+  startManagingSalon: (id: string) => void;
+  stopManagingSalon: () => void;
   signOut: () => Promise<void>;
 }
 
@@ -30,7 +33,10 @@ const defaultAuthContext: AuthContextType = {
   isSuperAdmin: false,
   isSalonAdmin: false,
   isStaff: false,
+  isManagingSalon: false,
   setCurrentSalonId: () => {},
+  startManagingSalon: () => {},
+  stopManagingSalon: () => {},
   signOut: async () => {},
 };
 
@@ -48,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<AuthContextType['profile']>(null);
   const [currentSalonId, setCurrentSalonId] = useState<string | null>(null);
   const [currentBranchId, setCurrentBranchId] = useState<string | null>(null);
+  const [isManagingSalon, setIsManagingSalon] = useState(false);
   const fetchIdRef = useRef(0); // Track latest fetch to ignore stale results
 
   const fetchUserData = useCallback(async (userId: string, fetchId: number) => {
@@ -82,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         (memberships || []).forEach(m => roleSet.add(m.role as AppRole));
-      } else {
+      } else if (!isManagingSalon) {
         setCurrentSalonId(null);
         setCurrentBranchId(null);
       }
@@ -97,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentSalonId(null);
       setCurrentBranchId(null);
     }
-  }, []);
+  }, [isManagingSalon]);
 
   useEffect(() => {
     let mounted = true;
@@ -130,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(null);
           setCurrentSalonId(null);
           setCurrentBranchId(null);
+          setIsManagingSalon(false);
           if (mounted) setLoading(false);
         }
       }
@@ -148,6 +156,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRoles([]);
     setProfile(null);
     setCurrentSalonId(null);
+    setCurrentBranchId(null);
+    setIsManagingSalon(false);
+  };
+
+  const startManagingSalon = (id: string) => {
+    setCurrentSalonId(id);
+    setCurrentBranchId(null);
+    setIsManagingSalon(true);
+  };
+
+  const stopManagingSalon = () => {
+    setCurrentSalonId(null);
+    setCurrentBranchId(null);
+    setIsManagingSalon(false);
   };
 
   const isSuperAdmin = roles.includes('super_admin');
@@ -158,8 +180,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{
       user, session, loading, roles, profile,
       currentSalonId, currentBranchId,
-      isSuperAdmin, isSalonAdmin, isStaff,
-      setCurrentSalonId, signOut,
+      isSuperAdmin, isSalonAdmin, isStaff, isManagingSalon,
+      setCurrentSalonId, startManagingSalon, stopManagingSalon, signOut,
     }}>
       {children}
     </AuthContext.Provider>

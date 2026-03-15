@@ -57,16 +57,46 @@ export function useSalonData() {
   const salonId = currentSalonId;
 
   const fetchAll = useCallback(async () => {
-    if (!user) { setLoading(false); return; }
+    if (!user) {
+      setSalon(null);
+      setBranches([]);
+      setCustomers([]);
+      setServices([]);
+      setStaff([]);
+      setAppointments([]);
+      setPayments([]);
+      setNotificationSettings(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     // If super admin without a selected salon, show empty
     if (isSuperAdmin && !salonId) {
+      setSalon(null);
+      setBranches([]);
+      setCustomers([]);
+      setServices([]);
+      setStaff([]);
+      setAppointments([]);
+      setPayments([]);
+      setNotificationSettings(null);
       setLoading(false);
       return;
     }
 
-    if (!salonId) { setLoading(false); return; }
+    if (!salonId) {
+      setSalon(null);
+      setBranches([]);
+      setCustomers([]);
+      setServices([]);
+      setStaff([]);
+      setAppointments([]);
+      setPayments([]);
+      setNotificationSettings(null);
+      setLoading(false);
+      return;
+    }
 
     const [salonRes, branchRes, custRes, svcRes, staffRes, aptRes, payRes, notifRes] = await Promise.all([
       supabase.from('salons').select('id, name, slug, phone, address, is_active, logo_url, subscription_plan, subscription_expires_at, online_booking_active').eq('id', salonId).single(),

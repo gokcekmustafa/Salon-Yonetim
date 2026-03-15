@@ -47,7 +47,7 @@ const planLabels: Record<string, string> = {
 };
 
 export default function SuperAdminSalonsPage() {
-  const { isSuperAdmin, setCurrentSalonId } = useAuth();
+  const { isSuperAdmin, startManagingSalon } = useAuth();
   const { hasPlatformPermission, isHelper } = usePlatformPermissions();
   const navigate = useNavigate();
 
@@ -248,7 +248,7 @@ export default function SuperAdminSalonsPage() {
   };
 
   const manageSalon = (salon: Salon) => {
-    setCurrentSalonId(salon.id);
+    startManagingSalon(salon.id);
     navigate('/');
   };
 
@@ -368,17 +368,22 @@ export default function SuperAdminSalonsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal className="h-4 w-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => manageSalon(salon)}><LogIn className="h-4 w-4 mr-2" /> Yönet</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openEdit(salon)}><Edit className="h-4 w-4 mr-2" /> Düzenle</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => { setPermSalon({ id: salon.id, name: salon.name }); setPermDialogOpen(true); }}><Shield className="h-4 w-4 mr-2" /> İzinler</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(salon)} className="text-destructive focus:text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Sil</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => manageSalon(salon)}>
+                          <LogIn className="h-3.5 w-3.5" />
+                          Salonu Yönet
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openEdit(salon)}><Edit className="h-4 w-4 mr-2" /> Düzenle</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setPermSalon({ id: salon.id, name: salon.name }); setPermDialogOpen(true); }}><Shield className="h-4 w-4 mr-2" /> İzinler</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(salon)} className="text-destructive focus:text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Sil</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

@@ -5,8 +5,9 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PopupDisplay } from '@/components/popup/PopupDisplay';
 import { useOnlineHeartbeat } from '@/hooks/useOnlineStatus';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings } from 'lucide-react';
+import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +30,7 @@ const navItems = [
 ];
 
 export default function SalonLayout({ children }: SalonLayoutProps) {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isManagingSalon, stopManagingSalon } = useAuth();
   const { salon } = useSalonData();
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,10 +59,28 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
   const isActive = (url: string) =>
     url === '/' ? location.pathname === '/' : location.pathname.startsWith(url);
 
+  const handleExitManagedSalon = () => {
+    stopManagingSalon();
+    navigate('/admin/salonlar');
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[hsl(var(--salon-bg))]">
+      {isManagingSalon && (
+        <div className="sticky top-0 z-50 border-b border-warning/30 bg-warning/15 backdrop-blur-sm">
+          <div className="flex min-h-12 flex-col gap-2 px-4 py-2 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+            <p className="text-sm font-semibold text-warning-foreground">
+              ⚠️ {salon?.name || 'Salon'} adına yönetiyorsunuz
+            </p>
+            <Button variant="outline" size="sm" className="border-warning/40 bg-background/80 text-foreground hover:bg-background" onClick={handleExitManagedSalon}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Superadmin Paneline Dön
+            </Button>
+          </div>
+        </div>
+      )}
       {/* TopBar */}
-      <header className="sticky top-0 z-40 bg-card border-b" style={{ borderColor: '#e8e8e8' }}>
+      <header className={`sticky z-40 bg-card border-b ${isManagingSalon ? 'top-12' : 'top-0'}`} style={{ borderColor: '#e8e8e8' }}>
         <div className="flex items-center justify-between h-16 px-4 lg:px-6">
           {/* Left: Logo + Salon name + Date */}
           <div className="flex items-center gap-3 min-w-0">
@@ -134,7 +153,7 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                     <LogOut className="h-4 w-4 mr-2" />
-                    Çıkış
+                    Çıkış Yap
                   </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
