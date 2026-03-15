@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData } from '@/hooks/useSalonData';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ import { format, parseISO, isSameMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Loader2, ArrowUpCircle, ArrowDownCircle,
-  Receipt, Pencil, Trash2, Banknote, CreditCard, Building2, Send, Download, FileSpreadsheet, FileText,
+  Receipt, Pencil, Trash2, Banknote, CreditCard, Building2, Send, FileSpreadsheet, FileText,
 } from 'lucide-react';
 import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -48,6 +49,7 @@ export default function CashPage() {
   const { hasPermission } = usePermissions();
   const { user, currentSalonId } = useAuth();
   const { loading: salonLoading } = useSalonData();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -128,8 +130,6 @@ export default function CashPage() {
   // Monthly stats for current tab
   const monthlyIncome = useMemo(() => tabTransactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0), [tabTransactions]);
   const monthlyExpense = useMemo(() => tabTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0), [tabTransactions]);
-
-  const currentBoxBalance = boxBalances.find(b => b.payment_method === activeTab);
 
   const resetForm = useCallback(() => {
     setTxType('income'); setTxAmount(''); setTxDescription('');
@@ -248,6 +248,22 @@ export default function CashPage() {
     setDialogOpen(true);
   };
 
+  useEffect(() => {
+    const action = searchParams.get('islem');
+    if (!action) return;
+
+    if (action === 'odeme-al' || action === 'gelir-gir') {
+      openAddIncome();
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    if (action === 'odeme-yap' || action === 'gider-gir') {
+      openAddExpense();
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   if (!hasPermission('can_manage_payments')) return <NoPermission feature="Kasa Yönetimi" />;
   if (salonLoading || isLoading || loadingBoxes) return (
     <div className="flex items-center justify-center py-20">
@@ -303,13 +319,16 @@ export default function CashPage() {
             <FileText className="h-4 w-4" /> PDF
           </Button>
           <Button variant="outline" onClick={() => setTransferDialogOpen(true)} className="gap-1.5 flex-1 sm:flex-initial">
-            <Send className="h-4 w-4" /> Para Çıkışı
+            <Send className="h-4 w-4" /> Ödeme Yap
           </Button>
           <Button className="btn-gradient gap-2 flex-1 sm:flex-initial" onClick={openAddIncome}>
-            <Plus className="h-4 w-4" /> Gelir Ekle
+            <Plus className="h-4 w-4" /> Ödeme Al
+          </Button>
+          <Button variant="outline" className="gap-2 flex-1 sm:flex-initial" onClick={openAddIncome}>
+            <ArrowUpCircle className="h-4 w-4" /> Gelir Gir
           </Button>
           <Button variant="destructive" className="gap-2 flex-1 sm:flex-initial" onClick={openAddExpense}>
-            <TrendingDown className="h-4 w-4" /> Gider Ekle
+            <TrendingDown className="h-4 w-4" /> Gider Gir
           </Button>
         </div>
       </div>

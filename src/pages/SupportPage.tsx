@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
@@ -78,7 +77,7 @@ const statusIcons: Record<TicketStatus, React.ReactNode> = {
 };
 
 export default function SupportPage() {
-  const { user, currentSalonId, profile, isSalonAdmin } = useAuth();
+  const { user, currentSalonId, profile } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -96,6 +95,7 @@ export default function SupportPage() {
   const [creating, setCreating] = useState(false);
 
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [createTab, setCreateTab] = useState<TicketType>('support');
 
   const fetchTickets = async () => {
     if (!currentSalonId) return;
@@ -124,11 +124,12 @@ export default function SupportPage() {
     if (error) {
       toast.error('Talep oluşturulamadı: ' + error.message);
     } else {
-      toast.success(formType === 'support' ? 'Destek talebi oluşturuldu' : formType === 'suggestion' ? 'Öneriniz iletildi' : 'Şikayetiniz iletildi');
+      toast.success(formType === 'support' ? 'Destek talebiniz gönderildi' : formType === 'suggestion' ? 'Öneriniz başarıyla iletildi' : 'Şikayetiniz başarıyla iletildi');
       setCreateOpen(false);
       setFormTitle('');
       setFormMessage('');
       setFormType('support');
+      setCreateTab('support');
       fetchTickets();
     }
     setCreating(false);
@@ -281,35 +282,71 @@ export default function SupportPage() {
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5 text-primary" />
-              Yeni Talep Oluştur
+              Yeni Mesaj Oluştur
             </DialogTitle>
-            <DialogDescription>Destek talebi, öneri veya şikayet oluşturun</DialogDescription>
+            <DialogDescription>Destek talebi, öneri ve şikayet formlarından birini doldurun</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Talep Türü</Label>
-              <Select value={formType} onValueChange={v => setFormType(v as TicketType)}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="support">🛟 Destek Talebi</SelectItem>
-                  <SelectItem value="suggestion">💡 Öneri</SelectItem>
-                  <SelectItem value="complaint">⚠️ Şikayet</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Başlık *</Label>
-              <Input value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="Konu başlığı..." className="h-10" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Mesaj *</Label>
-              <Textarea value={formMessage} onChange={e => setFormMessage(e.target.value)} placeholder="Detaylı açıklama yazın..." rows={4} />
-            </div>
-          </div>
+          <Tabs
+            value={createTab}
+            onValueChange={(value) => {
+              const nextType = value as TicketType;
+              setCreateTab(nextType);
+              setFormType(nextType);
+            }}
+            className="space-y-4"
+          >
+            <TabsList className="grid h-auto w-full grid-cols-3">
+              <TabsTrigger value="support">Destek Talebi</TabsTrigger>
+              <TabsTrigger value="suggestion">Öneri</TabsTrigger>
+              <TabsTrigger value="complaint">Şikayet</TabsTrigger>
+            </TabsList>
+
+            {(['support', 'suggestion', 'complaint'] as TicketType[]).map((type) => (
+              <TabsContent key={type} value={type} className="space-y-4 mt-0">
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    {typeIcons[type]}
+                    {typeLabels[type]} Formu
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {type === 'support' && 'Sorununuzu iletin; destek ekibi sizinle bu kayıt üzerinden ilgilensin.'}
+                    {type === 'suggestion' && 'Geliştirme fikirlerinizi gönderin; superadmin panelinde doğrudan görünsün.'}
+                    {type === 'complaint' && 'Yaşadığınız sorunu detaylı aktarın; çözüm süreci kayıt altına alınsın.'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Başlık *</Label>
+                  <Input
+                    value={createTab === type ? formTitle : ''}
+                    onChange={e => {
+                      setCreateTab(type);
+                      setFormType(type);
+                      setFormTitle(e.target.value);
+                    }}
+                    placeholder="Konu başlığı..."
+                    className="h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Mesaj *</Label>
+                  <Textarea
+                    value={createTab === type ? formMessage : ''}
+                    onChange={e => {
+                      setCreateTab(type);
+                      setFormType(type);
+                      setFormMessage(e.target.value);
+                    }}
+                    placeholder="Detaylı açıklama yazın..."
+                    rows={5}
+                  />
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>İptal</Button>
             <Button onClick={handleCreate} disabled={creating || !formTitle.trim() || !formMessage.trim()} className="btn-gradient">
