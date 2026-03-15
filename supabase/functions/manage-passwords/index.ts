@@ -261,6 +261,24 @@ Deno.serve(async (req) => {
           // Remove existing roles first, then insert new one
           await supabaseAdmin.from('user_roles').delete().eq('user_id', assignUserId)
           await supabaseAdmin.from('user_roles').insert({ user_id: assignUserId, role: global_role })
+          
+          // If becoming super_admin, ensure platform_staff_permissions row exists
+          if (global_role === 'super_admin') {
+            const { data: existingPerm } = await supabaseAdmin
+              .from('platform_staff_permissions')
+              .select('id')
+              .eq('user_id', assignUserId)
+              .maybeSingle()
+            if (!existingPerm) {
+              await supabaseAdmin.from('platform_staff_permissions').insert({
+                user_id: assignUserId,
+                is_helper: true,
+              })
+            }
+          } else {
+            // If no longer super_admin, remove platform_staff_permissions
+            await supabaseAdmin.from('platform_staff_permissions').delete().eq('user_id', assignUserId)
+          }
         }
 
         // Assign salon membership if provided
