@@ -140,14 +140,27 @@ export default function AppointmentsPage() {
     setDialogOpen(true);
   };
 
-  // Auto-set duration from service
-  const selectedService = services.find(s => s.id === form.serviceId);
+  // Multi-service totals
+  const selectedServices = services.filter(s => form.serviceIds.includes(s.id));
+  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
+  const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
+
+  // Auto-set duration from selected services
   useEffect(() => {
-    if (selectedService) {
-      setForm(f => ({ ...f, duration: String(selectedService.duration) }));
+    if (totalDuration > 0) {
+      setForm(f => ({ ...f, duration: String(totalDuration) }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedService?.id]);
+  }, [totalDuration]);
+
+  const toggleService = (serviceId: string) => {
+    setForm(f => ({
+      ...f,
+      serviceIds: f.serviceIds.includes(serviceId)
+        ? f.serviceIds.filter(id => id !== serviceId)
+        : [...f.serviceIds, serviceId],
+    }));
+  };
 
   const handleSave = async () => {
     if (!form.customerId || !form.staffId || !form.serviceId) {
