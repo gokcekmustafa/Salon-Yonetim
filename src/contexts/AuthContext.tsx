@@ -137,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(null);
           setCurrentSalonId(null);
           setCurrentBranchId(null);
+          setIsManagingSalon(false);
           if (mounted) setLoading(false);
         }
       }
