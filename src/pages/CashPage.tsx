@@ -250,22 +250,6 @@ export default function CashPage() {
     setDialogOpen(true);
   };
 
-  if (!hasPermission('can_manage_payments')) return <NoPermission feature="Kasa Yönetimi" />;
-  if (salonLoading || isLoading || loadingBoxes) return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
-
-  const getTabLabel = (method: string) => {
-    switch (method) {
-      case 'cash': return 'Nakit';
-      case 'eft': return 'EFT / Havale';
-      case 'credit_card': return 'Kredi Kartı';
-      default: return method;
-    }
-  };
-
   useEffect(() => {
     const action = searchParams.get('islem');
     if (!action) return;
@@ -281,6 +265,22 @@ export default function CashPage() {
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
+
+  if (!hasPermission('can_manage_payments')) return <NoPermission feature="Kasa Yönetimi" />;
+  if (salonLoading || isLoading || loadingBoxes) return (
+    <div className="flex items-center justify-center py-20">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+
+  const getTabLabel = (method: string) => {
+    switch (method) {
+      case 'cash': return 'Nakit';
+      case 'eft': return 'EFT / Havale';
+      case 'credit_card': return 'Kredi Kartı';
+      default: return method;
+    }
+  };
 
   return (
     <div className="page-container animate-in">
