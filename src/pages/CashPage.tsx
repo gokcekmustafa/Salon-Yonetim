@@ -266,6 +266,22 @@ export default function CashPage() {
     }
   };
 
+  useEffect(() => {
+    const action = searchParams.get('islem');
+    if (!action) return;
+
+    if (action === 'odeme-al' || action === 'gelir-gir') {
+      openAddIncome();
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    if (action === 'odeme-yap' || action === 'gider-gir') {
+      openAddExpense();
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   return (
     <div className="page-container animate-in">
       <div className="page-header">
@@ -305,13 +321,16 @@ export default function CashPage() {
             <FileText className="h-4 w-4" /> PDF
           </Button>
           <Button variant="outline" onClick={() => setTransferDialogOpen(true)} className="gap-1.5 flex-1 sm:flex-initial">
-            <Send className="h-4 w-4" /> Para Çıkışı
+            <Send className="h-4 w-4" /> Ödeme Yap
           </Button>
           <Button className="btn-gradient gap-2 flex-1 sm:flex-initial" onClick={openAddIncome}>
-            <Plus className="h-4 w-4" /> Gelir Ekle
+            <Plus className="h-4 w-4" /> Ödeme Al
+          </Button>
+          <Button variant="outline" className="gap-2 flex-1 sm:flex-initial" onClick={openAddIncome}>
+            <ArrowUpCircle className="h-4 w-4" /> Gelir Gir
           </Button>
           <Button variant="destructive" className="gap-2 flex-1 sm:flex-initial" onClick={openAddExpense}>
-            <TrendingDown className="h-4 w-4" /> Gider Ekle
+            <TrendingDown className="h-4 w-4" /> Gider Gir
           </Button>
         </div>
       </div>
