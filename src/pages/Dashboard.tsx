@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Wallet, TrendingUp, Loader2, Clock, Plus, CreditCard, BarChart3, UserCheck, CircleDot } from 'lucide-react';
+import { Calendar, Users, Wallet, TrendingUp, Loader2, Clock, Plus, BarChart3, UserCheck, CircleDot } from 'lucide-react';
 import { format, isToday, parseISO, isSameMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -74,7 +74,7 @@ export default function Dashboard() {
   const quickActions = [
     { label: 'Randevular', icon: Calendar, onClick: () => navigate('/randevular'), color: 'text-primary bg-primary/5 hover:bg-primary/10 border-primary/20' },
     { label: 'Yeni Müşteri', icon: Plus, onClick: () => navigate('/musteriler'), color: 'text-success bg-success/5 hover:bg-success/10 border-success/20' },
-    { label: 'Personel', icon: CreditCard, onClick: () => navigate('/personel'), color: 'text-accent bg-accent/5 hover:bg-accent/10 border-accent/20' },
+    { label: 'Personel', icon: UserCheck, onClick: () => navigate('/personel'), color: 'text-accent bg-accent/5 hover:bg-accent/10 border-accent/20' },
     { label: 'Rapor Gör', icon: BarChart3, onClick: () => navigate('/raporlar'), color: 'text-warning bg-warning/5 hover:bg-warning/10 border-warning/20' },
   ];
 
