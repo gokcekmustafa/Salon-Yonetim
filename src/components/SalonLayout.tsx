@@ -92,9 +92,9 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
               <button
                 key={item.url}
                 onClick={() => navigate(item.url)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                className={`px-4 py-2 rounded-full text-[14px] font-medium transition-all duration-200 ${
                   isActive(item.url)
-                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-[hsl(var(--salon-nav-active-bg))] text-[hsl(var(--salon-nav-active-text))] font-semibold'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
