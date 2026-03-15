@@ -89,14 +89,17 @@ export function AppSidebar() {
   const location = useLocation();
   const { roles, isSuperAdmin } = useAuth();
   const { hasPermission } = usePermissions();
+  const { hasPlatformPermission } = usePlatformPermissions();
   const { branding } = useBranding();
 
   const filterByRole = (items: MenuItem[]) =>
     items.filter(item => {
       // Role check
       if (item.roles && !item.roles.some(r => roles.includes(r))) return false;
-      // Permission check (super admin bypasses)
+      // Permission check (super admin bypasses salon permissions)
       if (item.permissionKey && !isSuperAdmin && !hasPermission(item.permissionKey)) return false;
+      // Platform permission check for super admin helpers
+      if (item.platformPermKey && isSuperAdmin && !hasPlatformPermission(item.platformPermKey)) return false;
       return true;
     });
 
