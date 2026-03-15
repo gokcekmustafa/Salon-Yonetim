@@ -104,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentSalonId(null);
       setCurrentBranchId(null);
     }
-  }, []);
+  }, [isManagingSalon]);
 
   useEffect(() => {
     let mounted = true;
