@@ -26,6 +26,7 @@ import { SubscriptionAlertSettings } from '@/components/notifications/Subscripti
 import { PopupManager } from '@/components/popup/PopupManager';
 import { PermissionManager } from '@/components/permissions/PermissionManager';
 import { PlatformStaffManager } from '@/components/admin/PlatformStaffManager';
+import { TicketManager } from '@/components/admin/TicketManager';
 import { usePlatformPermissions } from '@/hooks/usePlatformPermissions';
 
 type Salon = {
