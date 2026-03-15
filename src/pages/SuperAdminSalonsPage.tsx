@@ -388,16 +388,19 @@ export default function SuperAdminSalonsPage() {
       )}
 
       {/* Subscription Alert Settings */}
-      <SubscriptionAlertSettings />
+      {hasPlatformPermission('can_manage_settings') && <SubscriptionAlertSettings />}
 
       {/* Announcements */}
-      <AnnouncementManager mode="super_admin" />
+      {hasPlatformPermission('can_manage_announcements') && <AnnouncementManager mode="super_admin" />}
 
       {/* Popup Announcements */}
-      <PopupManager mode="super_admin" />
+      {hasPlatformPermission('can_manage_popups') && <PopupManager mode="super_admin" />}
 
       {/* User Management */}
-      <SuperAdminUserManager />
+      {hasPlatformPermission('can_manage_users') && <SuperAdminUserManager />}
+
+      {/* Platform Staff Manager - only for non-helper super admins */}
+      {!isHelper && <PlatformStaffManager />}
 
       {/* Create/Edit Salon Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
