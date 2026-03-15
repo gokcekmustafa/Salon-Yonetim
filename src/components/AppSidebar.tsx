@@ -79,8 +79,8 @@ const otherMenu: MenuItem[] = [
 ];
 
 const superAdminMenu: MenuItem[] = [
-  { title: 'Platform Yönetimi', url: '/admin/salonlar', icon: Shield, roles: ['super_admin'] },
-  { title: 'Tüm Veriler', url: '/admin/veriler', icon: BarChart3, roles: ['super_admin'] },
+  { title: 'Platform Yönetimi', url: '/admin/salonlar', icon: Shield, roles: ['super_admin'], platformPermKey: 'can_manage_salons' },
+  { title: 'Tüm Veriler', url: '/admin/veriler', icon: BarChart3, roles: ['super_admin'], platformPermKey: 'can_manage_data' },
 ];
 
 export function AppSidebar() {
