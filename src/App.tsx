@@ -39,8 +39,8 @@ const queryClient = new QueryClient();
 import { useAuth } from '@/contexts/AuthContext';
 
 function RoleLayout({ children }: { children: React.ReactNode }) {
-  const { isSuperAdmin } = useAuth();
-  if (isSuperAdmin) return <AppLayout>{children}</AppLayout>;
+  const { isSuperAdmin, isManagingSalon } = useAuth();
+  if (isSuperAdmin && !isManagingSalon) return <AppLayout>{children}</AppLayout>;
   return <SalonLayout>{children}</SalonLayout>;
 }
 

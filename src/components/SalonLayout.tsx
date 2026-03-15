@@ -153,7 +153,7 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                     <LogOut className="h-4 w-4 mr-2" />
-                    Çıkış
+                    Çıkış Yap
                   </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
