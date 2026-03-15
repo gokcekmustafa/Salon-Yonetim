@@ -581,38 +581,135 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
         </div>
       </div>
 
-      {/* Calendar View */}
-      <div className="overflow-auto max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-240px)]">
-        {viewMode === 'day' ? (
-          <DayCalendarView
-            date={currentDate}
-            filteredStaffId={filteredStaffId}
-            filteredBranchId={filteredBranchId}
-            onAppointmentClick={handleAppointmentClick}
-            rooms={rooms}
-            appointments={appointments}
-            staff={staff}
-            customers={customers}
-            services={services}
-            branches={branches}
-            updateAppointment={updateAppointment}
-            hasConflict={hasConflict}
-          />
-        ) : (
-          <WeekCalendarView
-            date={currentDate}
-            filteredStaffId={filteredStaffId}
-            filteredBranchId={filteredBranchId}
-            onAppointmentClick={handleAppointmentClick}
-            appointments={appointments}
-            staff={staff}
-            customers={customers}
-            services={services}
-            updateAppointment={updateAppointment}
-            hasConflict={hasConflict}
-          />
-        )}
-      </div>
+      {/* Calendar or List View */}
+      {listGroupMode ? (
+        <div className="overflow-auto max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-240px)]">
+          {(() => {
+            const filtered = appointments.filter(a => {
+              if (filteredStaffId && a.staff_id !== filteredStaffId) return false;
+              if (filteredBranchId && a.branch_id !== filteredBranchId) return false;
+              return true;
+            });
+
+            if (listGroupMode === 'list') {
+              return (
+                <Card className="shadow-soft border-border/60">
+                  <CardContent className="p-0">
+                    <div className="divide-y">
+                      {filtered.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-8">Randevu bulunamadı</p>
+                      ) : filtered.map(a => {
+                        const effStatus = getEffectiveAppointmentStatus(a);
+                        return (
+                          <div key={a.id} className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer" onClick={() => handleAppointmentClick(a)}>
+                            <Badge variant={statusVariant(effStatus)} className="text-[10px] w-20 justify-center">{statusLabel[effStatus]}</Badge>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{getCustomerName(a.customer_id)}</p>
+                              <p className="text-xs text-muted-foreground">{getServiceName(a.service_id)} • {getStaffName(a.staff_id)}</p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-sm font-medium">{format(new Date(a.start_time), 'HH:mm', { locale: tr })}</p>
+                              <p className="text-xs text-muted-foreground">{format(new Date(a.start_time), 'd MMM', { locale: tr })}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            // Group by room or staff
+            const groups: Record<string, typeof filtered> = {};
+            filtered.forEach(a => {
+              const key = listGroupMode === 'room' ? (a.room_id || 'unassigned') : a.staff_id;
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(a);
+            });
+
+            const getGroupLabel = (key: string) => {
+              if (listGroupMode === 'room') return key === 'unassigned' ? 'Oda Atanmamış' : getRoomName(key);
+              return getStaffName(key);
+            };
+
+            return (
+              <div className="space-y-4">
+                {Object.entries(groups).map(([key, apts]) => (
+                  <Card key={key} className="shadow-soft border-border/60">
+                    <CardHeader className="pb-2 pt-3 px-4">
+                      <div className="flex items-center gap-2">
+                        {listGroupMode === 'room' ? <DoorOpen className="h-4 w-4 text-primary" /> : <Users className="h-4 w-4 text-primary" />}
+                        <CardTitle className="text-sm">{getGroupLabel(key)}</CardTitle>
+                        <Badge variant="secondary" className="text-[10px]">{apts.length}</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="divide-y">
+                        {apts.map(a => {
+                          const effStatus = getEffectiveAppointmentStatus(a);
+                          return (
+                            <div key={a.id} className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer" onClick={() => handleAppointmentClick(a)}>
+                              <Badge variant={statusVariant(effStatus)} className="text-[10px] w-20 justify-center">{statusLabel[effStatus]}</Badge>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{getCustomerName(a.customer_id)}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {getServiceName(a.service_id)}
+                                  {listGroupMode === 'room' && ` • ${getStaffName(a.staff_id)}`}
+                                  {listGroupMode === 'staff' && a.room_id && ` • ${getRoomName(a.room_id)}`}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-sm font-medium">{format(new Date(a.start_time), 'HH:mm', { locale: tr })}</p>
+                                <p className="text-xs text-muted-foreground">{format(new Date(a.start_time), 'd MMM', { locale: tr })}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {Object.keys(groups).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-8">Randevu bulunamadı</p>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      ) : (
+        <div className="overflow-auto max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-240px)]">
+          {viewMode === 'day' ? (
+            <DayCalendarView
+              date={currentDate}
+              filteredStaffId={filteredStaffId}
+              filteredBranchId={filteredBranchId}
+              onAppointmentClick={handleAppointmentClick}
+              rooms={rooms}
+              appointments={appointments}
+              staff={staff}
+              customers={customers}
+              services={services}
+              branches={branches}
+              updateAppointment={updateAppointment}
+              hasConflict={hasConflict}
+            />
+          ) : (
+            <WeekCalendarView
+              date={currentDate}
+              filteredStaffId={filteredStaffId}
+              filteredBranchId={filteredBranchId}
+              onAppointmentClick={handleAppointmentClick}
+              appointments={appointments}
+              staff={staff}
+              customers={customers}
+              services={services}
+              updateAppointment={updateAppointment}
+              hasConflict={hasConflict}
+            />
+          )}
+        </div>
+      )
 
       {/* New Appointment Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
