@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2, Banknote, CreditCard, FileSpreadsheet, FileText, List, LayoutGrid } from 'lucide-react';
@@ -82,7 +83,7 @@ export default function AppointmentsPage() {
   const [form, setForm] = useState({
     customerId: '',
     staffId: '',
-    serviceId: '',
+    serviceIds: [] as string[],
     roomId: 'none',
     date: format(new Date(), 'yyyy-MM-dd'),
     time: '09:00',
@@ -131,7 +132,7 @@ export default function AppointmentsPage() {
     setForm({
       customerId: '',
       staffId: filteredStaffId || '',
-      serviceId: '',
+      serviceIds: [],
       roomId: 'none',
       date: format(currentDate, 'yyyy-MM-dd'),
       time: '09:00',
@@ -140,57 +141,83 @@ export default function AppointmentsPage() {
     setDialogOpen(true);
   };
 
-  // Auto-set duration from service
-  const selectedService = services.find(s => s.id === form.serviceId);
+  // Multi-service totals
+  const selectedServices = services.filter(s => form.serviceIds.includes(s.id));
+  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
+  const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
+
+  // Auto-set duration from selected services
   useEffect(() => {
-    if (selectedService) {
-      setForm(f => ({ ...f, duration: String(selectedService.duration) }));
+    if (totalDuration > 0) {
+      setForm(f => ({ ...f, duration: String(totalDuration) }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedService?.id]);
+  }, [totalDuration]);
+
+  const toggleService = (serviceId: string) => {
+    setForm(f => ({
+      ...f,
+      serviceIds: f.serviceIds.includes(serviceId)
+        ? f.serviceIds.filter(id => id !== serviceId)
+        : [...f.serviceIds, serviceId],
+    }));
+  };
 
   const handleSave = async () => {
-    if (!form.customerId || !form.staffId || !form.serviceId) {
-      toast.error('Lütfen müşteri, personel ve hizmet seçin.');
+    if (!form.customerId || !form.staffId || form.serviceIds.length === 0) {
+      toast.error('Lütfen müşteri, personel ve en az bir hizmet seçin.');
       return;
-    }
-    const duration = parseInt(form.duration) || 60;
-    const start = new Date(`${form.date}T${form.time}`);
-    const end = addMinutes(start, duration);
-
-    if (hasConflict(form.staffId, start.toISOString(), end.toISOString())) {
-      toast.error('Bu personelin seçilen saatte başka bir randevusu var!');
-      return;
-    }
-
-    // Check room conflict
-    if (form.roomId !== 'none') {
-      const roomConflict = appointments.some(a => {
-        if (a.room_id !== form.roomId || a.status === 'iptal') return false;
-        return new Date(start) < new Date(a.end_time) && new Date(end) > new Date(a.start_time);
-      });
-      if (roomConflict) {
-        toast.error('Seçilen oda bu saatte dolu!');
-        return;
-      }
     }
 
     const staffMember = staff.find(s => s.id === form.staffId);
-    const error = await addAppointment({
-      customer_id: form.customerId,
-      staff_id: form.staffId,
-      service_id: form.serviceId,
-      branch_id: staffMember?.branch_id || '',
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-      status: 'bekliyor',
-      room_id: form.roomId !== 'none' ? form.roomId : null,
-    });
+    let currentStart = new Date(`${form.date}T${form.time}`);
+    let hasError = false;
 
-    if (error) {
-      toast.error('Randevu oluşturulamadı: ' + error.message);
-    } else {
-      toast.success('Randevu oluşturuldu.');
+    for (const serviceId of form.serviceIds) {
+      const svc = services.find(s => s.id === serviceId);
+      const dur = svc?.duration || 60;
+      const end = addMinutes(currentStart, dur);
+
+      if (hasConflict(form.staffId, currentStart.toISOString(), end.toISOString())) {
+        toast.error(`Bu personelin ${format(currentStart, 'HH:mm')} saatinde başka bir randevusu var!`);
+        hasError = true;
+        break;
+      }
+
+      if (form.roomId !== 'none') {
+        const roomConflict = appointments.some(a => {
+          if (a.room_id !== form.roomId || a.status === 'iptal') return false;
+          return currentStart < new Date(a.end_time) && end > new Date(a.start_time);
+        });
+        if (roomConflict) {
+          toast.error(`Seçilen oda ${format(currentStart, 'HH:mm')} saatinde dolu!`);
+          hasError = true;
+          break;
+        }
+      }
+
+      const error = await addAppointment({
+        customer_id: form.customerId,
+        staff_id: form.staffId,
+        service_id: serviceId,
+        branch_id: staffMember?.branch_id || '',
+        start_time: currentStart.toISOString(),
+        end_time: end.toISOString(),
+        status: 'bekliyor',
+        room_id: form.roomId !== 'none' ? form.roomId : null,
+      });
+
+      if (error) {
+        toast.error('Randevu oluşturulamadı: ' + error.message);
+        hasError = true;
+        break;
+      }
+
+      currentStart = end; // next service starts where this one ends
+    }
+
+    if (!hasError) {
+      toast.success(`${form.serviceIds.length} randevu oluşturuldu.`);
       setDialogOpen(false);
       refetch();
     }
@@ -737,11 +764,31 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Hizmet</Label>
-              <Select value={form.serviceId} onValueChange={v => setForm(f => ({ ...f, serviceId: v }))}>
-                <SelectTrigger><SelectValue placeholder="Hizmet seçin" /></SelectTrigger>
-                <SelectContent>{services.filter(s => s.is_active).map(s => <SelectItem key={s.id} value={s.id}>{s.name} — ₺{s.price} ({s.duration} dk)</SelectItem>)}</SelectContent>
-              </Select>
+              <Label>Hizmet {form.serviceIds.length > 0 && <span className="text-xs text-muted-foreground ml-1">({form.serviceIds.length} seçili)</span>}</Label>
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
+                {services.filter(s => s.is_active).map(s => (
+                  <label
+                    key={s.id}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors ${
+                      form.serviceIds.includes(s.id) ? 'bg-primary/10' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <Checkbox
+                      checked={form.serviceIds.includes(s.id)}
+                      onCheckedChange={() => toggleService(s.id)}
+                    />
+                    <span className="flex-1 text-sm">{s.name}</span>
+                    <span className="text-xs text-muted-foreground">{s.duration} dk</span>
+                    <span className="text-xs font-semibold">₺{s.price}</span>
+                  </label>
+                ))}
+              </div>
+              {form.serviceIds.length > 0 && (
+                <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">Toplam:</span>
+                  <span className="font-semibold">{totalDuration} dk • ₺{totalPrice.toLocaleString('tr-TR')}</span>
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Oda</Label>
