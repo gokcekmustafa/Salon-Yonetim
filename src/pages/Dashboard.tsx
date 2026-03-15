@@ -175,9 +175,9 @@ export default function Dashboard() {
         {/* Right column (1/3) */}
         <div className="space-y-6">
           {/* Quick Actions 2x2 */}
-          <Card className="shadow-sm border-border/60">
+          <Card style={{ borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' }}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">Hızlı İşlemler</CardTitle>
+              <CardTitle style={{ fontSize: '14px' }} className="font-semibold">Hızlı İşlemler</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
@@ -185,10 +185,11 @@ export default function Dashboard() {
                   <button
                     key={action.label}
                     onClick={action.onClick}
-                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all duration-200 ${action.color}`}
+                    className={`flex flex-col items-center justify-center gap-2 p-4 border transition-all duration-200 ${action.color}`}
+                    style={{ borderRadius: '12px' }}
                   >
                     <action.icon className="h-5 w-5" />
-                    <span className="text-xs font-semibold">{action.label}</span>
+                    <span style={{ fontSize: '12px' }} className="font-semibold">{action.label}</span>
                   </button>
                 ))}
               </div>
