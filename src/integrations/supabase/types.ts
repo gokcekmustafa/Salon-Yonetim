@@ -917,6 +917,54 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_staff_permissions: {
+        Row: {
+          can_manage_announcements: boolean
+          can_manage_data: boolean
+          can_manage_popups: boolean
+          can_manage_salons: boolean
+          can_manage_settings: boolean
+          can_manage_users: boolean
+          can_view_audit_logs: boolean
+          can_view_reports: boolean
+          created_at: string
+          id: string
+          is_helper: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_manage_announcements?: boolean
+          can_manage_data?: boolean
+          can_manage_popups?: boolean
+          can_manage_salons?: boolean
+          can_manage_settings?: boolean
+          can_manage_users?: boolean
+          can_view_audit_logs?: boolean
+          can_view_reports?: boolean
+          created_at?: string
+          id?: string
+          is_helper?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_manage_announcements?: boolean
+          can_manage_data?: boolean
+          can_manage_popups?: boolean
+          can_manage_salons?: boolean
+          can_manage_settings?: boolean
+          can_manage_users?: boolean
+          can_view_audit_logs?: boolean
+          can_view_reports?: boolean
+          created_at?: string
+          id?: string
+          is_helper?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       popup_announcements: {
         Row: {
           created_at: string
