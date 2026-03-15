@@ -43,6 +43,7 @@ export default function AppointmentsPage() {
   } = useSalonData();
 
   const [viewMode, setViewMode] = useState<ViewMode>('day');
+  const [listGroupMode, setListGroupMode] = useState<ListGroupMode>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filteredStaffId, setFilteredStaffId] = useState<string | null>(null);
   const [filteredBranchId, setFilteredBranchId] = useState<string | null>(null);
