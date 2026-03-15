@@ -25,6 +25,8 @@ import { AnnouncementManager } from '@/components/notifications/AnnouncementMana
 import { SubscriptionAlertSettings } from '@/components/notifications/SubscriptionAlertSettings';
 import { PopupManager } from '@/components/popup/PopupManager';
 import { PermissionManager } from '@/components/permissions/PermissionManager';
+import { PlatformStaffManager } from '@/components/admin/PlatformStaffManager';
+import { usePlatformPermissions } from '@/hooks/usePlatformPermissions';
 
 type Salon = {
   id: string; name: string; slug: string; phone: string | null; address: string | null;
