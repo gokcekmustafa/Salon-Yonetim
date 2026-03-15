@@ -5,7 +5,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PopupDisplay } from '@/components/popup/PopupDisplay';
 import { useOnlineHeartbeat } from '@/hooks/useOnlineStatus';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { LogOut, Building2, Menu, X } from 'lucide-react';
+import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings } from 'lucide-react';
 import { useState } from 'react';
 import {
   DropdownMenu,
@@ -20,24 +20,12 @@ interface SalonLayoutProps {
 }
 
 const navItems = [
-  { title: 'Panel', url: '/' },
+  { title: 'Anasayfa', url: '/' },
   { title: 'Randevular', url: '/randevular' },
   { title: 'Müşteriler', url: '/musteriler' },
-  { title: 'Hizmetler', url: '/hizmetler' },
-  { title: 'Personel Yönetimi', url: '/personel' },
-  { title: 'Şubeler', url: '/subeler' },
-  { title: 'Aday Müşteriler', url: '/adaylar' },
-  { title: 'Sözleşmeler', url: '/sozlesmeler' },
-  { title: 'Ödemeler', url: '/kasa' },
   { title: 'Kasa Yönetimi', url: '/kasa-yonetimi' },
-  { title: 'Taksitler', url: '/taksitler' },
+  { title: 'Personel', url: '/personel' },
   { title: 'Raporlar', url: '/raporlar' },
-  { title: 'Performans', url: '/performans' },
-  { title: 'Maaş & Ödeme', url: '/maas' },
-  { title: 'Bildirimler', url: '/bildirimler' },
-  { title: 'Destek & İletişim', url: '/destek' },
-  { title: 'İzleme & Günlük', url: '/izleme' },
-  { title: 'Ayarlar', url: '/ayarlar' },
 ];
 
 export default function SalonLayout({ children }: SalonLayoutProps) {
