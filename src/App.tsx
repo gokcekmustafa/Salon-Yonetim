@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
+import SalonLayout from "@/components/SalonLayout";
 import Dashboard from "./pages/Dashboard";
 import CustomersPage from "./pages/CustomersPage";
 import AppointmentsPage from "./pages/AppointmentsPage";
@@ -34,15 +35,23 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+import { useAuth } from '@/contexts/AuthContext';
+
+function RoleLayout({ children }: { children: React.ReactNode }) {
+  const { isSuperAdmin } = useAuth();
+  if (isSuperAdmin) return <AppLayout>{children}</AppLayout>;
+  return <SalonLayout>{children}</SalonLayout>;
+}
+
 const AdminRoute = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute anyRole={['super_admin', 'salon_admin', 'staff']}>
-    <AppLayout>{children}</AppLayout>
+    <RoleLayout>{children}</RoleLayout>
   </ProtectedRoute>
 );
 
 const FinanceRoute = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute anyRole={['super_admin', 'salon_admin']}>
-    <AppLayout>{children}</AppLayout>
+    <RoleLayout>{children}</RoleLayout>
   </ProtectedRoute>
 );
 
