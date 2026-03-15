@@ -23,7 +23,8 @@ import { getEffectiveAppointmentStatus, type AppointmentUiStatus } from '@/lib/a
 import { useQuery } from '@tanstack/react-query';
 
 type ViewMode = 'day' | 'week';
-type Room = { id: string; salon_id: string; name: string; is_active: boolean };
+type ListGroupMode = 'room' | 'staff' | 'list' | null;
+type Room = { id: string; salon_id: string; name: string; is_active: boolean; room_number: string | null };
 
 const SESSION_STATUSES = [
   { value: 'waiting', label: 'Bekliyor' },
