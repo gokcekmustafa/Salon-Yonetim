@@ -82,7 +82,7 @@ export default function AppointmentsPage() {
   const [form, setForm] = useState({
     customerId: '',
     staffId: '',
-    serviceId: '',
+    serviceIds: [] as string[],
     roomId: 'none',
     date: format(new Date(), 'yyyy-MM-dd'),
     time: '09:00',
