@@ -10,10 +10,13 @@ export type SalonNavigationKey =
   | 'kasa-yonetimi'
   | 'personel'
   | 'raporlar'
+  | 'hizmetler'
   | 'taksitler'
   | 'performans'
   | 'subeler'
-  | 'odalar';
+  | 'odalar'
+  | 'sozlesmeler'
+  | 'maas';
 
 export type SalonNavigationItem = {
   key: SalonNavigationKey;
@@ -34,10 +37,13 @@ const NAVIGATION_ITEMS: Omit<SalonNavigationItem, 'isVisible'>[] = [
   { key: 'kasa-yonetimi', title: 'Kasa Yönetimi', url: '/kasa-yonetimi', locked: true, placement: 'topbar', defaultOrder: 3 },
   { key: 'personel', title: 'Personel', url: '/personel', locked: false, placement: 'topbar', defaultOrder: 4 },
   { key: 'raporlar', title: 'Raporlar', url: '/raporlar', locked: false, placement: 'topbar', defaultOrder: 5 },
-  { key: 'taksitler', title: 'Taksitler', url: '/taksitler', locked: false, placement: 'more', defaultOrder: 6 },
-  { key: 'performans', title: 'Performans', url: '/performans', locked: false, placement: 'more', defaultOrder: 7 },
-  { key: 'subeler', title: 'Şubeler', url: '/subeler', locked: false, placement: 'more', defaultOrder: 8 },
-  { key: 'odalar', title: 'Odalar', url: '/odalar', locked: false, placement: 'more', defaultOrder: 9 },
+  { key: 'hizmetler', title: 'Hizmetler', url: '/hizmetler', locked: false, placement: 'more', defaultOrder: 6 },
+  { key: 'taksitler', title: 'Taksitler', url: '/taksitler', locked: false, placement: 'more', defaultOrder: 7 },
+  { key: 'performans', title: 'Performans', url: '/performans', locked: false, placement: 'more', defaultOrder: 8 },
+  { key: 'subeler', title: 'Şubeler', url: '/subeler', locked: false, placement: 'more', defaultOrder: 9 },
+  { key: 'odalar', title: 'Odalar', url: '/odalar', locked: false, placement: 'more', defaultOrder: 10 },
+  { key: 'sozlesmeler', title: 'Sözleşmeler', url: '/sozlesmeler', locked: false, placement: 'more', defaultOrder: 11 },
+  { key: 'maas', title: 'Maaş & Ödeme', url: '/maas', locked: false, placement: 'more', defaultOrder: 12 },
 ];
 
 const isRelevantPayload = (
