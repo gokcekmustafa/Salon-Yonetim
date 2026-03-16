@@ -1445,12 +1445,14 @@ export type Database = {
           bonus_type: string | null
           created_at: string | null
           department: string | null
+          email: string | null
           experiences: string[] | null
           gender: string | null
           id: string
           offered_services: string[] | null
           payment_period: string | null
           permissions: Json | null
+          profile_photo_url: string | null
           reward_description: string | null
           salary_notes: string | null
           salon_id: string
@@ -1469,12 +1471,14 @@ export type Database = {
           bonus_type?: string | null
           created_at?: string | null
           department?: string | null
+          email?: string | null
           experiences?: string[] | null
           gender?: string | null
           id?: string
           offered_services?: string[] | null
           payment_period?: string | null
           permissions?: Json | null
+          profile_photo_url?: string | null
           reward_description?: string | null
           salary_notes?: string | null
           salon_id: string
@@ -1493,12 +1497,14 @@ export type Database = {
           bonus_type?: string | null
           created_at?: string | null
           department?: string | null
+          email?: string | null
           experiences?: string[] | null
           gender?: string | null
           id?: string
           offered_services?: string[] | null
           payment_period?: string | null
           permissions?: Json | null
+          profile_photo_url?: string | null
           reward_description?: string | null
           salary_notes?: string | null
           salon_id?: string

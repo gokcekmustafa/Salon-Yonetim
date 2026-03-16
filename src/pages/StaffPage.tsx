@@ -115,6 +115,7 @@ export default function StaffPage() {
           staff={detailStaff}
           open={!!detailStaff}
           onOpenChange={v => !v && setDetailStaff(null)}
+          onUpdated={refetch}
           branches={branches}
           appointments={appointments}
           services={services}

@@ -50,12 +50,7 @@ export default function ServicesPage() {
 
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
-  // Auto expand all categories
-  useEffect(() => {
-    if (categories.length > 0 && expandedCats.size === 0) {
-      setExpandedCats(new Set(categories.map(c => c.id)));
-    }
-  }, [categories]);
+  // Kategoriler varsayılan olarak kapalı başlar.
 
   if (!hasPermission('can_manage_services')) return <NoPermission feature="Hizmet Yönetimi" />;
   if (loading) return (
