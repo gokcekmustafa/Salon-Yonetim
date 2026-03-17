@@ -21,6 +21,7 @@ import BookingPage from "./pages/BookingPage";
 import ReportsPage from "./pages/ReportsPage";
 import CashPage from "./pages/CashPage";
 import AuthPage from "./pages/AuthPage";
+import CompanyRegistrationPage from "./pages/CompanyRegistrationPage";
 import InstallmentsPage from "./pages/InstallmentsPage";
 import ContractsPage from "./pages/ContractsPage";
 import StaffPerformancePage from "./pages/StaffPerformancePage";
@@ -35,10 +36,6 @@ import NotFound from "./pages/NotFound";
 import { useAuth } from '@/contexts/AuthContext';
 
 const queryClient = new QueryClient();
-
-function CompanyRegistrationPage() {
-  return <Navigate to="/auth" replace />;
-}
 
 function RoleLayout({ children }: { children: React.ReactNode }) {
   const { isSuperAdmin, isManagingSalon } = useAuth();
