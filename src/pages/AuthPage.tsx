@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,6 @@ export default function AuthPage() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
-  // If already logged in, redirect to home
   if (!authLoading && user) {
     return <Navigate to="/" replace />;
   }
@@ -38,9 +37,7 @@ export default function AuthPage() {
     if (error) {
       toast({ title: 'Giriş başarısız', description: error.message, variant: 'destructive' });
     }
-    // Navigation handled automatically by auth state change + ProtectedRoute
   };
-
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ background: 'var(--gradient-hero)' }}>
@@ -48,7 +45,6 @@ export default function AuthPage() {
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <img
             src={branding.logo_url || salonumLogo}
@@ -82,9 +78,14 @@ export default function AuthPage() {
                   </button>
                 </div>
               </div>
-              <Button type="submit" className="w-full h-11 btn-gradient rounded-xl text-sm font-semibold gap-2" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>Giriş Yap</span><ArrowRight className="h-4 w-4" /></>}
-              </Button>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Button type="submit" className="w-full h-11 btn-gradient rounded-xl text-sm font-semibold gap-2" disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>Firma Giriş</span><ArrowRight className="h-4 w-4" /></>}
+                </Button>
+                <Button asChild type="button" variant="outline" className="w-full h-11 rounded-xl text-sm font-semibold">
+                  <Link to="/firma-kayit">Firma Kayıt</Link>
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

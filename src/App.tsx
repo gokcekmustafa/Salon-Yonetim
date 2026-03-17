@@ -22,7 +22,6 @@ import ReportsPage from "./pages/ReportsPage";
 import CashPage from "./pages/CashPage";
 import AuthPage from "./pages/AuthPage";
 import InstallmentsPage from "./pages/InstallmentsPage";
-// SessionsPage merged into AppointmentsPage
 import ContractsPage from "./pages/ContractsPage";
 import StaffPerformancePage from "./pages/StaffPerformancePage";
 import StaffSalaryPage from "./pages/StaffSalaryPage";
@@ -33,10 +32,13 @@ import NotificationsPage from "./pages/NotificationsPage";
 import AuditPage from "./pages/AuditPage";
 import SupportPage from "./pages/SupportPage";
 import NotFound from "./pages/NotFound";
+import { useAuth } from '@/contexts/AuthContext';
 
 const queryClient = new QueryClient();
 
-import { useAuth } from '@/contexts/AuthContext';
+function CompanyRegistrationPage() {
+  return <Navigate to="/auth" replace />;
+}
 
 function RoleLayout({ children }: { children: React.ReactNode }) {
   const { isSuperAdmin, isManagingSalon } = useAuth();
@@ -71,15 +73,11 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Public */}
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/firma-kayit" element={<CompanyRegistrationPage />} />
               <Route path="/book/:salonSlug" element={<BookingPage />} />
-
-              {/* Super Admin */}
               <Route path="/admin/salonlar" element={<SuperAdminRoute><SuperAdminSalonsPage /></SuperAdminRoute>} />
               <Route path="/admin/veriler" element={<SuperAdminRoute><SuperAdminDataPage /></SuperAdminRoute>} />
-
-              {/* Admin panel - all authenticated users */}
               <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
               <Route path="/musteriler" element={<AdminRoute><CustomersPage /></AdminRoute>} />
               <Route path="/randevular" element={<AdminRoute><AppointmentsPage /></AdminRoute>} />
@@ -93,12 +91,9 @@ const App = () => (
               <Route path="/destek" element={<AdminRoute><SupportPage /></AdminRoute>} />
               <Route path="/destek-iletisim" element={<Navigate to="/destek" replace />} />
               <Route path="/adaylar" element={<AdminRoute><LeadsPage /></AdminRoute>} />
-              {/* Sessions merged into /randevular */}
               <Route path="/sozlesmeler" element={<AdminRoute><ContractsPage /></AdminRoute>} />
               <Route path="/performans" element={<FinanceRoute><StaffPerformancePage /></FinanceRoute>} />
               <Route path="/maas" element={<FinanceRoute><StaffSalaryPage /></FinanceRoute>} />
-
-              {/* Finance - admin only */}
               <Route path="/kasa" element={<FinanceRoute><PaymentsPage /></FinanceRoute>} />
               <Route path="/odemeler" element={<Navigate to="/kasa" replace />} />
               <Route path="/taksitler" element={<FinanceRoute><InstallmentsPage /></FinanceRoute>} />
@@ -108,13 +103,8 @@ const App = () => (
               <Route path="/gelir-gir" element={<Navigate to="/kasa-yonetimi?islem=gelir-gir" replace />} />
               <Route path="/gider-gir" element={<Navigate to="/kasa-yonetimi?islem=gider-gir" replace />} />
               <Route path="/raporlar" element={<FinanceRoute><ReportsPage /></FinanceRoute>} />
-
-              {/* Settings - admin only */}
               <Route path="/ayarlar" element={<FinanceRoute><SettingsPage /></FinanceRoute>} />
-
-              {/* Public salon slug */}
               <Route path="/:salonSlug" element={<BookingPage />} />
-
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
