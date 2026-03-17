@@ -1890,6 +1890,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_company_username_available: {
+        Args: { _username: string }
+        Returns: boolean
+      }
       is_salon_admin: {
         Args: { _salon_id: string; _user_id: string }
         Returns: boolean
