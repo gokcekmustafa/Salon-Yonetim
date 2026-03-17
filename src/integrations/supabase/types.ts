@@ -344,6 +344,81 @@ export type Database = {
           },
         ]
       }
+      company_registration_requests: {
+        Row: {
+          address: string
+          birth_date: string
+          city: string
+          company_name: string
+          company_phone: string
+          company_phone_secondary: string | null
+          created_at: string
+          district: string
+          email: string
+          full_name: string
+          id: string
+          identity_number: string
+          identity_type: string
+          neighborhood: string
+          notes: string | null
+          personal_phone: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          roles: string[]
+          status: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          address: string
+          birth_date: string
+          city: string
+          company_name: string
+          company_phone: string
+          company_phone_secondary?: string | null
+          created_at?: string
+          district: string
+          email: string
+          full_name: string
+          id?: string
+          identity_number: string
+          identity_type: string
+          neighborhood: string
+          notes?: string | null
+          personal_phone: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          roles?: string[]
+          status?: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          address?: string
+          birth_date?: string
+          city?: string
+          company_name?: string
+          company_phone?: string
+          company_phone_secondary?: string | null
+          created_at?: string
+          district?: string
+          email?: string
+          full_name?: string
+          id?: string
+          identity_number?: string
+          identity_type?: string
+          neighborhood?: string
+          notes?: string | null
+          personal_phone?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          roles?: string[]
+          status?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       contract_templates: {
         Row: {
           created_at: string
