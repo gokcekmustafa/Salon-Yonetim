@@ -100,8 +100,16 @@ export default function NotificationsPage() {
     switch (type) {
       case 'subscription_alert': return 'Abonelik Uyarısı';
       case 'announcement': return 'Duyuru';
+      case 'registration': return 'Firma Başvurusu';
+      case 'ticket': return 'Destek Talebi';
       default: return 'Bildirim';
     }
+  };
+
+  const handleGoToSection = () => {
+    if (!selected) return;
+    const route = getNotificationRoute(selected.type);
+    if (route) navigate(route);
   };
 
   return (
