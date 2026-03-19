@@ -394,6 +394,9 @@ export default function SuperAdminSalonsPage() {
         </Card>
       )}
 
+      {/* Registration Requests */}
+      {hasPlatformPermission('can_manage_salons') && <RegistrationRequestManager />}
+
       {/* Subscription Alert Settings */}
       {hasPlatformPermission('can_manage_settings') && <SubscriptionAlertSettings />}
 
