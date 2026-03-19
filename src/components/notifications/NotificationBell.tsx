@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bell, Check, CheckCheck, Megaphone, AlertTriangle, Info, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Check, CheckCheck, Megaphone, AlertTriangle, Info, X, ClipboardList, LifeBuoy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,6 +24,7 @@ interface Notification {
 
 export function NotificationBell() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -77,7 +79,27 @@ export function NotificationBell() {
     switch (type) {
       case 'subscription_alert': return <AlertTriangle className="h-4 w-4 text-warning" />;
       case 'announcement': return <Megaphone className="h-4 w-4 text-primary" />;
+      case 'registration': return <ClipboardList className="h-4 w-4 text-success" />;
+      case 'ticket': return <LifeBuoy className="h-4 w-4 text-info" />;
       default: return <Info className="h-4 w-4 text-info" />;
+    }
+  };
+
+  const getNotificationRoute = (type: string): string | null => {
+    switch (type) {
+      case 'registration': return '/admin/salonlar';
+      case 'ticket': return '/admin/salonlar';
+      case 'subscription_alert': return '/admin/salonlar';
+      default: return null;
+    }
+  };
+
+  const handleNotificationClick = async (n: Notification) => {
+    await markAsRead(n.id);
+    const route = getNotificationRoute(n.type);
+    if (route) {
+      setOpen(false);
+      navigate(route);
     }
   };
 
@@ -111,10 +133,10 @@ export function NotificationBell() {
           ) : (
             <div className="divide-y divide-border/40">
               {notifications.map(n => (
-                <button
-                  key={n.id}
-                  className={`w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors flex items-start gap-3 ${!n.is_read ? 'bg-primary/5' : ''}`}
-                  onClick={() => markAsRead(n.id)}
+                  <button
+                    key={n.id}
+                    className={`w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors flex items-start gap-3 ${!n.is_read ? 'bg-primary/5' : ''}`}
+                    onClick={() => handleNotificationClick(n)}
                 >
                   <div className="shrink-0 mt-0.5">{typeIcon(n.type)}</div>
                   <div className="flex-1 min-w-0">

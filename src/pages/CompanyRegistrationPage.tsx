@@ -183,7 +183,7 @@ export default function CompanyRegistrationPage() {
       nextErrors.identityNumber = 'Pasaport no alfanumerik ve 6-20 karakter olmalıdır.';
     }
 
-    if (!form.birthDate) nextErrors.birthDate = 'Doğum tarihi zorunludur.';
+    // birthDate is optional — no validation needed
     if (form.roles.length === 0) nextErrors.roles = 'En az bir görev seçmelisiniz.';
 
     if (!form.companyName.trim()) nextErrors.companyName = 'Firma adı zorunludur.';
@@ -229,7 +229,7 @@ export default function CompanyRegistrationPage() {
       personal_phone: form.personalPhone,
       identity_number: form.identityNumber.trim(),
       identity_type: getIdentityType(form.identityNumber.trim()),
-      birth_date: format(form.birthDate as Date, 'yyyy-MM-dd'),
+      birth_date: form.birthDate ? format(form.birthDate, 'yyyy-MM-dd') : null,
       email: form.email.trim().toLowerCase(),
       roles: form.roles,
       company_name: form.companyName.trim(),
@@ -304,7 +304,7 @@ export default function CompanyRegistrationPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Doğum Tarihi *</Label>
+                    <Label>Doğum Tarihi</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button type="button" variant="outline" className={cn('w-full justify-start text-left font-normal', !form.birthDate && 'text-muted-foreground')}>
@@ -318,6 +318,9 @@ export default function CompanyRegistrationPage() {
                           selected={form.birthDate}
                           onSelect={(date) => setField('birthDate', date)}
                           disabled={(date) => date > new Date()}
+                          captionLayout="dropdown-buttons"
+                          fromYear={1940}
+                          toYear={new Date().getFullYear()}
                           initialFocus
                           className={cn('p-3 pointer-events-auto')}
                         />

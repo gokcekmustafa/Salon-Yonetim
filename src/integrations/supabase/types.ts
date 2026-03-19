@@ -347,7 +347,7 @@ export type Database = {
       company_registration_requests: {
         Row: {
           address: string
-          birth_date: string
+          birth_date: string | null
           city: string
           company_name: string
           company_phone: string
@@ -371,7 +371,7 @@ export type Database = {
         }
         Insert: {
           address: string
-          birth_date: string
+          birth_date?: string | null
           city: string
           company_name: string
           company_phone: string
@@ -395,7 +395,7 @@ export type Database = {
         }
         Update: {
           address?: string
-          birth_date?: string
+          birth_date?: string | null
           city?: string
           company_name?: string
           company_phone?: string

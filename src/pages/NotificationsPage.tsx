@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bell, Megaphone, AlertTriangle, Info, CheckCheck, ArrowLeft, Clock, Circle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Megaphone, AlertTriangle, Info, CheckCheck, ArrowLeft, Clock, Circle, ClipboardList, LifeBuoy, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,8 +19,18 @@ interface Notification {
   salon_id: string | null;
 }
 
+const getNotificationRoute = (type: string): string | null => {
+  switch (type) {
+    case 'registration': return '/admin/salonlar';
+    case 'ticket': return '/admin/salonlar';
+    case 'subscription_alert': return '/admin/salonlar';
+    default: return null;
+  }
+};
+
 export default function NotificationsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -79,6 +90,8 @@ export default function NotificationsPage() {
     switch (type) {
       case 'subscription_alert': return <AlertTriangle className={`${size} text-warning`} />;
       case 'announcement': return <Megaphone className={`${size} text-primary`} />;
+      case 'registration': return <ClipboardList className={`${size} text-success`} />;
+      case 'ticket': return <LifeBuoy className={`${size} text-info`} />;
       default: return <Info className={`${size} text-info`} />;
     }
   };
@@ -87,8 +100,16 @@ export default function NotificationsPage() {
     switch (type) {
       case 'subscription_alert': return 'Abonelik Uyarısı';
       case 'announcement': return 'Duyuru';
+      case 'registration': return 'Firma Başvurusu';
+      case 'ticket': return 'Destek Talebi';
       default: return 'Bildirim';
     }
+  };
+
+  const handleGoToSection = () => {
+    if (!selected) return;
+    const route = getNotificationRoute(selected.type);
+    if (route) navigate(route);
   };
 
   return (
@@ -185,6 +206,11 @@ export default function NotificationsPage() {
                       <Clock className="h-3.5 w-3.5" />
                       {format(parseISO(selected.created_at), 'd MMMM yyyy, HH:mm', { locale: tr })}
                     </span>
+                    {getNotificationRoute(selected.type) && (
+                      <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={handleGoToSection}>
+                        <ExternalLink className="h-3 w-3" /> İlgili Bölüme Git
+                      </Button>
+                    )}
                   </div>
 
                   {/* Divider */}

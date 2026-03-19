@@ -1,0 +1,1 @@
+ALTER TABLE public.company_registration_requests ALTER COLUMN birth_date DROP NOT NULL;
