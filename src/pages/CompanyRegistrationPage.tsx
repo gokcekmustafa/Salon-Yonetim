@@ -229,7 +229,7 @@ export default function CompanyRegistrationPage() {
       personal_phone: form.personalPhone,
       identity_number: form.identityNumber.trim(),
       identity_type: getIdentityType(form.identityNumber.trim()),
-      birth_date: format(form.birthDate as Date, 'yyyy-MM-dd'),
+      birth_date: form.birthDate ? format(form.birthDate, 'yyyy-MM-dd') : null,
       email: form.email.trim().toLowerCase(),
       roles: form.roles,
       company_name: form.companyName.trim(),
