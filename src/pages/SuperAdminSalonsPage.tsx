@@ -27,6 +27,7 @@ import { PopupManager } from '@/components/popup/PopupManager';
 import { PermissionManager } from '@/components/permissions/PermissionManager';
 import { PlatformStaffManager } from '@/components/admin/PlatformStaffManager';
 import { TicketManager } from '@/components/admin/TicketManager';
+import { RegistrationRequestManager } from '@/components/admin/RegistrationRequestManager';
 import { usePlatformPermissions } from '@/hooks/usePlatformPermissions';
 
 type Salon = {
