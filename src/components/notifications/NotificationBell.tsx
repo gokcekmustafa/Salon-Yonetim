@@ -133,10 +133,10 @@ export function NotificationBell() {
           ) : (
             <div className="divide-y divide-border/40">
               {notifications.map(n => (
-                <button
-                  key={n.id}
-                  className={`w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors flex items-start gap-3 ${!n.is_read ? 'bg-primary/5' : ''}`}
-                  onClick={() => markAsRead(n.id)}
+                  <button
+                    key={n.id}
+                    className={`w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors flex items-start gap-3 ${!n.is_read ? 'bg-primary/5' : ''}`}
+                    onClick={() => handleNotificationClick(n)}
                 >
                   <div className="shrink-0 mt-0.5">{typeIcon(n.type)}</div>
                   <div className="flex-1 min-w-0">
