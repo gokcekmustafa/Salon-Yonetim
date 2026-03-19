@@ -19,8 +19,18 @@ interface Notification {
   salon_id: string | null;
 }
 
+const getNotificationRoute = (type: string): string | null => {
+  switch (type) {
+    case 'registration': return '/admin/salonlar';
+    case 'ticket': return '/admin/salonlar';
+    case 'subscription_alert': return '/admin/salonlar';
+    default: return null;
+  }
+};
+
 export default function NotificationsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
