@@ -304,7 +304,7 @@ export default function CompanyRegistrationPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Doğum Tarihi *</Label>
+                    <Label>Doğum Tarihi</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button type="button" variant="outline" className={cn('w-full justify-start text-left font-normal', !form.birthDate && 'text-muted-foreground')}>
@@ -318,6 +318,9 @@ export default function CompanyRegistrationPage() {
                           selected={form.birthDate}
                           onSelect={(date) => setField('birthDate', date)}
                           disabled={(date) => date > new Date()}
+                          captionLayout="dropdown-buttons"
+                          fromYear={1940}
+                          toYear={new Date().getFullYear()}
                           initialFocus
                           className={cn('p-3 pointer-events-auto')}
                         />
