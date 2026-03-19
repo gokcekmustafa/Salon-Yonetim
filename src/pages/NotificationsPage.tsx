@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bell, Megaphone, AlertTriangle, Info, CheckCheck, ArrowLeft, Clock, Circle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Megaphone, AlertTriangle, Info, CheckCheck, ArrowLeft, Clock, Circle, ClipboardList, LifeBuoy, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
