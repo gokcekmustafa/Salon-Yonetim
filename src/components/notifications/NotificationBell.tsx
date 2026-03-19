@@ -79,7 +79,27 @@ export function NotificationBell() {
     switch (type) {
       case 'subscription_alert': return <AlertTriangle className="h-4 w-4 text-warning" />;
       case 'announcement': return <Megaphone className="h-4 w-4 text-primary" />;
+      case 'registration': return <ClipboardList className="h-4 w-4 text-success" />;
+      case 'ticket': return <LifeBuoy className="h-4 w-4 text-info" />;
       default: return <Info className="h-4 w-4 text-info" />;
+    }
+  };
+
+  const getNotificationRoute = (type: string): string | null => {
+    switch (type) {
+      case 'registration': return '/admin/salonlar';
+      case 'ticket': return '/admin/salonlar';
+      case 'subscription_alert': return '/admin/salonlar';
+      default: return null;
+    }
+  };
+
+  const handleNotificationClick = async (n: Notification) => {
+    await markAsRead(n.id);
+    const route = getNotificationRoute(n.type);
+    if (route) {
+      setOpen(false);
+      navigate(route);
     }
   };
 
