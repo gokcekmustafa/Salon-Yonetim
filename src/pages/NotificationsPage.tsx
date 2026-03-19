@@ -206,6 +206,11 @@ export default function NotificationsPage() {
                       <Clock className="h-3.5 w-3.5" />
                       {format(parseISO(selected.created_at), 'd MMMM yyyy, HH:mm', { locale: tr })}
                     </span>
+                    {getNotificationRoute(selected.type) && (
+                      <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={handleGoToSection}>
+                        <ExternalLink className="h-3 w-3" /> İlgili Bölüme Git
+                      </Button>
+                    )}
                   </div>
 
                   {/* Divider */}
