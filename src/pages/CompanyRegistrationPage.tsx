@@ -183,7 +183,7 @@ export default function CompanyRegistrationPage() {
       nextErrors.identityNumber = 'Pasaport no alfanumerik ve 6-20 karakter olmalıdır.';
     }
 
-    if (!form.birthDate) nextErrors.birthDate = 'Doğum tarihi zorunludur.';
+    // birthDate is optional — no validation needed
     if (form.roles.length === 0) nextErrors.roles = 'En az bir görev seçmelisiniz.';
 
     if (!form.companyName.trim()) nextErrors.companyName = 'Firma adı zorunludur.';
