@@ -90,6 +90,8 @@ export default function NotificationsPage() {
     switch (type) {
       case 'subscription_alert': return <AlertTriangle className={`${size} text-warning`} />;
       case 'announcement': return <Megaphone className={`${size} text-primary`} />;
+      case 'registration': return <ClipboardList className={`${size} text-success`} />;
+      case 'ticket': return <LifeBuoy className={`${size} text-info`} />;
       default: return <Info className={`${size} text-info`} />;
     }
   };
