@@ -388,23 +388,13 @@ export default function CompanyRegistrationPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Firma Telefonu *</Label>
+                    <Label>Firma Telefonu</Label>
                     <Input
                       placeholder="05XX XXX XX XX"
                       value={form.companyPhone}
                       onChange={(e) => setField('companyPhone', formatTurkishPhone(e.target.value))}
                     />
                     {errors.companyPhone && <p className="text-xs text-destructive">{errors.companyPhone}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Firma Telefonu Yedek</Label>
-                    <Input
-                      placeholder="05XX XXX XX XX"
-                      value={form.companyPhoneSecondary}
-                      onChange={(e) => setField('companyPhoneSecondary', formatTurkishPhone(e.target.value))}
-                    />
-                    {errors.companyPhoneSecondary && <p className="text-xs text-destructive">{errors.companyPhoneSecondary}</p>}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
