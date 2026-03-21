@@ -246,12 +246,14 @@ export default function CompanyRegistrationPage() {
       personal_phone: form.personalPhone,
       identity_number: form.identityNumber.trim(),
       identity_type: getIdentityType(form.identityNumber.trim()),
-      birth_date: form.birthDate ? format(form.birthDate, 'yyyy-MM-dd') : null,
+      birth_date: form.birthYear && form.birthMonth && form.birthDay
+        ? `${form.birthYear}-${form.birthMonth}-${form.birthDay}`
+        : null,
       email: form.email.trim().toLowerCase(),
       roles: form.roles,
       company_name: form.companyName.trim(),
-      company_phone: form.companyPhone,
-      company_phone_secondary: form.companyPhoneSecondary || null,
+      company_phone: form.companyPhone || null,
+      company_phone_secondary: null,
       city: form.city,
       district: form.district,
       neighborhood: form.neighborhood,
