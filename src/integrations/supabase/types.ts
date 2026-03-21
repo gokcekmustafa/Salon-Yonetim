@@ -1131,6 +1131,7 @@ export type Database = {
           phone: string | null
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1140,6 +1141,7 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1149,6 +1151,7 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -1882,6 +1885,7 @@ export type Database = {
         Args: { _permission: string; _salon_id: string }
         Returns: boolean
       }
+      get_email_by_username: { Args: { _username: string }; Returns: string }
       get_user_salon_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
