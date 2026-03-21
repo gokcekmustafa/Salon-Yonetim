@@ -20,12 +20,13 @@ type FormState = {
   fullName: string;
   personalPhone: string;
   identityNumber: string;
-  birthDate?: Date;
+  birthYear: string;
+  birthMonth: string;
+  birthDay: string;
   email: string;
   roles: string[];
   companyName: string;
   companyPhone: string;
-  companyPhoneSecondary: string;
   city: string;
   district: string;
   neighborhood: string;
