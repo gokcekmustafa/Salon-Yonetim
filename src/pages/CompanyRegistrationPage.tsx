@@ -324,28 +324,32 @@ export default function CompanyRegistrationPage() {
 
                   <div className="space-y-2">
                     <Label>Doğum Tarihi</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button type="button" variant="outline" className={cn('w-full justify-start text-left font-normal', !form.birthDate && 'text-muted-foreground')}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {form.birthDate ? format(form.birthDate, 'dd.MM.yyyy') : 'Tarih seçin'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={form.birthDate}
-                          onSelect={(date) => setField('birthDate', date)}
-                          disabled={(date) => date > new Date()}
-                          captionLayout="dropdown-buttons"
-                          fromYear={1940}
-                          toYear={new Date().getFullYear()}
-                          initialFocus
-                          className={cn('p-3 pointer-events-auto')}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {errors.birthDate && <p className="text-xs text-destructive">{errors.birthDate}</p>}
+                    <div className="grid grid-cols-3 gap-2">
+                      <Select value={form.birthYear} onValueChange={(v) => setField('birthYear', v)}>
+                        <SelectTrigger><SelectValue placeholder="Yıl" /></SelectTrigger>
+                        <SelectContent>
+                          {getYearOptions().map((y) => (
+                            <SelectItem key={y} value={y}>{y}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={form.birthMonth} onValueChange={(v) => setField('birthMonth', v)}>
+                        <SelectTrigger><SelectValue placeholder="Ay" /></SelectTrigger>
+                        <SelectContent>
+                          {MONTHS.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={form.birthDay} onValueChange={(v) => setField('birthDay', v)}>
+                        <SelectTrigger><SelectValue placeholder="Gün" /></SelectTrigger>
+                        <SelectContent>
+                          {getDayOptions(form.birthYear, form.birthMonth).map((d) => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
