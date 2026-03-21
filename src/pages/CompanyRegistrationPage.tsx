@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { format } from 'date-fns';
 import { Link, Navigate } from 'react-router-dom';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
