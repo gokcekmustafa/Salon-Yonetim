@@ -42,18 +42,38 @@ const INITIAL_FORM: FormState = {
   fullName: '',
   personalPhone: '',
   identityNumber: '',
-  birthDate: undefined,
+  birthYear: '',
+  birthMonth: '',
+  birthDay: '',
   email: '',
   roles: [],
   companyName: '',
   companyPhone: '',
-  companyPhoneSecondary: '',
   city: '',
   district: '',
   neighborhood: '',
   address: '',
   username: '',
 };
+
+const MONTHS = [
+  { value: '01', label: 'Ocak' }, { value: '02', label: 'Şubat' }, { value: '03', label: 'Mart' },
+  { value: '04', label: 'Nisan' }, { value: '05', label: 'Mayıs' }, { value: '06', label: 'Haziran' },
+  { value: '07', label: 'Temmuz' }, { value: '08', label: 'Ağustos' }, { value: '09', label: 'Eylül' },
+  { value: '10', label: 'Ekim' }, { value: '11', label: 'Kasım' }, { value: '12', label: 'Aralık' },
+];
+
+function getYearOptions() {
+  const years: string[] = [];
+  for (let y = 2005; y >= 1940; y--) years.push(String(y));
+  return years;
+}
+
+function getDayOptions(year: string, month: string) {
+  if (!year || !month) return Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+  const daysInMonth = new Date(Number(year), Number(month), 0).getDate();
+  return Array.from({ length: daysInMonth }, (_, i) => String(i + 1).padStart(2, '0'));
+}
 
 function slugifyCompanyName(value: string) {
   return value

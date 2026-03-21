@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Lock, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useBranding } from '@/hooks/useBranding';
@@ -19,7 +19,7 @@ export default function AuthPage() {
   const { user, loading: authLoading } = useAuth();
   const { branding } = useBranding();
 
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
   if (!authLoading && user) {
@@ -29,14 +29,32 @@ export default function AuthPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password: loginPassword,
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: 'Giriş başarısız', description: error.message, variant: 'destructive' });
+
+    try {
+      // Resolve username to email
+      const { data: email, error: resolveError } = await supabase.rpc('get_email_by_username', {
+        _username: loginUsername.trim().toLowerCase(),
+      });
+
+      if (resolveError || !email) {
+        toast({ title: 'Giriş başarısız', description: 'Kullanıcı adı bulunamadı.', variant: 'destructive' });
+        setLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email as string,
+        password: loginPassword,
+      });
+
+      if (error) {
+        toast({ title: 'Giriş başarısız', description: 'Kullanıcı adı veya şifre hatalı.', variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Giriş başarısız', description: 'Bir hata oluştu.', variant: 'destructive' });
     }
+
+    setLoading(false);
   };
 
   return (
@@ -62,10 +80,10 @@ export default function AuthPage() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-xs font-semibold">E-posta</Label>
+                <Label htmlFor="login-username" className="text-xs font-semibold">Kullanıcı Adı</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input id="login-email" type="email" placeholder="ornek@email.com" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="pl-10 h-11" required />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input id="login-username" type="text" placeholder="kullaniciadi" value={loginUsername} onChange={e => setLoginUsername(e.target.value)} className="pl-10 h-11" required />
                 </div>
               </div>
               <div className="space-y-2">
