@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { format } from 'date-fns';
 import { Link, Navigate } from 'react-router-dom';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,8 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { TURKEY_CITIES, getDistrictsByCity, getNeighborhoodsByDistrict } from '@/lib/turkeyLocations';
 
@@ -23,12 +20,13 @@ type FormState = {
   fullName: string;
   personalPhone: string;
   identityNumber: string;
-  birthDate?: Date;
+  birthYear: string;
+  birthMonth: string;
+  birthDay: string;
   email: string;
   roles: string[];
   companyName: string;
   companyPhone: string;
-  companyPhoneSecondary: string;
   city: string;
   district: string;
   neighborhood: string;
@@ -44,18 +42,38 @@ const INITIAL_FORM: FormState = {
   fullName: '',
   personalPhone: '',
   identityNumber: '',
-  birthDate: undefined,
+  birthYear: '',
+  birthMonth: '',
+  birthDay: '',
   email: '',
   roles: [],
   companyName: '',
   companyPhone: '',
-  companyPhoneSecondary: '',
   city: '',
   district: '',
   neighborhood: '',
   address: '',
   username: '',
 };
+
+const MONTHS = [
+  { value: '01', label: 'Ocak' }, { value: '02', label: 'Şubat' }, { value: '03', label: 'Mart' },
+  { value: '04', label: 'Nisan' }, { value: '05', label: 'Mayıs' }, { value: '06', label: 'Haziran' },
+  { value: '07', label: 'Temmuz' }, { value: '08', label: 'Ağustos' }, { value: '09', label: 'Eylül' },
+  { value: '10', label: 'Ekim' }, { value: '11', label: 'Kasım' }, { value: '12', label: 'Aralık' },
+];
+
+function getYearOptions() {
+  const years: string[] = [];
+  for (let y = 2005; y >= 1940; y--) years.push(String(y));
+  return years;
+}
+
+function getDayOptions(year: string, month: string) {
+  if (!year || !month) return Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+  const daysInMonth = new Date(Number(year), Number(month), 0).getDate();
+  return Array.from({ length: daysInMonth }, (_, i) => String(i + 1).padStart(2, '0'));
+}
 
 function slugifyCompanyName(value: string) {
   return value
@@ -187,9 +205,8 @@ export default function CompanyRegistrationPage() {
     if (form.roles.length === 0) nextErrors.roles = 'En az bir görev seçmelisiniz.';
 
     if (!form.companyName.trim()) nextErrors.companyName = 'Firma adı zorunludur.';
-    if (!PHONE_REGEX.test(form.companyPhone)) nextErrors.companyPhone = 'Firma telefonu formatı 05XX XXX XX XX olmalıdır.';
-    if (form.companyPhoneSecondary && !PHONE_REGEX.test(form.companyPhoneSecondary)) {
-      nextErrors.companyPhoneSecondary = 'Yedek telefon formatı 05XX XXX XX XX olmalıdır.';
+    if (form.companyPhone && !PHONE_REGEX.test(form.companyPhone)) {
+      nextErrors.companyPhone = 'Firma telefonu formatı 05XX XXX XX XX olmalıdır.';
     }
 
     if (!form.city) nextErrors.city = 'İl seçimi zorunludur.';
@@ -229,12 +246,14 @@ export default function CompanyRegistrationPage() {
       personal_phone: form.personalPhone,
       identity_number: form.identityNumber.trim(),
       identity_type: getIdentityType(form.identityNumber.trim()),
-      birth_date: form.birthDate ? format(form.birthDate, 'yyyy-MM-dd') : null,
+      birth_date: form.birthYear && form.birthMonth && form.birthDay
+        ? `${form.birthYear}-${form.birthMonth}-${form.birthDay}`
+        : null,
       email: form.email.trim().toLowerCase(),
       roles: form.roles,
       company_name: form.companyName.trim(),
-      company_phone: form.companyPhone,
-      company_phone_secondary: form.companyPhoneSecondary || null,
+      company_phone: form.companyPhone || null,
+      company_phone_secondary: null,
       city: form.city,
       district: form.district,
       neighborhood: form.neighborhood,
@@ -305,28 +324,32 @@ export default function CompanyRegistrationPage() {
 
                   <div className="space-y-2">
                     <Label>Doğum Tarihi</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button type="button" variant="outline" className={cn('w-full justify-start text-left font-normal', !form.birthDate && 'text-muted-foreground')}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {form.birthDate ? format(form.birthDate, 'dd.MM.yyyy') : 'Tarih seçin'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={form.birthDate}
-                          onSelect={(date) => setField('birthDate', date)}
-                          disabled={(date) => date > new Date()}
-                          captionLayout="dropdown-buttons"
-                          fromYear={1940}
-                          toYear={new Date().getFullYear()}
-                          initialFocus
-                          className={cn('p-3 pointer-events-auto')}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {errors.birthDate && <p className="text-xs text-destructive">{errors.birthDate}</p>}
+                    <div className="grid grid-cols-3 gap-2">
+                      <Select value={form.birthYear} onValueChange={(v) => setField('birthYear', v)}>
+                        <SelectTrigger><SelectValue placeholder="Yıl" /></SelectTrigger>
+                        <SelectContent>
+                          {getYearOptions().map((y) => (
+                            <SelectItem key={y} value={y}>{y}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={form.birthMonth} onValueChange={(v) => setField('birthMonth', v)}>
+                        <SelectTrigger><SelectValue placeholder="Ay" /></SelectTrigger>
+                        <SelectContent>
+                          {MONTHS.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={form.birthDay} onValueChange={(v) => setField('birthDay', v)}>
+                        <SelectTrigger><SelectValue placeholder="Gün" /></SelectTrigger>
+                        <SelectContent>
+                          {getDayOptions(form.birthYear, form.birthMonth).map((d) => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -365,23 +388,13 @@ export default function CompanyRegistrationPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Firma Telefonu *</Label>
+                    <Label>Firma Telefonu</Label>
                     <Input
                       placeholder="05XX XXX XX XX"
                       value={form.companyPhone}
                       onChange={(e) => setField('companyPhone', formatTurkishPhone(e.target.value))}
                     />
                     {errors.companyPhone && <p className="text-xs text-destructive">{errors.companyPhone}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Firma Telefonu Yedek</Label>
-                    <Input
-                      placeholder="05XX XXX XX XX"
-                      value={form.companyPhoneSecondary}
-                      onChange={(e) => setField('companyPhoneSecondary', formatTurkishPhone(e.target.value))}
-                    />
-                    {errors.companyPhoneSecondary && <p className="text-xs text-destructive">{errors.companyPhoneSecondary}</p>}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
