@@ -222,6 +222,12 @@ Deno.serve(async (req) => {
         // Store password
         await storePassword(ownerUser.user.id, owner_password)
 
+        // Set username on profile (use slug as username)
+        await supabaseAdmin.from('profiles').upsert(
+          { user_id: ownerUser.user.id, full_name: owner_full_name || owner_email, username: slug },
+          { onConflict: 'user_id' }
+        )
+
         return json({
           success: true, salon_id: salon.id, user_id: ownerUser.user.id,
           message: `${salon_name} salonu ve ${owner_email} hesabı oluşturuldu`,
