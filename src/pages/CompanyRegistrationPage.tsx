@@ -205,9 +205,8 @@ export default function CompanyRegistrationPage() {
     if (form.roles.length === 0) nextErrors.roles = 'En az bir görev seçmelisiniz.';
 
     if (!form.companyName.trim()) nextErrors.companyName = 'Firma adı zorunludur.';
-    if (!PHONE_REGEX.test(form.companyPhone)) nextErrors.companyPhone = 'Firma telefonu formatı 05XX XXX XX XX olmalıdır.';
-    if (form.companyPhoneSecondary && !PHONE_REGEX.test(form.companyPhoneSecondary)) {
-      nextErrors.companyPhoneSecondary = 'Yedek telefon formatı 05XX XXX XX XX olmalıdır.';
+    if (form.companyPhone && !PHONE_REGEX.test(form.companyPhone)) {
+      nextErrors.companyPhone = 'Firma telefonu formatı 05XX XXX XX XX olmalıdır.';
     }
 
     if (!form.city) nextErrors.city = 'İl seçimi zorunludur.';
