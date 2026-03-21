@@ -170,6 +170,13 @@ Deno.serve(async (req) => {
 
         await storePassword(newUser.user.id, password)
 
+        // Set username on profile (use email prefix as default)
+        const usernameForProfile = email.split('@')[0].toLowerCase()
+        await supabaseAdmin.from('profiles').upsert(
+          { user_id: newUser.user.id, full_name: full_name || email, username: usernameForProfile },
+          { onConflict: 'user_id' }
+        )
+
         return json({ success: true, user_id: newUser.user.id, message: 'Kullanıcı başarıyla oluşturuldu' })
       }
 
