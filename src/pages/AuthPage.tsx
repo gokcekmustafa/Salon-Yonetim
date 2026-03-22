@@ -19,7 +19,7 @@ export default function AuthPage() {
   const { user, loading: authLoading } = useAuth();
   const { branding } = useBranding();
 
-  const [loginUsername, setLoginUsername] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
   if (!authLoading && user) {
