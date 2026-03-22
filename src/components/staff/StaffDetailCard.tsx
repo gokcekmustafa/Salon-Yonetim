@@ -119,7 +119,8 @@ const buildFormState = (staff: DbStaff, detail: StaffDetail | null, salary: Sala
 };
 
 export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdated, branches, appointments, services, customers }: Props) {
-  const { currentSalonId } = useAuth();
+  const { currentSalonId, isStaff, isSalonAdmin, isSuperAdmin } = useAuth();
+  const canManagePermissions = isSuperAdmin || isSalonAdmin;
   const [detail, setDetail] = useState<StaffDetail | null>(null);
   const [salary, setSalary] = useState<SalaryRow | null>(null);
   const [staffPayments, setStaffPayments] = useState<any[]>([]);
