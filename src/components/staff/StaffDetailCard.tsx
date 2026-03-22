@@ -349,6 +349,7 @@ export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdate
                 <TabsTrigger value="salary" className="text-xs">Maaş Bilgi</TabsTrigger>
                 <TabsTrigger value="history" className="text-xs">İşlemler</TabsTrigger>
                 <TabsTrigger value="permissions" className="text-xs">Yetki</TabsTrigger>
+                <TabsTrigger value="account" className="text-xs">Hesap</TabsTrigger>
               </TabsList>
 
               {isEditing ? (
