@@ -35,6 +35,7 @@ export function ProfileSettings() {
     setFullName(profile?.full_name || '');
     setPhone(profile?.phone || '');
     setEmail(user?.email || '');
+    setUsername(profile?.username || '');
     setAvatarUrl(profile?.avatar_url || null);
   }, [profile, user]);
 
