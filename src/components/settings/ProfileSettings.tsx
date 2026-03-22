@@ -216,7 +216,12 @@ export function ProfileSettings() {
               placeholder="05XX XXX XX XX"
             />
           </div>
-          <div className="space-y-2 sm:col-span-2">
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold">Kullanıcı Adı</Label>
+            <Input value={username} disabled className="bg-muted/50" />
+            <p className="text-[11px] text-muted-foreground">Kullanıcı adı değişikliği için yönetici ile iletişime geçin.</p>
+          </div>
+          <div className="space-y-2">
             <Label className="text-xs font-semibold">E-posta</Label>
             <Input value={email} disabled className="bg-muted/50" />
             <p className="text-[11px] text-muted-foreground">E-posta değişikliği için yönetici ile iletişime geçin.</p>

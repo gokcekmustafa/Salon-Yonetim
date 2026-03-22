@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const [rolesRes, profileRes] = await Promise.all([
         supabase.from('user_roles').select('role').eq('user_id', userId),
-        supabase.from('profiles').select('full_name, avatar_url, phone').eq('user_id', userId).maybeSingle(),
+        supabase.from('profiles').select('full_name, avatar_url, phone, username').eq('user_id', userId).maybeSingle(),
       ]);
 
       // If a newer fetch started, discard this result

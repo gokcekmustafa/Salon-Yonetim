@@ -86,10 +86,10 @@ export default function AuthPage() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="login-username" className="text-xs font-semibold">Kullanıcı Adı</Label>
+                <Label htmlFor="login-identifier" className="text-xs font-semibold">Kullanıcı Adı veya E-posta</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input id="login-username" type="text" placeholder="kullaniciadi" value={loginUsername} onChange={e => setLoginUsername(e.target.value)} className="pl-10 h-11" required />
+                  <Input id="login-identifier" type="text" placeholder="kullaniciadi veya e-posta" value={loginIdentifier} onChange={e => setLoginIdentifier(e.target.value)} className="pl-10 h-11" required />
                 </div>
               </div>
               <div className="space-y-2">
