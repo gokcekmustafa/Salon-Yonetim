@@ -238,6 +238,7 @@ export function ProfileSettings() {
               setEditing(false);
               setFullName(profile?.full_name || '');
               setPhone(profile?.phone || '');
+              setUsername(profile?.username || '');
               setAvatarPreview(null);
               setAvatarFile(null);
             }}>
