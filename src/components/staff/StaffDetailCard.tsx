@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { DbStaff } from '@/hooks/useSalonData';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, Loader2, Pencil, Save, X, Camera } from 'lucide-react';
+import { User, Loader2, Pencil, Save, X, Camera, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 type StaffDetail = {
