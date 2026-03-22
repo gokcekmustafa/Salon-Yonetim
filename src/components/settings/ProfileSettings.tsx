@@ -16,6 +16,7 @@ export function ProfileSettings() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -34,6 +35,7 @@ export function ProfileSettings() {
     setFullName(profile?.full_name || '');
     setPhone(profile?.phone || '');
     setEmail(user?.email || '');
+    setUsername(profile?.username || '');
     setAvatarUrl(profile?.avatar_url || null);
   }, [profile, user]);
 
@@ -214,7 +216,12 @@ export function ProfileSettings() {
               placeholder="05XX XXX XX XX"
             />
           </div>
-          <div className="space-y-2 sm:col-span-2">
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold">Kullanıcı Adı</Label>
+            <Input value={username} disabled className="bg-muted/50" />
+            <p className="text-[11px] text-muted-foreground">Kullanıcı adı değişikliği için yönetici ile iletişime geçin.</p>
+          </div>
+          <div className="space-y-2">
             <Label className="text-xs font-semibold">E-posta</Label>
             <Input value={email} disabled className="bg-muted/50" />
             <p className="text-[11px] text-muted-foreground">E-posta değişikliği için yönetici ile iletişime geçin.</p>
@@ -231,6 +238,7 @@ export function ProfileSettings() {
               setEditing(false);
               setFullName(profile?.full_name || '');
               setPhone(profile?.phone || '');
+              setUsername(profile?.username || '');
               setAvatarPreview(null);
               setAvatarFile(null);
             }}>
