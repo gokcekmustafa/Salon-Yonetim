@@ -119,6 +119,7 @@ const buildFormState = (staff: DbStaff, detail: StaffDetail | null, salary: Sala
 };
 
 export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdated, branches, appointments, services, customers }: Props) {
+  const { currentSalonId } = useAuth();
   const [detail, setDetail] = useState<StaffDetail | null>(null);
   const [salary, setSalary] = useState<SalaryRow | null>(null);
   const [staffPayments, setStaffPayments] = useState<any[]>([]);
@@ -128,6 +129,16 @@ export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdate
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [form, setForm] = useState<StaffFormState>(() => buildFormState(s, null, null));
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Account state
+  const [staffUsername, setStaffUsername] = useState('');
+  const [staffPassword, setStaffPassword] = useState('');
+  const [showStaffPassword, setShowStaffPassword] = useState(false);
+  const [hasAccount, setHasAccount] = useState(false);
+  const [existingUsername, setExistingUsername] = useState('');
+  const [accountSaving, setAccountSaving] = useState(false);
+  const [newPasswordForExisting, setNewPasswordForExisting] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   useEffect(() => {
     if (!open || !s) return;
@@ -147,6 +158,19 @@ export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdate
       setForm(buildFormState(s, nextDetail, nextSalary));
       setLoading(false);
     });
+
+    // Check if staff has an account
+    if (s.user_id) {
+      setHasAccount(true);
+      supabase.from('profiles').select('username').eq('user_id', s.user_id).maybeSingle().then(({ data }) => {
+        setExistingUsername(data?.username || '');
+      });
+    } else {
+      setHasAccount(false);
+      setExistingUsername('');
+      setStaffUsername('');
+      setStaffPassword('');
+    }
   }, [open, s]);
 
   const staffAppointments = useMemo(() => appointments.filter(a => a.staff_id === s?.id), [appointments, s?.id]);
