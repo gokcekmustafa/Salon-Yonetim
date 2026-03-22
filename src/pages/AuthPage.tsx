@@ -31,19 +31,25 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      // Resolve username to email
-      const { data: email, error: resolveError } = await supabase.rpc('get_email_by_username', {
-        _username: loginUsername.trim().toLowerCase(),
-      });
+      const identifier = loginIdentifier.trim().toLowerCase();
+      let emailToUse = identifier;
 
-      if (resolveError || !email) {
-        toast({ title: 'Giriş başarısız', description: 'Kullanıcı adı bulunamadı.', variant: 'destructive' });
-        setLoading(false);
-        return;
+      // If it looks like an email, use directly; otherwise resolve username
+      if (!identifier.includes('@')) {
+        const { data: resolvedEmail, error: resolveError } = await supabase.rpc('get_email_by_username', {
+          _username: identifier,
+        });
+
+        if (resolveError || !resolvedEmail) {
+          toast({ title: 'Giriş başarısız', description: 'Kullanıcı adı bulunamadı.', variant: 'destructive' });
+          setLoading(false);
+          return;
+        }
+        emailToUse = resolvedEmail as string;
       }
 
       const { error } = await supabase.auth.signInWithPassword({
-        email: email as string,
+        email: emailToUse,
         password: loginPassword,
       });
 
