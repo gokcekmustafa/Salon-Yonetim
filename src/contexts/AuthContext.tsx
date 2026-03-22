@@ -9,7 +9,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   roles: AppRole[];
-  profile: { full_name: string | null; avatar_url: string | null; phone: string | null } | null;
+  profile: { full_name: string | null; avatar_url: string | null; phone: string | null; username: string | null } | null;
   currentSalonId: string | null;
   currentBranchId: string | null;
   isSuperAdmin: boolean;
