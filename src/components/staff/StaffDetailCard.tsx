@@ -119,7 +119,8 @@ const buildFormState = (staff: DbStaff, detail: StaffDetail | null, salary: Sala
 };
 
 export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdated, branches, appointments, services, customers }: Props) {
-  const { currentSalonId } = useAuth();
+  const { currentSalonId, isStaff, isSalonAdmin, isSuperAdmin } = useAuth();
+  const canManagePermissions = isSuperAdmin || isSalonAdmin;
   const [detail, setDetail] = useState<StaffDetail | null>(null);
   const [salary, setSalary] = useState<SalaryRow | null>(null);
   const [staffPayments, setStaffPayments] = useState<any[]>([]);
@@ -348,8 +349,8 @@ export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdate
                 <TabsTrigger value="advances" className="text-xs">Avans/Maaş</TabsTrigger>
                 <TabsTrigger value="salary" className="text-xs">Maaş Bilgi</TabsTrigger>
                 <TabsTrigger value="history" className="text-xs">İşlemler</TabsTrigger>
-                <TabsTrigger value="permissions" className="text-xs">Yetki</TabsTrigger>
-                <TabsTrigger value="account" className="text-xs">Hesap</TabsTrigger>
+                {canManagePermissions && <TabsTrigger value="permissions" className="text-xs">Yetki</TabsTrigger>}
+                {canManagePermissions && <TabsTrigger value="account" className="text-xs">Hesap</TabsTrigger>}
               </TabsList>
 
               {isEditing ? (
