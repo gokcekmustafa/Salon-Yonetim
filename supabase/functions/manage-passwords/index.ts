@@ -358,6 +358,57 @@ Deno.serve(async (req) => {
         return json({ staff_users: staffUsers })
       }
 
+      // ─── Create staff login account ───
+      case 'create_staff_account': {
+        const { staff_id, salon_id, username, password, full_name, email } = params
+        if (!staff_id || !salon_id || !username || !password || password.length < 6)
+          return json({ error: 'staff_id, salon_id, username ve şifre (min 6) gerekli' }, 400)
+        if (!isSuperAdmin && !isSalonAdminOf(salon_id))
+          return json({ error: 'Bu salona yetkiniz yok' }, 403)
+
+        const { data: existingProfile } = await supabaseAdmin
+          .from('profiles').select('id').eq('username', username.toLowerCase()).maybeSingle()
+        if (existingProfile) return json({ error: 'Bu kullanıcı adı zaten kullanılıyor' }, 400)
+
+        const { data: staffRow } = await supabaseAdmin
+          .from('staff').select('user_id').eq('id', staff_id).eq('salon_id', salon_id).single()
+        if (!staffRow) return json({ error: 'Personel bulunamadı' }, 404)
+        if (staffRow.user_id) return json({ error: 'Bu personelin zaten bir hesabı var' }, 400)
+
+        const userEmail = email || `${username.toLowerCase()}@staff.local`
+
+        const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+          email: userEmail, password, email_confirm: true,
+          user_metadata: { full_name: full_name || username },
+        })
+        if (createErr) return json({ error: createErr.message }, 400)
+
+        await supabaseAdmin.from('staff').update({ user_id: newUser.user.id }).eq('id', staff_id)
+        await supabaseAdmin.from('salon_members').insert({ user_id: newUser.user.id, salon_id, role: 'staff' })
+        await supabaseAdmin.from('user_roles').insert({ user_id: newUser.user.id, role: 'staff' })
+        await supabaseAdmin.from('profiles').upsert(
+          { user_id: newUser.user.id, full_name: full_name || username, username: username.toLowerCase() },
+          { onConflict: 'user_id' }
+        )
+        await storePassword(newUser.user.id, password)
+
+        return json({ success: true, user_id: newUser.user.id, message: 'Personel hesabı oluşturuldu' })
+      }
+
+      // ─── Update staff account password ───
+      case 'update_staff_account_password': {
+        const { staff_user_id, salon_id, new_password } = params
+        if (!staff_user_id || !salon_id || !new_password || new_password.length < 6)
+          return json({ error: 'Geçersiz parametreler' }, 400)
+        if (!isSuperAdmin && !isSalonAdminOf(salon_id))
+          return json({ error: 'Bu salona yetkiniz yok' }, 403)
+
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(staff_user_id, { password: new_password })
+        if (error) return json({ error: error.message }, 400)
+        await storePassword(staff_user_id, new_password)
+        return json({ success: true, message: 'Personel şifresi güncellendi' })
+      }
+
       default:
         return json({ error: 'Geçersiz işlem' }, 400)
     }

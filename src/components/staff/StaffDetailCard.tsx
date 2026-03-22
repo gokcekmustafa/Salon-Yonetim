@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { DbStaff } from '@/hooks/useSalonData';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, Loader2, Pencil, Save, X, Camera } from 'lucide-react';
+import { User, Loader2, Pencil, Save, X, Camera, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 type StaffDetail = {
@@ -118,6 +119,7 @@ const buildFormState = (staff: DbStaff, detail: StaffDetail | null, salary: Sala
 };
 
 export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdated, branches, appointments, services, customers }: Props) {
+  const { currentSalonId } = useAuth();
   const [detail, setDetail] = useState<StaffDetail | null>(null);
   const [salary, setSalary] = useState<SalaryRow | null>(null);
   const [staffPayments, setStaffPayments] = useState<any[]>([]);
@@ -127,6 +129,16 @@ export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdate
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [form, setForm] = useState<StaffFormState>(() => buildFormState(s, null, null));
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Account state
+  const [staffUsername, setStaffUsername] = useState('');
+  const [staffPassword, setStaffPassword] = useState('');
+  const [showStaffPassword, setShowStaffPassword] = useState(false);
+  const [hasAccount, setHasAccount] = useState(false);
+  const [existingUsername, setExistingUsername] = useState('');
+  const [accountSaving, setAccountSaving] = useState(false);
+  const [newPasswordForExisting, setNewPasswordForExisting] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   useEffect(() => {
     if (!open || !s) return;
@@ -146,6 +158,19 @@ export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdate
       setForm(buildFormState(s, nextDetail, nextSalary));
       setLoading(false);
     });
+
+    // Check if staff has an account
+    if (s.user_id) {
+      setHasAccount(true);
+      supabase.from('profiles').select('username').eq('user_id', s.user_id).maybeSingle().then(({ data }) => {
+        setExistingUsername(data?.username || '');
+      });
+    } else {
+      setHasAccount(false);
+      setExistingUsername('');
+      setStaffUsername('');
+      setStaffPassword('');
+    }
   }, [open, s]);
 
   const staffAppointments = useMemo(() => appointments.filter(a => a.staff_id === s?.id), [appointments, s?.id]);
@@ -324,6 +349,7 @@ export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdate
                 <TabsTrigger value="salary" className="text-xs">Maaş Bilgi</TabsTrigger>
                 <TabsTrigger value="history" className="text-xs">İşlemler</TabsTrigger>
                 <TabsTrigger value="permissions" className="text-xs">Yetki</TabsTrigger>
+                <TabsTrigger value="account" className="text-xs">Hesap</TabsTrigger>
               </TabsList>
 
               {isEditing ? (
@@ -605,6 +631,132 @@ export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdate
                   </div>
                 ))}
               </div>
+            </TabsContent>
+
+            <TabsContent value="account" className={tabContentClass}>
+              {hasAccount ? (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <KeyRound className="h-5 w-5 text-primary" />
+                      <p className="font-semibold text-sm">Hesap Bilgileri</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Kullanıcı Adı</Label>
+                        <p className="font-medium">{existingUsername || '-'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Durum</Label>
+                        <Badge variant="default" className="text-xs">Aktif Hesap</Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-xs font-semibold">Şifre Sıfırla</Label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type={showNewPassword ? 'text' : 'password'}
+                          value={newPasswordForExisting}
+                          onChange={e => setNewPasswordForExisting(e.target.value)}
+                          placeholder="Yeni şifre (min 6 karakter)"
+                          className="h-10 pr-10"
+                        />
+                        <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                          {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="h-10"
+                        disabled={accountSaving || newPasswordForExisting.length < 6}
+                        onClick={async () => {
+                          setAccountSaving(true);
+                          try {
+                            const { data, error } = await supabase.functions.invoke('manage-passwords', {
+                              body: { action: 'update_staff_account_password', staff_user_id: s.user_id, salon_id: s.salon_id, new_password: newPasswordForExisting },
+                            });
+                            if (error || data?.error) throw new Error(data?.error || error?.message);
+                            toast.success('Şifre güncellendi');
+                            setNewPasswordForExisting('');
+                          } catch (err: any) {
+                            toast.error(err.message || 'Şifre güncellenemedi');
+                          } finally {
+                            setAccountSaving(false);
+                          }
+                        }}
+                      >
+                        {accountSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Güncelle'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <KeyRound className="h-5 w-5 text-muted-foreground" />
+                      <p className="font-semibold text-sm">Giriş Hesabı Oluştur</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Bu personel için kullanıcı adı ve şifre belirleyerek sisteme giriş yapabilmesini sağlayın.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Kullanıcı Adı *</Label>
+                      <Input value={staffUsername} onChange={e => setStaffUsername(e.target.value)} placeholder="personel.adi" className="h-10" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Şifre *</Label>
+                      <div className="relative">
+                        <Input
+                          type={showStaffPassword ? 'text' : 'password'}
+                          value={staffPassword}
+                          onChange={e => setStaffPassword(e.target.value)}
+                          placeholder="Min 6 karakter"
+                          className="h-10 pr-10"
+                        />
+                        <button type="button" onClick={() => setShowStaffPassword(!showStaffPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                          {showStaffPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    className="btn-gradient"
+                    disabled={accountSaving || !staffUsername.trim() || staffPassword.length < 6}
+                    onClick={async () => {
+                      setAccountSaving(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke('manage-passwords', {
+                          body: {
+                            action: 'create_staff_account',
+                            staff_id: s.id,
+                            salon_id: s.salon_id,
+                            username: staffUsername.trim(),
+                            password: staffPassword,
+                            full_name: `${form.name} ${form.surname}`.trim(),
+                          },
+                        });
+                        if (error || data?.error) throw new Error(data?.error || error?.message);
+                        toast.success('Personel hesabı oluşturuldu');
+                        setHasAccount(true);
+                        setExistingUsername(staffUsername.trim().toLowerCase());
+                        setStaffUsername('');
+                        setStaffPassword('');
+                        onUpdated?.();
+                      } catch (err: any) {
+                        toast.error(err.message || 'Hesap oluşturulamadı');
+                      } finally {
+                        setAccountSaving(false);
+                      }
+                    }}
+                  >
+                    {accountSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <KeyRound className="h-4 w-4 mr-2" />}
+                    Hesap Oluştur
+                  </Button>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         )}
