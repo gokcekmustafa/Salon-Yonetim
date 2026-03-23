@@ -44,6 +44,7 @@ const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no
 export default function CustomersPage() {
   const { hasPermission } = usePermissions();
   const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, loading } = useSalonData();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -51,6 +52,15 @@ export default function CustomersPage() {
   const [editing, setEditing] = useState<DbCustomer | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('yeni') === '1' && !loading) {
+      setEditing(null);
+      setForm(emptyForm);
+      setDialogOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, loading]);
 
   if (!hasPermission('can_manage_customers')) return <NoPermission feature="Müşteri Yönetimi" />;
   if (loading) return (
