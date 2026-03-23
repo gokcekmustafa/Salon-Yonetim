@@ -372,82 +372,83 @@ export function SuperAdminUserManager() {
               <p className="text-sm text-muted-foreground">Kullanıcı bulunamadı</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-border/60">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="font-semibold">Kullanıcı</TableHead>
-                    <TableHead className="font-semibold hidden md:table-cell">E-posta</TableHead>
-                    <TableHead className="font-semibold hidden lg:table-cell">Şifre</TableHead>
-                    <TableHead className="font-semibold">Roller</TableHead>
-                    <TableHead className="font-semibold hidden lg:table-cell">Salonlar</TableHead>
-                    <TableHead className="w-32"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map(user => (
-                    <TableRow key={user.id} className="group">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-primary">
-                              {(user.full_name || user.email || '?')[0].toUpperCase()}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{user.full_name || '—'}</p>
-                            <p className="text-xs text-muted-foreground md:hidden">{user.email}</p>
-                          </div>
+            <div className="space-y-6">
+              {/* Platform Yöneticileri */}
+              {platformAdmins.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-1">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Platform Yöneticileri</h3>
+                    <Badge variant="secondary" className="text-[10px]">{platformAdmins.length}</Badge>
+                  </div>
+                  <div className="overflow-x-auto rounded-lg border border-border/60">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="font-semibold">Kullanıcı</TableHead>
+                          <TableHead className="font-semibold hidden md:table-cell">E-posta</TableHead>
+                          <TableHead className="font-semibold hidden lg:table-cell">Şifre</TableHead>
+                          <TableHead className="font-semibold">Roller</TableHead>
+                          <TableHead className="w-32"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {platformAdmins.map(user => (
+                          <UserRow key={user.id} user={user} roleLabel={roleLabel} roleColor={roleColor} showSalons={false}
+                            onReset={openReset} onEmail={openEmailUpdate} onMember={openMemberManage} onDelete={handleDelete} />
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              {/* İşletme Sahipleri & Personelleri */}
+              {(salonAdmins.length > 0 || unassignedStaff.length > 0) && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-1">
+                    <Crown className="h-4 w-4 text-warning" />
+                    <h3 className="text-sm font-semibold text-foreground">İşletme Sahipleri & Personelleri</h3>
+                    <Badge variant="secondary" className="text-[10px]">{salonAdmins.length + staffUsers.length}</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {salonAdmins.map(admin => {
+                      const adminSalonIds = admin.memberships.map(m => m.salon_id);
+                      const adminStaff = staffUsers.filter(u => u.memberships.some(m => adminSalonIds.includes(m.salon_id)));
+                      return (
+                        <SalonAdminGroup
+                          key={admin.id}
+                          admin={admin}
+                          staffList={adminStaff}
+                          roleLabel={roleLabel}
+                          roleColor={roleColor}
+                          onReset={openReset}
+                          onEmail={openEmailUpdate}
+                          onMember={openMemberManage}
+                          onDelete={handleDelete}
+                        />
+                      );
+                    })}
+                    {unassignedStaff.length > 0 && (
+                      <div className="rounded-lg border border-border/60 overflow-hidden">
+                        <div className="px-4 py-3 bg-muted/30 border-b border-border/40">
+                          <p className="text-xs font-semibold text-muted-foreground">Salona Atanmamış Personeller</p>
                         </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <span className="text-sm text-muted-foreground">{user.email}</span>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {user.stored_password ? (
-                          <PasswordReveal password={user.stored_password} />
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {user.roles.map(role => (
-                            <Badge key={role} variant="secondary" className={`text-[10px] font-semibold ${roleColor(role)}`}>
-                              {roleLabel(role)}
-                            </Badge>
-                          ))}
-                          {user.roles.length === 0 && (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="flex flex-wrap gap-1">
-                          {user.memberships.map(m => (
-                            <Badge key={m.salon_id} variant="outline" className="text-[10px]">
-                              {m.salon_name}
-                            </Badge>
-                          ))}
-                          {user.memberships.length === 0 && (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" onClick={() => openMemberManage(user)} className="h-8 w-8" title="Rol & Salon Ata">
-                            <UserCog className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => openEmailUpdate(user)} className="h-8 w-8" title="E-posta güncelle">
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => openReset(user)} className="h-8 w-8" title="Şifre sıfırla">
-                            <Key className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(user)} className="h-8 w-8 text-destructive hover:text-destructive" title="Kullanıcıyı sil">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        <Table>
+                          <TableBody>
+                            {unassignedStaff.map(user => (
+                              <UserRow key={user.id} user={user} roleLabel={roleLabel} roleColor={roleColor} showSalons
+                                onReset={openReset} onEmail={openEmailUpdate} onMember={openMemberManage} onDelete={handleDelete} />
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
                         </div>
                       </TableCell>
                     </TableRow>
