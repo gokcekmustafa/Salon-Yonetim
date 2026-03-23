@@ -13,6 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { startOfDay, startOfWeek, startOfMonth, startOfYear, endOfDay, format, isWithinInterval } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 type TimeRange = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -143,6 +144,7 @@ export default function StaffPerformancePage() {
     .map(m => ({ name: m.name, value: Math.round(m.totalSales) }));
 
   return (
+    <StaffPageGuard permissionKey="page_performance" featureLabel="Performans">
     <div className="page-container animate-in space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -360,5 +362,6 @@ export default function StaffPerformancePage() {
         </CardContent>
       </Card>
     </div>
+    </StaffPageGuard>
   );
 }

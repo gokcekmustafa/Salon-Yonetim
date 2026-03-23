@@ -12,6 +12,7 @@ import { NoPermission } from '@/components/permissions/NoPermission';
 import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
 import StaffDetailCard from '@/components/staff/StaffDetailCard';
 import StaffAddForm from '@/components/staff/StaffAddForm';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 const STAFF_COLUMNS: ColumnMapping[] = [
   { excelHeader: 'Ad Soyad', dbKey: 'name', required: true },
@@ -38,6 +39,7 @@ export default function StaffPage() {
   const getBranchName = (id: string | null) => branches.find(b => b.id === id)?.name ?? '-';
 
   return (
+    <StaffPageGuard permissionKey="page_staff" featureLabel="Personel Yönetimi">
     <div className="page-container animate-in">
       <div className="page-header">
         <div>
@@ -127,5 +129,6 @@ export default function StaffPage() {
         />
       )}
     </div>
+    </StaffPageGuard>
   );
 }

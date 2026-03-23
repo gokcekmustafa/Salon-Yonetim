@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO, startOfDay, startOfWeek, startOfMonth, startOfYear, endOfDay, isWithinInterval } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 type StaffSalary = {
   id: string; staff_id: string; salon_id: string; monthly_salary: number;
@@ -225,6 +226,7 @@ export default function StaffSalaryPage() {
   };
 
   return (
+    <StaffPageGuard permissionKey="page_salary" featureLabel="Maaş & Ödeme">
     <div className="page-container animate-in space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -535,5 +537,6 @@ export default function StaffSalaryPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </StaffPageGuard>
   );
 }

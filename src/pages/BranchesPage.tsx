@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 const BRANCH_COLUMNS: ColumnMapping[] = [
   { excelHeader: 'Şube Adı', dbKey: 'name', required: true },
@@ -60,6 +61,7 @@ export default function BranchesPage() {
   const getStaffCount = (branchId: string) => staff.filter(s => s.branch_id === branchId).length;
 
   return (
+    <StaffPageGuard permissionKey="page_branches" featureLabel="Şubeler">
     <div className="page-container animate-in">
       <div className="page-header">
         <div>
@@ -145,5 +147,6 @@ export default function BranchesPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </StaffPageGuard>
   );
 }

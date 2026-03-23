@@ -60,18 +60,9 @@ type StaffFormState = {
 
 const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 const OFFERED = ['LAZER EPİLASYON', 'CİLT BAKIMI', 'BÖLGESEL ZAYIFLAMA', 'KİRPİK LİFTİNG', 'ÇATLAK BAKIMI'];
-const PERMISSION_KEYS = [
-  { key: 'appointment_system', label: 'Randevu Sistemi' },
-  { key: 'meeting_records', label: 'Görüşme Kayıtları' },
-  { key: 'staff_payments', label: 'Personel Ödemeleri' },
-  { key: 'cash_book', label: 'Kasa Defteri' },
-  { key: 'company_actions', label: 'Firma Hareketleri' },
-  { key: 'sms_actions', label: 'SMS Hareketleri' },
-  { key: 'customer_reviews', label: 'Müşteri Yorumları' },
-  { key: 'past_transactions', label: 'Geçmiş Tarihli İşlemler' },
-  { key: 'service_stats', label: 'Hizmet / Ürün / Satış İstatistiği' },
-  { key: 'company_stats', label: 'Şirket İstatistiği' },
-];
+import { STAFF_PAGE_PERMISSIONS } from '@/hooks/useStaffPermissions';
+
+const PERMISSION_KEYS = STAFF_PAGE_PERMISSIONS.map(p => ({ key: p.key, label: p.label }));
 
 interface Props {
   staff: DbStaff;

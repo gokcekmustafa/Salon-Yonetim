@@ -25,6 +25,7 @@ import {
 import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 type CashBox = { id: string; salon_id: string; name: string; payment_method: string; is_active: boolean };
 type CashTransaction = {
@@ -600,6 +601,7 @@ export default function CashPage() {
                   {cashBoxes.filter(b => b.is_active).map(b => {
                     const bal = boxBalances.find(bb => bb.id === b.id);
                     return (
+    <StaffPageGuard permissionKey="page_payments" featureLabel="Kasa Yönetimi">
                       <SelectItem key={b.id} value={b.id}>
                         {b.name} — Bakiye: ₺{(bal?.balance || 0).toLocaleString('tr-TR')}
                       </SelectItem>
@@ -627,5 +629,6 @@ export default function CashPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </StaffPageGuard>
   );
 }
