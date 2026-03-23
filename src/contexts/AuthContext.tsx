@@ -133,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTimeout(() => {
             if (!mounted) return;
             fetchUserData(newSession.user.id, id).finally(() => {
-              if (mounted && id === fetchIdRef.current && shouldBlockWithLoading) {
+              if (mounted && id === fetchIdRef.current) {
                 setLoading(false);
               }
             });
