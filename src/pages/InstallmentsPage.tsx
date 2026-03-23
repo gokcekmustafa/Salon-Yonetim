@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Loader2, Plus, CreditCard, AlertTriangle, CheckCircle2, Clock, Banknote } from 'lucide-react';
-import { format, parseISO, isBefore, startOfDay, addMonths } from 'date-fns';
+import { format, parseISO, isBefore, startOfDay, addMonths, addDays, addWeeks } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
