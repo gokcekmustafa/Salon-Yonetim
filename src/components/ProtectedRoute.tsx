@@ -1,6 +1,6 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, ShieldAlert } from 'lucide-react';
+import { Loader2, ShieldAlert, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
@@ -11,7 +11,8 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requiredRole, anyRole }: ProtectedRouteProps) {
-  const { user, loading, roles, signOut } = useAuth();
+  const { user, loading, roles } = useAuth();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -35,12 +36,12 @@ export default function ProtectedRoute({ children, requiredRole, anyRole }: Prot
           <div className="mx-auto h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
             <ShieldAlert className="h-6 w-6 text-destructive" />
           </div>
-          <h1 className="text-lg font-semibold text-foreground">Erişim izniniz bulunmuyor</h1>
+          <h1 className="text-lg font-semibold text-foreground">Bu sayfaya erişim yetkiniz yok</h1>
           <p className="text-sm text-muted-foreground">
             Hesabınız için rol/salon ataması eksik olabilir. Lütfen yöneticinizle iletişime geçin.
           </p>
-          <Button variant="outline" onClick={() => void signOut()} className="w-full">
-            Çıkış Yap
+          <Button variant="outline" onClick={() => navigate('/')} className="w-full gap-2">
+            <ArrowLeft className="h-4 w-4" /> Geri Dön
           </Button>
         </div>
       </div>

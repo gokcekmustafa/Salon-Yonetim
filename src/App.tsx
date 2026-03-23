@@ -51,7 +51,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => (
 );
 
 const FinanceRoute = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute anyRole={['super_admin', 'salon_admin']}>
+  <ProtectedRoute anyRole={['super_admin', 'salon_admin', 'staff']}>
     <RoleLayout>{children}</RoleLayout>
   </ProtectedRoute>
 );
