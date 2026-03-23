@@ -311,6 +311,21 @@ export default function CustomersPage() {
             {form.source_type && (
               <div className="space-y-2"><Label className="text-xs font-semibold">Kaynak Detayı <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input value={form.source_detail} onChange={e => set('source_detail', e.target.value)} placeholder="Kaynak adı veya tanımı yazın..." className="h-10" /></div>
             )}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">İşlem Yapan Personel <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label>
+              <Select value={form.assigned_staff_id} onValueChange={v => set('assigned_staff_id', v)}>
+                <SelectTrigger className="h-10"><SelectValue placeholder="Personel seçin" /></SelectTrigger>
+                <SelectContent>
+                  {staff.filter((s: any) => s.is_active !== false).map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                  <SelectItem value="__other__">Diğer</SelectItem>
+                </SelectContent>
+              </Select>
+              {form.assigned_staff_id === '__other__' && (
+                <Input value={form.assigned_staff_other} onChange={e => set('assigned_staff_other', e.target.value)} placeholder="Personel adını yazın..." className="h-10" />
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
