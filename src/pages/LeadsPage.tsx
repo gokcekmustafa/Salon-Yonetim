@@ -65,7 +65,7 @@ const NOTE_TYPE_COLORS: Record<string, string> = {
 
 export default function LeadsPage() {
   const { hasPermission } = usePermissions();
-  const { user, currentSalonId, isSuperAdmin } = useAuth();
+  const { user, currentSalonId, isSuperAdmin, isSalonAdmin } = useAuth();
   const { addCustomer, staff: salonStaff } = useSalonData();
 
   const activeStaff = salonStaff.filter(s => s.is_active);
@@ -226,7 +226,22 @@ export default function LeadsPage() {
     setSheetOpen(false);
   };
 
+  const canDeleteLead = (lead: Lead): boolean => {
+    if (lead.status !== 'won') return false; // Only won leads can be deleted
+    if (isSuperAdmin) return true;
+    if (isSalonAdmin && hasPermission('can_delete_leads')) return true;
+    return false;
+  };
+
   const handleDelete = async (lead: Lead) => {
+    if (!canDeleteLead(lead)) {
+      if (lead.status !== 'won') {
+        toast.error('Sadece "Kazanıldı" durumundaki adaylar silinebilir.');
+      } else {
+        toast.error('Aday müşteri silme yetkiniz bulunmamaktadır.');
+      }
+      return;
+    }
     if (!confirm(`"${lead.name}" adayını silmek istiyor musunuz?`)) return;
     const { error } = await supabase.from('leads').delete().eq('id', lead.id);
     if (!error) { toast.success('Aday silindi'); fetchLeads(); setSheetOpen(false); }
@@ -517,7 +532,7 @@ export default function LeadsPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  {!selectedLead.converted_customer_id && (
+                  {!selectedLead.converted_customer_id && selectedLead.status !== 'won' && (
                     <Button onClick={() => handleConvert(selectedLead)} variant="outline" className="gap-2 flex-1 text-success hover:text-success">
                       <ArrowRightLeft className="h-4 w-4" /> Müşteriye Dönüştür
                     </Button>
@@ -525,9 +540,11 @@ export default function LeadsPage() {
                   <Button onClick={() => openEdit(selectedLead)} variant="outline" className="gap-2">
                     Düzenle
                   </Button>
-                  <Button onClick={() => handleDelete(selectedLead)} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {canDeleteLead(selectedLead) && (
+                    <Button onClick={() => handleDelete(selectedLead)} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
 
                 {selectedLead.converted_customer_id && (

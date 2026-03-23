@@ -1,0 +1,1 @@
+ALTER TABLE public.salon_permissions ADD COLUMN can_delete_leads boolean NOT NULL DEFAULT false;

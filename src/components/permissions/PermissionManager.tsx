@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Shield, Calendar, Users, UserCheck, Wallet, LayoutDashboard, Bell, MessageSquare, Building2, Scissors, UserPlus, Globe } from 'lucide-react';
+import { Loader2, Shield, Calendar, Users, UserCheck, Wallet, LayoutDashboard, Bell, MessageSquare, Building2, Scissors, UserPlus, Globe, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { PERMISSION_LABELS, type SalonPermissions } from '@/hooks/usePermissions';
@@ -21,6 +21,7 @@ const ICONS: Record<string, React.ReactNode> = {
   can_manage_services: <Scissors className="h-4 w-4" />,
   can_manage_leads: <UserPlus className="h-4 w-4" />,
   can_manage_online_booking: <Globe className="h-4 w-4" />,
+  can_delete_leads: <Trash2 className="h-4 w-4" />,
 };
 
 const ALL_KEYS = Object.keys(PERMISSION_LABELS) as (keyof SalonPermissions)[];

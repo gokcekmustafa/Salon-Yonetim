@@ -1284,6 +1284,7 @@ export type Database = {
       salon_permissions: {
         Row: {
           can_add_branches: boolean
+          can_delete_leads: boolean
           can_manage_announcements: boolean
           can_manage_appointments: boolean
           can_manage_customers: boolean
@@ -1301,6 +1302,7 @@ export type Database = {
         }
         Insert: {
           can_add_branches?: boolean
+          can_delete_leads?: boolean
           can_manage_announcements?: boolean
           can_manage_appointments?: boolean
           can_manage_customers?: boolean
@@ -1318,6 +1320,7 @@ export type Database = {
         }
         Update: {
           can_add_branches?: boolean
+          can_delete_leads?: boolean
           can_manage_announcements?: boolean
           can_manage_appointments?: boolean
           can_manage_customers?: boolean
