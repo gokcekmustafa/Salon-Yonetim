@@ -276,6 +276,7 @@ export default function ServicesPage() {
   };
 
   return (
+    <StaffPageGuard permissionKey="page_services" featureLabel="Hizmetler">
     <div className="page-container animate-in">
       <div className="page-header">
         <div>
