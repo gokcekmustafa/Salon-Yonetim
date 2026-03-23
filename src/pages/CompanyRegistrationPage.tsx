@@ -36,7 +36,7 @@ type FormState = {
 };
 
 const ROLE_OPTIONS = ['İşletme Sahibi', 'Estetisyen', 'Satış Temsilcisi', 'Aracı'];
-const USERNAME_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const USERNAME_REGEX = /^[a-z0-9][a-z0-9._]*$/;
 const PHONE_REGEX = /^05\d{2} \d{3} \d{2} \d{2}$/;
 
 const INITIAL_FORM: FormState = {
