@@ -11,6 +11,7 @@ export type SalonNavigationKey =
   | 'personel'
   | 'raporlar'
   | 'hizmetler'
+  | 'adaylar'
   | 'taksitler'
   | 'performans'
   | 'subeler'
@@ -38,12 +39,13 @@ const NAVIGATION_ITEMS: Omit<SalonNavigationItem, 'isVisible'>[] = [
   { key: 'personel', title: 'Personel', url: '/personel', locked: false, placement: 'topbar', defaultOrder: 4 },
   { key: 'raporlar', title: 'Raporlar', url: '/raporlar', locked: false, placement: 'topbar', defaultOrder: 5 },
   { key: 'hizmetler', title: 'Hizmetler', url: '/hizmetler', locked: false, placement: 'more', defaultOrder: 6 },
-  { key: 'taksitler', title: 'Taksitler', url: '/taksitler', locked: false, placement: 'more', defaultOrder: 7 },
-  { key: 'performans', title: 'Performans', url: '/performans', locked: false, placement: 'more', defaultOrder: 8 },
-  { key: 'subeler', title: 'Şubeler', url: '/subeler', locked: false, placement: 'more', defaultOrder: 9 },
-  { key: 'odalar', title: 'Odalar', url: '/odalar', locked: false, placement: 'more', defaultOrder: 10 },
-  { key: 'sozlesmeler', title: 'Sözleşmeler', url: '/sozlesmeler', locked: false, placement: 'more', defaultOrder: 11 },
-  { key: 'maas', title: 'Maaş & Ödeme', url: '/maas', locked: false, placement: 'more', defaultOrder: 12 },
+  { key: 'adaylar', title: 'Aday Müşteriler', url: '/adaylar', locked: false, placement: 'more', defaultOrder: 7 },
+  { key: 'taksitler', title: 'Taksitler', url: '/taksitler', locked: false, placement: 'more', defaultOrder: 8 },
+  { key: 'performans', title: 'Performans', url: '/performans', locked: false, placement: 'more', defaultOrder: 9 },
+  { key: 'subeler', title: 'Şubeler', url: '/subeler', locked: false, placement: 'more', defaultOrder: 10 },
+  { key: 'odalar', title: 'Odalar', url: '/odalar', locked: false, placement: 'more', defaultOrder: 11 },
+  { key: 'sozlesmeler', title: 'Sözleşmeler', url: '/sozlesmeler', locked: false, placement: 'more', defaultOrder: 12 },
+  { key: 'maas', title: 'Maaş & Ödeme', url: '/maas', locked: false, placement: 'more', defaultOrder: 13 },
 ];
 
 const isRelevantPayload = (
