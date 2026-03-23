@@ -26,7 +26,6 @@ import {
   UserCheck,
   Wallet,
   Settings,
-  
   Building2,
   BarChart3,
   Globe,
@@ -40,6 +39,7 @@ import {
   CreditCard,
   TrendingUp,
   LifeBuoy,
+  Package,
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
