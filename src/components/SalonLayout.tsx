@@ -237,7 +237,9 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            </div>
           </nav>
+        )}
         )}
       </header>
 
