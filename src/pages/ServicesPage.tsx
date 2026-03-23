@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData, DbService } from '@/hooks/useSalonData';
