@@ -398,6 +398,9 @@ export default function SuperAdminSalonsPage() {
       {/* Registration Requests */}
       {hasPlatformPermission('can_manage_salons') && <RegistrationRequestManager />}
 
+      {/* Standard Rooms */}
+      {hasPlatformPermission('can_manage_salons') && <StandardRoomManager />}
+
       {/* Subscription Alert Settings */}
       {hasPlatformPermission('can_manage_settings') && <SubscriptionAlertSettings />}
 
