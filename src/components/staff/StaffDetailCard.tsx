@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { User, Loader2, Pencil, Save, X, Camera, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { sanitizeUsername } from '@/lib/usernameUtils';
 
 type StaffDetail = {
   id: string;
