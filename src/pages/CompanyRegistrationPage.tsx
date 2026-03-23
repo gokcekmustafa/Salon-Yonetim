@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { sanitizeUsername } from '@/lib/usernameUtils';
 import { TURKEY_CITIES, getDistrictsByCity, getNeighborhoodsByDistrict } from '@/lib/turkeyLocations';
 
 type FormState = {
