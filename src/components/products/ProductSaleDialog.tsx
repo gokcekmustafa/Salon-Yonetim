@@ -23,9 +23,11 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   paymentMethod?: string;
+  customerId?: string;
+  customerName?: string;
 }
 
-export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash' }: Props) {
+export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash', customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
   const qc = useQueryClient();
   const salonId = currentSalonId;
