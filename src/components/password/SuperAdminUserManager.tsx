@@ -207,6 +207,7 @@ function SalonAdminGroup({ admin, staffList, roleLabel, roleColor, onReset, onEm
 }
 
 export function SuperAdminUserManager() {
+  const [users, setUsers] = useState<EnrichedUser[]>([]);
   const [salons, setSalons] = useState<SalonOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
