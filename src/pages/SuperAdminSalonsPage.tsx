@@ -402,6 +402,9 @@ export default function SuperAdminSalonsPage() {
       {/* Standard Rooms */}
       {hasPlatformPermission('can_manage_salons') && <StandardRoomManager />}
 
+      {/* Standard Services */}
+      {hasPlatformPermission('can_manage_salons') && <StandardServiceManager />}
+
       {/* Subscription Alert Settings */}
       {hasPlatformPermission('can_manage_settings') && <SubscriptionAlertSettings />}
 
