@@ -470,6 +470,7 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
   if (!hasPermission('can_manage_appointments')) return <NoPermission feature="Randevu Yönetimi" />;
 
   return (
+    <StaffPageGuard permissionKey="page_appointments" featureLabel="Randevular">
     <div className="page-container animate-in">
       {/* Header */}
       <div className="flex flex-col gap-3">
