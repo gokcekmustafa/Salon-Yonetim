@@ -189,8 +189,8 @@ export default function CustomersPage() {
                 <div className="space-y-0.5 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-sm">{c.name}</p>
-                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : 'default'} className="text-[10px]">
-                      {c.customer_type === 'single_session' ? 'Tek Seans' : 'Taksitli'}
+                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : c.customer_type === 'cash' ? 'outline' : 'default'} className="text-[10px]">
+                      {c.customer_type === 'single_session' ? 'Tek Seans' : c.customer_type === 'cash' ? 'Peşin' : 'Taksitli'}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">{c.phone}</p>
