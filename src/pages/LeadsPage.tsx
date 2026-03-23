@@ -226,7 +226,22 @@ export default function LeadsPage() {
     setSheetOpen(false);
   };
 
+  const canDeleteLead = (lead: Lead): boolean => {
+    if (lead.status !== 'won') return false; // Only won leads can be deleted
+    if (isSuperAdmin) return true;
+    if (isSalonAdmin && hasPermission('can_delete_leads')) return true;
+    return false;
+  };
+
   const handleDelete = async (lead: Lead) => {
+    if (!canDeleteLead(lead)) {
+      if (lead.status !== 'won') {
+        toast.error('Sadece "Kazanıldı" durumundaki adaylar silinebilir.');
+      } else {
+        toast.error('Aday müşteri silme yetkiniz bulunmamaktadır.');
+      }
+      return;
+    }
     if (!confirm(`"${lead.name}" adayını silmek istiyor musunuz?`)) return;
     const { error } = await supabase.from('leads').delete().eq('id', lead.id);
     if (!error) { toast.success('Aday silindi'); fetchLeads(); setSheetOpen(false); }
