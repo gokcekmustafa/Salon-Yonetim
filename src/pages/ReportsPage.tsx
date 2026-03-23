@@ -442,7 +442,6 @@ export default function ReportsPage() {
             {cashBoxSummaries.map(box => {
               const Icon = CASH_BOX_ICONS[box.payment_method] || Wallet;
               return (
-    <StaffPageGuard permissionKey="page_reports" featureLabel="Raporlar">
                 <Card key={box.id}>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">{box.name}</CardTitle>

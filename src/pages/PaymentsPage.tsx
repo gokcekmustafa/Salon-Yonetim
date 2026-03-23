@@ -185,7 +185,7 @@ export default function PaymentsPage() {
         {boxSummaries.map(box => {
           const Icon = BOX_ICONS[box.payment_method] || Wallet;
           return (
-    <StaffPageGuard permissionKey="page_cash" featureLabel="Kasa">
+    
             <div key={box.id} className="stat-card p-5">
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
