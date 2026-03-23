@@ -112,16 +112,31 @@ export default function CustomersPage() {
     if (editing) {
       await updateCustomer(editing.id, { name: form.name, phone: form.phone, ...optionals });
       toast.success('Müşteri güncellendi.');
+      setSaving(false);
+      setDialogOpen(false);
     } else {
-      await addCustomer({ name: form.name, phone: form.phone, ...optionals });
+      const result = await addCustomer({ name: form.name, phone: form.phone, ...optionals });
       toast.success('Müşteri eklendi.');
+      setSaving(false);
+      setDialogOpen(false);
+      // Auto-open sale dialog for new customer
+      if (result && !result.error) {
+        // Find the newly added customer from refreshed list
+        setTimeout(() => {
+          const newCustomer = customers.find(c => c.phone === form.phone && c.name === form.name);
+          if (newCustomer) {
+            setSaleCustomer(newCustomer);
+            setSaleDialogOpen(true);
+          }
+        }, 500);
+      }
     }
-    setSaving(false);
-    setDialogOpen(false);
   };
 
   const handleDelete = async (c: DbCustomer) => { await deleteCustomer(c.id); toast.success('Müşteri silindi.'); };
   const openHistory = (c: DbCustomer) => { setSelectedCustomer(c); setHistoryOpen(true); };
+  const openSale = (c: DbCustomer) => { setSaleCustomer(c); setSaleDialogOpen(true); };
+  const openSalesHistory = (c: DbCustomer) => { setSaleCustomer(c); setSalesHistoryOpen(true); };
 
   const customerAppointments = selectedCustomer
     ? appointments.filter(a => a.customer_id === selectedCustomer.id).sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
