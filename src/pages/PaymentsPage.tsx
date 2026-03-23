@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 type DateRange = 'daily' | 'weekly' | 'monthly' | 'yearly';
 type CashBox = { id: string; name: string; payment_method: string; salon_id: string; is_active: boolean };
@@ -183,6 +184,7 @@ export default function PaymentsPage() {
         {boxSummaries.map(box => {
           const Icon = BOX_ICONS[box.payment_method] || Wallet;
           return (
+    <StaffPageGuard permissionKey="page_cash" featureLabel="Kasa">
             <div key={box.id} className="stat-card p-5">
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
@@ -275,4 +277,5 @@ export default function PaymentsPage() {
       </Tabs>
     </div>
   );
+    </StaffPageGuard>
 }

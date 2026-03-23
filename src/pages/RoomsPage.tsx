@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, DoorOpen, Pencil, Trash2, Loader2, Users, ListPlus } from 'lucide-react';
 import { toast } from 'sonner';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 interface Room {
   id: string;
@@ -179,6 +180,7 @@ export default function RoomsPage() {
   }
 
   return (
+    <StaffPageGuard permissionKey="page_rooms" featureLabel="Odalar">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -392,4 +394,5 @@ export default function RoomsPage() {
       </AlertDialog>
     </div>
   );
+    </StaffPageGuard>
 }

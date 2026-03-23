@@ -26,6 +26,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 import { getEffectiveAppointmentStatus, type AppointmentUiStatus } from '@/lib/appointmentStatus';
 import { useQuery } from '@tanstack/react-query';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 type ViewMode = 'day' | 'week';
 type ListGroupMode = 'room' | 'staff' | 'list' | null;
@@ -872,6 +873,7 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
                             {group.services.map(s => {
                               const isSelected = form.serviceIds.includes(s.id);
                               return (
+    <StaffPageGuard permissionKey="page_appointments" featureLabel="Randevular">
                                 <label
                                   key={s.id}
                                   className="flex items-start gap-1.5 p-2 rounded-md cursor-pointer transition-colors border"
@@ -1127,4 +1129,5 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
       </Dialog>
     </div>
   );
+    </StaffPageGuard>
 }

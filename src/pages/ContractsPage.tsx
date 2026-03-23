@@ -18,6 +18,7 @@ import { FileText, Upload, Plus, Printer, Eye, Trash2, User, Banknote, CreditCar
 import { format, addMonths } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 type ContractTemplate = {
   id: string; salon_id: string; name: string; description: string | null;
@@ -665,6 +666,7 @@ export default function ContractsPage() {
             const data = previewContract.filled_data as Record<string, string>;
             const instPayments = getContractInstallments(previewContract);
             return (
+    <StaffPageGuard permissionKey="page_contracts" featureLabel="Sözleşmeler">
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div><span className="font-medium text-muted-foreground">Şablon:</span><p>{previewContract.template_name}</p></div>
@@ -715,4 +717,5 @@ export default function ContractsPage() {
       </Dialog>
     </div>
   );
+    </StaffPageGuard>
 }

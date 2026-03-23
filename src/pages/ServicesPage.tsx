@@ -14,6 +14,7 @@ import { Plus, Pencil, Trash2, Scissors, Loader2, ChevronDown, ChevronRight, Fol
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 type ServiceCategory = {
   id: string; salon_id: string; name: string; sort_order: number; created_at: string;
@@ -469,6 +470,7 @@ export default function ServicesPage() {
                 const allSelected = catSvcs.every(s => stdSelected.has(s.id));
                 const someSelected = catSvcs.some(s => stdSelected.has(s.id));
                 return (
+    <StaffPageGuard permissionKey="page_services" featureLabel="Hizmetler">
                   <div key={cat} className="rounded-xl border border-border/60 overflow-hidden">
                     <div className="flex items-center gap-2 px-3 py-2 bg-muted/30">
                       <Checkbox
@@ -519,4 +521,5 @@ export default function ServicesPage() {
       </Dialog>
     </div>
   );
+    </StaffPageGuard>
 }

@@ -17,6 +17,7 @@ import { format, parseISO, isBefore, startOfDay, addMonths } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 type Installment = {
   id: string; salon_id: string; customer_id: string;
@@ -277,6 +278,7 @@ export default function InstallmentsPage() {
             const paidTotal = instPayments.filter(p => p.is_paid).reduce((s, p) => s + Number(p.paid_amount), 0);
 
             return (
+    <StaffPageGuard permissionKey="page_installments" featureLabel="Taksitler">
               <div key={inst.id} className={`p-4 rounded-xl border ${hasOverdue ? 'border-destructive/40 bg-destructive/5' : 'border-border/60'}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -423,4 +425,5 @@ export default function InstallmentsPage() {
       </Dialog>
     </div>
   );
+    </StaffPageGuard>
 }

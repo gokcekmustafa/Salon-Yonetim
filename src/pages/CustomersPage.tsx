@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
+import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
 const CUSTOMER_COLUMNS: ColumnMapping[] = [
   { excelHeader: 'Ad Soyad', dbKey: 'name', required: true },
@@ -126,6 +127,7 @@ export default function CustomersPage() {
   const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }));
 
   return (
+    <StaffPageGuard permissionKey="page_customers" featureLabel="Müşteriler">
     <div className="page-container animate-in">
       <div className="page-header">
         <div>
@@ -362,4 +364,5 @@ export default function CustomersPage() {
       </Dialog>
     </div>
   );
+    </StaffPageGuard>
 }
