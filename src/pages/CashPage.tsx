@@ -26,6 +26,7 @@ import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
+import { ProductSaleDialog } from '@/components/products/ProductSaleDialog';
 
 type CashBox = { id: string; salon_id: string; name: string; payment_method: string; is_active: boolean };
 type CashTransaction = {
