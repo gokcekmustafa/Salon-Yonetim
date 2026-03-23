@@ -59,6 +59,7 @@ export const PERMISSION_ICONS: Record<keyof SalonPermissions, string> = {
   can_manage_services: 'Scissors',
   can_manage_leads: 'UserPlus',
   can_manage_online_booking: 'Globe',
+  can_delete_leads: 'Trash2',
 };
 
 export function usePermissions() {
