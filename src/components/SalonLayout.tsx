@@ -193,7 +193,11 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
         </div>
 
         {mobileMenuOpen && (
-          <nav className="lg:hidden border-t px-4 py-3 flex flex-wrap gap-2" style={{ borderColor: '#e8e8e8' }}>
+          <nav className="lg:hidden border-t px-4 py-3 flex flex-col gap-2" style={{ borderColor: '#e8e8e8' }}>
+            <div className="sm:hidden mb-1">
+              <BranchSelector />
+            </div>
+            <div className="flex flex-wrap gap-2">
             {topbarItems.map((item) => (
               <button
                 key={item.key}
