@@ -22,6 +22,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
 import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
+import { CustomerSaleDialog } from '@/components/sales/CustomerSaleDialog';
+import { CustomerSalesHistory } from '@/components/sales/CustomerSalesHistory';
 
 const CUSTOMER_COLUMNS: ColumnMapping[] = [
   { excelHeader: 'Ad Soyad', dbKey: 'name', required: true },
