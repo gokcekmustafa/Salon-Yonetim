@@ -332,7 +332,13 @@ export default function InstallmentsPage() {
         <CardContent className="space-y-3">
           {installments.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Henüz taksit planı yok</p>
-          ) : installments.map(inst => {
+          ) : installments.filter(inst => {
+            if (filterStatus === 'all') return true;
+            const instPays = getInstPayments(inst.id);
+            if (filterStatus === 'overdue') return instPays.some(p => !p.is_paid && isBefore(parseISO(p.due_date), today));
+            if (filterStatus === 'upcoming') return instPays.some(p => !p.is_paid && !isBefore(parseISO(p.due_date), today));
+            return true;
+          }).map(inst => {
             const instPayments = getInstPayments(inst.id);
             const paid = instPayments.filter(p => p.is_paid).length;
             const hasOverdue = instPayments.some(p => !p.is_paid && isBefore(parseISO(p.due_date), today));
