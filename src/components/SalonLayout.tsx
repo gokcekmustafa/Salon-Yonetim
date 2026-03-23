@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useSalonNavigation } from '@/hooks/useSalonNavigation';
 import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { BranchSelector } from '@/components/BranchSelector';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
