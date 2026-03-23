@@ -1730,6 +1730,36 @@ export type Database = {
           },
         ]
       }
+      standard_rooms: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          room_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          room_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          room_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           assigned_to: string | null
