@@ -157,6 +157,21 @@ export function RegistrationRequestManager() {
     setRejecting(false);
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Bu başvuruyu silmek istediğinize emin misiniz?')) return;
+    const { error } = await (supabase as any)
+      .from('company_registration_requests')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast.error('Silme işlemi başarısız');
+    } else {
+      toast.success('Başvuru silindi');
+      fetchRequests();
+    }
+  };
+
   const filtered = requests.filter(r =>
     r.company_name.toLowerCase().includes(search.toLowerCase()) ||
     r.full_name.toLowerCase().includes(search.toLowerCase()) ||
