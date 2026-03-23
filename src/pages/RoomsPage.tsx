@@ -32,6 +32,7 @@ export default function RoomsPage() {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [deleteRoom, setDeleteRoom] = useState<Room | null>(null);
   const [saving, setSaving] = useState(false);
+  useFormGuard(dialogOpen);
 
   const [name, setName] = useState('');
   const [roomNumber, setRoomNumber] = useState('');

@@ -53,6 +53,7 @@ export default function CustomersPage() {
   const [editing, setEditing] = useState<DbCustomer | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  useFormGuard(dialogOpen);
 
   useEffect(() => {
     if (searchParams.get('yeni') === '1' && !loading) {

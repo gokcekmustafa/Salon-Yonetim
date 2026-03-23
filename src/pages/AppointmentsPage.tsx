@@ -52,6 +52,7 @@ export default function AppointmentsPage() {
   const [filteredStaffId, setFilteredStaffId] = useState<string | null>(null);
   const [filteredBranchId, setFilteredBranchId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  useFormGuard(dialogOpen);
   const [detailApt, setDetailApt] = useState<DbAppointment | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState('');

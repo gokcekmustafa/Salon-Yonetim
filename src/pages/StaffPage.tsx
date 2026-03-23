@@ -23,6 +23,7 @@ export default function StaffPage() {
   const { staff, addStaff, branches, loading, appointments, services, customers, payments, refetch } = useSalonData();
   const [addOpen, setAddOpen] = useState(false);
   const [detailStaff, setDetailStaff] = useState<DbStaff | null>(null);
+  useFormGuard(addOpen || !!detailStaff);
 
   if (!hasPermission('can_manage_staff')) return <NoPermission feature="Personel Yönetimi" />;
 

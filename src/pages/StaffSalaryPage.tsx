@@ -77,6 +77,7 @@ export default function StaffSalaryPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('monthly');
   const [payDialogOpen, setPayDialogOpen] = useState(false);
   const [salaryDialogOpen, setSalaryDialogOpen] = useState(false);
+  useFormGuard(payDialogOpen || salaryDialogOpen);
   const [salaryStaffId, setSalaryStaffId] = useState('');
   const [salaryAmount, setSalaryAmount] = useState('');
 
