@@ -44,6 +44,7 @@ export const PERMISSION_LABELS: Record<keyof SalonPermissions, string> = {
   can_manage_services: 'Hizmet Yönetimi',
   can_manage_leads: 'Aday Müşteri Yönetimi',
   can_manage_online_booking: 'Online Randevu Yönetimi',
+  can_delete_leads: 'Aday Müşteri Silme Yetkisi',
 };
 
 export const PERMISSION_ICONS: Record<keyof SalonPermissions, string> = {
