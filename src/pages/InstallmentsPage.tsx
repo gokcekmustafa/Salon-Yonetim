@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Loader2, Plus, CreditCard, AlertTriangle, CheckCircle2, Clock, Banknote } from 'lucide-react';
-import { format, parseISO, isBefore, startOfDay, addMonths } from 'date-fns';
+import { format, parseISO, isBefore, startOfDay, addMonths, addDays, addWeeks } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -56,6 +56,9 @@ export default function InstallmentsPage() {
   const [formCount, setFormCount] = useState('3');
   const [formNotes, setFormNotes] = useState('');
   const [formStartDate, setFormStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [formInterval, setFormInterval] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly');
+  const [formDownPayment, setFormDownPayment] = useState('0');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'overdue' | 'upcoming'>('all');
 
   const salonId = currentSalonId;
 
@@ -84,27 +87,56 @@ export default function InstallmentsPage() {
       if (!salonId || !user) throw new Error('Missing');
       const total = parseFloat(formTotal);
       const count = parseInt(formCount);
+      const dp = parseFloat(formDownPayment) || 0;
       if (isNaN(total) || total <= 0) throw new Error('Geçerli tutar girin');
       if (!formCustomerId) throw new Error('Müşteri seçin');
+
+      const remaining = Math.max(0, total - dp);
+      if (remaining <= 0) throw new Error('Taksitlendirilecek tutar 0 olamaz');
+
+      // Down payment cash entry
+      if (dp > 0) {
+        const custName = customers.find(c => c.id === formCustomerId)?.name || '';
+        const { error: cashErr } = await supabase.from('cash_transactions').insert({
+          salon_id: salonId,
+          type: 'income',
+          amount: dp,
+          description: `Peşinat - ${custName}`,
+          payment_method: 'cash',
+          created_by: user.id,
+        });
+        if (cashErr) throw cashErr;
+      }
 
       const { data: inst, error } = await supabase.from('installments').insert({
         salon_id: salonId,
         customer_id: formCustomerId,
-        total_amount: total,
+        total_amount: remaining,
         installment_count: count,
         notes: formNotes || null,
         created_by: user.id,
       } as any).select('id').single();
       if (error || !inst) throw error || new Error('Failed');
 
-      const perAmount = Math.round((total / count) * 100) / 100;
-      const installmentPayments = Array.from({ length: count }, (_, i) => ({
-        installment_id: inst.id,
-        salon_id: salonId,
-        due_date: format(addMonths(new Date(formStartDate), i), 'yyyy-MM-dd'),
-        amount: i === count - 1 ? Math.round((total - perAmount * (count - 1)) * 100) / 100 : perAmount,
-        installment_number: i + 1,
-      }));
+      const perAmount = Math.round((remaining / count) * 100) / 100;
+      const installmentPayments = Array.from({ length: count }, (_, i) => {
+        let dueDate: Date;
+        const start = new Date(formStartDate);
+        if (formInterval === 'weekly') {
+          dueDate = addWeeks(start, i);
+        } else if (formInterval === 'biweekly') {
+          dueDate = addDays(start, i * 15);
+        } else {
+          dueDate = addMonths(start, i);
+        }
+        return {
+          installment_id: inst.id,
+          salon_id: salonId,
+          due_date: format(dueDate, 'yyyy-MM-dd'),
+          amount: i === count - 1 ? Math.round((remaining - perAmount * (count - 1)) * 100) / 100 : perAmount,
+          installment_number: i + 1,
+        };
+      });
 
       const { error: payErr } = await supabase.from('installment_payments').insert(installmentPayments as any);
       if (payErr) throw payErr;
@@ -112,16 +144,17 @@ export default function InstallmentsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['installments', salonId] });
       queryClient.invalidateQueries({ queryKey: ['installment_payments', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['cash_transactions'] });
       toast.success('Taksit planı oluşturuldu');
       setDialogOpen(false);
-      setFormCustomerId(''); setFormTotal(''); setFormCount('3'); setFormNotes('');
+      setFormCustomerId(''); setFormTotal(''); setFormCount('3'); setFormNotes(''); setFormDownPayment('0');
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const markPaidMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedPayment) throw new Error('No payment');
+      if (!selectedPayment || !salonId || !user) throw new Error('No payment');
       const { error } = await supabase.from('installment_payments').update({
         is_paid: true,
         paid_amount: selectedPayment.amount,
@@ -129,9 +162,25 @@ export default function InstallmentsPage() {
         payment_method: payMethod,
       } as any).eq('id', selectedPayment.id);
       if (error) throw error;
+
+      // Find installment to get customer name
+      const inst = installments.find(i => i.id === selectedPayment.installment_id);
+      const custName = inst ? getCustomerName(inst.customer_id) : '';
+
+      // Auto cash transaction
+      const { error: cashErr } = await supabase.from('cash_transactions').insert({
+        salon_id: salonId,
+        type: 'income',
+        amount: selectedPayment.amount,
+        description: `Taksit tahsilatı - ${custName} (Taksit ${selectedPayment.installment_number})`,
+        payment_method: payMethod,
+        created_by: user.id,
+      });
+      if (cashErr) throw cashErr;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['installment_payments', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['cash_transactions'] });
       toast.success('Taksit ödendi olarak işaretlendi');
       setPayDialogOpen(false);
       setSelectedPayment(null);
@@ -172,6 +221,17 @@ export default function InstallmentsPage() {
         </div>
         <Button onClick={() => setDialogOpen(true)} className="btn-gradient gap-2">
           <Plus className="h-4 w-4" /> Yeni Taksit
+        </Button>
+      </div>
+
+      {/* Filter Buttons */}
+      <div className="flex gap-2">
+        <Button size="sm" variant={filterStatus === 'all' ? 'default' : 'outline'} onClick={() => setFilterStatus('all')}>Tümü</Button>
+        <Button size="sm" variant={filterStatus === 'overdue' ? 'destructive' : 'outline'} onClick={() => setFilterStatus('overdue')}>
+          Gecikmiş ({overduePayments.length})
+        </Button>
+        <Button size="sm" variant={filterStatus === 'upcoming' ? 'default' : 'outline'} onClick={() => setFilterStatus('upcoming')}>
+          Yaklaşan
         </Button>
       </div>
 
@@ -272,7 +332,13 @@ export default function InstallmentsPage() {
         <CardContent className="space-y-3">
           {installments.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Henüz taksit planı yok</p>
-          ) : installments.map(inst => {
+          ) : installments.filter(inst => {
+            if (filterStatus === 'all') return true;
+            const instPays = getInstPayments(inst.id);
+            if (filterStatus === 'overdue') return instPays.some(p => !p.is_paid && isBefore(parseISO(p.due_date), today));
+            if (filterStatus === 'upcoming') return instPays.some(p => !p.is_paid && !isBefore(parseISO(p.due_date), today));
+            return true;
+          }).map(inst => {
             const instPayments = getInstPayments(inst.id);
             const paid = instPayments.filter(p => p.is_paid).length;
             const hasOverdue = instPayments.some(p => !p.is_paid && isBefore(parseISO(p.due_date), today));
@@ -361,6 +427,10 @@ export default function InstallmentsPage() {
               <Input type="number" min="0" step="0.01" value={formTotal} onChange={e => setFormTotal(e.target.value)} placeholder="0.00" className="h-10" />
             </div>
             <div className="space-y-2">
+              <Label className="text-xs font-semibold">Peşinat (₺)</Label>
+              <Input type="number" min="0" value={formDownPayment} onChange={e => setFormDownPayment(e.target.value)} placeholder="0" className="h-10" />
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs font-semibold">Taksit Sayısı *</Label>
               <Select value={formCount} onValueChange={setFormCount}>
                 <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
@@ -372,13 +442,34 @@ export default function InstallmentsPage() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label className="text-xs font-semibold">Taksit Aralığı</Label>
+              <Select value={formInterval} onValueChange={(v) => setFormInterval(v as any)}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Haftalık</SelectItem>
+                  <SelectItem value="biweekly">15 Günlük</SelectItem>
+                  <SelectItem value="monthly">Aylık</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs font-semibold">İlk Taksit Tarihi</Label>
               <Input type="date" value={formStartDate} onChange={e => setFormStartDate(e.target.value)} className="h-10" />
             </div>
             {formTotal && formCount && (
-              <div className="p-3 rounded-lg bg-muted/50 border">
-                <p className="text-xs text-muted-foreground">Aylık taksit tutarı:</p>
-                <p className="font-bold text-lg">₺{(parseFloat(formTotal || '0') / parseInt(formCount || '1')).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <div className="p-3 rounded-lg bg-muted/50 border space-y-1">
+                {parseFloat(formDownPayment) > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Peşinat:</span>
+                    <span className="font-medium">₺{parseFloat(formDownPayment).toLocaleString('tr-TR')}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Taksitlendirilecek:</span>
+                  <span className="font-medium">₺{Math.max(0, parseFloat(formTotal || '0') - (parseFloat(formDownPayment) || 0)).toLocaleString('tr-TR')}</span>
+                </div>
+                <p className="text-xs text-muted-foreground pt-1 border-t">Taksit tutarı:</p>
+                <p className="font-bold text-lg">₺{(Math.max(0, parseFloat(formTotal || '0') - (parseFloat(formDownPayment) || 0)) / parseInt(formCount || '1')).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             )}
             <div className="space-y-2">

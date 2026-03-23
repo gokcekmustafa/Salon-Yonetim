@@ -1,12 +1,14 @@
 import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Wallet, TrendingUp, Loader2, Clock, Plus, BarChart3, UserCheck, CircleDot } from 'lucide-react';
-import { format, isToday, parseISO, isSameMonth } from 'date-fns';
+import { Calendar, Users, Wallet, TrendingUp, Loader2, Clock, Plus, BarChart3, UserCheck, CircleDot, AlertTriangle } from 'lucide-react';
+import { format, isToday, parseISO, isSameMonth, isBefore, startOfDay, addDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import { SubscriptionAlert } from '@/components/notifications/SubscriptionAlert';
 
@@ -14,6 +16,24 @@ export default function Dashboard() {
   const { isSuperAdmin, currentSalonId, profile } = useAuth();
   const { appointments, customers, payments, staff, services, loading, salon } = useBranchFilteredData();
   const navigate = useNavigate();
+
+  const { data: overdueInstallments = [] } = useQuery({
+    queryKey: ['overdue_installments_dashboard', currentSalonId],
+    queryFn: async () => {
+      if (!currentSalonId) return [];
+      const today = format(startOfDay(new Date()), 'yyyy-MM-dd');
+      const { data } = await supabase
+        .from('installment_payments')
+        .select('*, installments(customer_id)')
+        .eq('salon_id', currentSalonId)
+        .eq('is_paid', false)
+        .lt('due_date', today)
+        .order('due_date')
+        .limit(5);
+      return data || [];
+    },
+    enabled: !!currentSalonId,
+  });
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
@@ -91,6 +111,36 @@ export default function Dashboard() {
           expiresAt={salon.subscription_expires_at}
           plan={salon.subscription_plan || 'free'}
         />
+      )}
+
+      {overdueInstallments.length > 0 && (
+        <Card className="border-destructive/40 bg-destructive/5" style={salonCard}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" /> Gecikmiş Taksitler ({overdueInstallments.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {overdueInstallments.map((p: any) => {
+              const custId = p.installments?.customer_id;
+              const custName = custId ? (customers.find(c => c.id === custId)?.name || '-') : '-';
+              return (
+                <div key={p.id} className="flex items-center justify-between p-2.5 rounded-lg border border-destructive/20 bg-card">
+                  <div>
+                    <p className="text-sm font-medium">{custName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Taksit {p.installment_number} • Vade: {format(parseISO(p.due_date), 'd MMM yyyy', { locale: tr })}
+                    </p>
+                  </div>
+                  <span className="font-bold text-sm text-destructive">₺{Number(p.amount).toLocaleString('tr-TR')}</span>
+                </div>
+              );
+            })}
+            <Button variant="outline" size="sm" className="w-full mt-1" onClick={() => navigate('/taksitler')}>
+              Tüm Taksitleri Gör
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       <div>
