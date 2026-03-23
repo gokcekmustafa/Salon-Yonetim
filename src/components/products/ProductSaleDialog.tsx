@@ -36,6 +36,17 @@ export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash', 
   const [selectedProductId, setSelectedProductId] = useState('');
   const [saving, setSaving] = useState(false);
   const [method, setMethod] = useState(paymentMethod);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(customerId || '');
+
+  const { data: customers = [] } = useQuery({
+    queryKey: ['customers_for_sale', salonId],
+    queryFn: async () => {
+      if (!salonId) return [];
+      const { data } = await supabase.from('customers').select('id, name, phone').eq('salon_id', salonId).order('name');
+      return data || [];
+    },
+    enabled: !!salonId && open,
+  });
 
   const { data: products = [] } = useQuery({
     queryKey: ['products', salonId],
