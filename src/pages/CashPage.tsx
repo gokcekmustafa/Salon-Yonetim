@@ -284,6 +284,7 @@ export default function CashPage() {
   };
 
   return (
+    <StaffPageGuard permissionKey="page_payments" featureLabel="Kasa Yönetimi">
     <div className="page-container animate-in">
       <div className="page-header">
         <div>
