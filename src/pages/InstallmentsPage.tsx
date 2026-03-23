@@ -421,6 +421,10 @@ export default function InstallmentsPage() {
               <Input type="number" min="0" step="0.01" value={formTotal} onChange={e => setFormTotal(e.target.value)} placeholder="0.00" className="h-10" />
             </div>
             <div className="space-y-2">
+              <Label className="text-xs font-semibold">Peşinat (₺)</Label>
+              <Input type="number" min="0" value={formDownPayment} onChange={e => setFormDownPayment(e.target.value)} placeholder="0" className="h-10" />
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs font-semibold">Taksit Sayısı *</Label>
               <Select value={formCount} onValueChange={setFormCount}>
                 <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
@@ -432,13 +436,34 @@ export default function InstallmentsPage() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label className="text-xs font-semibold">Taksit Aralığı</Label>
+              <Select value={formInterval} onValueChange={(v) => setFormInterval(v as any)}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Haftalık</SelectItem>
+                  <SelectItem value="biweekly">15 Günlük</SelectItem>
+                  <SelectItem value="monthly">Aylık</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs font-semibold">İlk Taksit Tarihi</Label>
               <Input type="date" value={formStartDate} onChange={e => setFormStartDate(e.target.value)} className="h-10" />
             </div>
             {formTotal && formCount && (
-              <div className="p-3 rounded-lg bg-muted/50 border">
-                <p className="text-xs text-muted-foreground">Aylık taksit tutarı:</p>
-                <p className="font-bold text-lg">₺{(parseFloat(formTotal || '0') / parseInt(formCount || '1')).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <div className="p-3 rounded-lg bg-muted/50 border space-y-1">
+                {parseFloat(formDownPayment) > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Peşinat:</span>
+                    <span className="font-medium">₺{parseFloat(formDownPayment).toLocaleString('tr-TR')}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Taksitlendirilecek:</span>
+                  <span className="font-medium">₺{Math.max(0, parseFloat(formTotal || '0') - (parseFloat(formDownPayment) || 0)).toLocaleString('tr-TR')}</span>
+                </div>
+                <p className="text-xs text-muted-foreground pt-1 border-t">Taksit tutarı:</p>
+                <p className="font-bold text-lg">₺{(Math.max(0, parseFloat(formTotal || '0') - (parseFloat(formDownPayment) || 0)) / parseInt(formCount || '1')).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             )}
             <div className="space-y-2">
