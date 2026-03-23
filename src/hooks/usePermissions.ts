@@ -102,6 +102,7 @@ export function usePermissions() {
         can_manage_services: data.can_manage_services,
         can_manage_leads: (data as any).can_manage_leads ?? true,
         can_manage_online_booking: (data as any).can_manage_online_booking ?? true,
+        can_delete_leads: (data as any).can_delete_leads ?? false,
       });
     }
     setLoading(false);
