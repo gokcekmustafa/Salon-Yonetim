@@ -177,15 +177,19 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold mb-1 px-3">Yönetim</SidebarGroupLabel>}
-          <SidebarGroupContent>{renderMenu(mainMenu)}</SidebarGroupContent>
-        </SidebarGroup>
+        {showSalonMenus && (
+          <>
+            <SidebarGroup>
+              {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold mb-1 px-3">Yönetim</SidebarGroupLabel>}
+              <SidebarGroupContent>{renderMenu(mainMenu)}</SidebarGroupContent>
+            </SidebarGroup>
 
-        <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold mb-1 px-3 mt-2">Finans</SidebarGroupLabel>}
-          <SidebarGroupContent>{renderMenu(financeMenu)}</SidebarGroupContent>
-        </SidebarGroup>
+            <SidebarGroup>
+              {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold mb-1 px-3 mt-2">Finans</SidebarGroupLabel>}
+              <SidebarGroupContent>{renderMenu(financeMenu)}</SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
 
         <SidebarGroup>
           {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold mb-1 px-3 mt-2">Diğer</SidebarGroupLabel>}
