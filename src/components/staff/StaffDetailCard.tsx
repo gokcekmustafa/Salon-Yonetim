@@ -696,7 +696,7 @@ export default function StaffDetailCard({ staff: s, open, onOpenChange, onUpdate
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold">Kullanıcı Adı *</Label>
-                      <Input value={staffUsername} onChange={e => setStaffUsername(e.target.value)} placeholder="personel.adi" className="h-10" />
+                      <Input value={staffUsername} onChange={e => setStaffUsername(sanitizeUsername(e.target.value))} placeholder="personel.adi" className="h-10" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold">Şifre *</Label>

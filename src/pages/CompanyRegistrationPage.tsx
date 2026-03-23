@@ -466,7 +466,7 @@ export default function CompanyRegistrationPage() {
                       value={form.username}
                       onChange={(e) => {
                         setManualUsernameEdit(true);
-                        setField('username', e.target.value.toLowerCase());
+                        setField('username', sanitizeUsername(e.target.value));
                       }}
                     />
                     {usernameChecking && <p className="text-xs text-muted-foreground">Kullanıcı adı kontrol ediliyor...</p>}
