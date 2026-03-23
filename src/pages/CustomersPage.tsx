@@ -386,6 +386,26 @@ export default function CustomersPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Customer Sale Dialog */}
+      {saleCustomer && (
+        <CustomerSaleDialog
+          open={saleDialogOpen}
+          onOpenChange={setSaleDialogOpen}
+          customerId={saleCustomer.id}
+          customerName={saleCustomer.name}
+        />
+      )}
+
+      {/* Customer Sales History */}
+      {saleCustomer && (
+        <CustomerSalesHistory
+          open={salesHistoryOpen}
+          onOpenChange={setSalesHistoryOpen}
+          customerId={saleCustomer.id}
+          customerName={saleCustomer.name}
+        />
+      )}
     </div>
     </StaffPageGuard>
   );
