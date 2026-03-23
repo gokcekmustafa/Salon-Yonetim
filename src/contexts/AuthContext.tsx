@@ -56,6 +56,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentBranchId, setCurrentBranchId] = useState<string | null>(null);
   const [isManagingSalon, setIsManagingSalon] = useState(false);
   const fetchIdRef = useRef(0); // Track latest fetch to ignore stale results
+  const currentUserIdRef = useRef<string | null>(null);
+  const managingSalonRef = useRef(false);
+
+  useEffect(() => {
+    managingSalonRef.current = isManagingSalon;
+  }, [isManagingSalon]);
 
   const fetchUserData = useCallback(async (userId: string, fetchId: number) => {
     try {
@@ -89,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         (memberships || []).forEach(m => roleSet.add(m.role as AppRole));
-      } else if (!isManagingSalon) {
+      } else if (!managingSalonRef.current) {
         setCurrentSalonId(null);
         setCurrentBranchId(null);
       }
@@ -98,13 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRoles(Array.from(roleSet));
     } catch (err) {
       console.error('Error fetching user data:', err);
-      if (fetchId !== fetchIdRef.current) return;
-      setRoles([]);
-      setProfile(null);
-      setCurrentSalonId(null);
-      setCurrentBranchId(null);
     }
-  }, [isManagingSalon]);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -114,19 +115,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (_event, newSession) => {
         if (!mounted) return;
 
+        const nextUserId = newSession?.user?.id ?? null;
+        const previousUserId = currentUserIdRef.current;
+        const shouldBlockWithLoading = previousUserId !== nextUserId;
+
+        currentUserIdRef.current = nextUserId;
         setSession(newSession);
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
-          // Increment fetch ID so any in-flight fetch is discarded
           const id = ++fetchIdRef.current;
-          // Keep loading true until roles are fetched
-          setLoading(true);
+          if (shouldBlockWithLoading) {
+            setLoading(true);
+          }
+
           // Use setTimeout to avoid Supabase auth deadlock
           setTimeout(() => {
             if (!mounted) return;
             fetchUserData(newSession.user.id, id).finally(() => {
-              if (mounted && id === fetchIdRef.current) {
+              if (mounted && id === fetchIdRef.current && shouldBlockWithLoading) {
                 setLoading(false);
               }
             });
