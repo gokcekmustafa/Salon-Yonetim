@@ -98,7 +98,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { roles, isSuperAdmin } = useAuth();
+  const { roles, isSuperAdmin, isManagingSalon } = useAuth();
   const { hasPermission } = usePermissions();
   const { hasPlatformPermission } = usePlatformPermissions();
   const { branding } = useBranding();
