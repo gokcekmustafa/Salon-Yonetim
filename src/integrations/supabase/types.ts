@@ -1165,6 +1165,7 @@ export type Database = {
         Row: {
           appointment_id: string | null
           created_at: string
+          customer_id: string | null
           id: string
           payment_method: string
           product_id: string
@@ -1177,6 +1178,7 @@ export type Database = {
         Insert: {
           appointment_id?: string | null
           created_at?: string
+          customer_id?: string | null
           id?: string
           payment_method?: string
           product_id: string
@@ -1189,6 +1191,7 @@ export type Database = {
         Update: {
           appointment_id?: string | null
           created_at?: string
+          customer_id?: string | null
           id?: string
           payment_method?: string
           product_id?: string
@@ -1204,6 +1207,13 @@ export type Database = {
             columns: ["appointment_id"]
             isOneToOne: false
             referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
           {
@@ -1575,6 +1585,80 @@ export type Database = {
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_sales: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          id: string
+          notes: string | null
+          payment_method: string
+          quantity: number
+          salon_id: string
+          service_id: string
+          sold_by: string
+          staff_id: string | null
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          quantity?: number
+          salon_id: string
+          service_id: string
+          sold_by: string
+          staff_id?: string | null
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          quantity?: number
+          salon_id?: string
+          service_id?: string
+          sold_by?: string
+          staff_id?: string | null
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_sales_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_sales_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_sales_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
