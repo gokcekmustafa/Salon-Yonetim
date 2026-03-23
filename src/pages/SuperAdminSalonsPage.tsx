@@ -399,26 +399,8 @@ export default function SuperAdminSalonsPage() {
       {/* Registration Requests */}
       {hasPlatformPermission('can_manage_salons') && <RegistrationRequestManager />}
 
-      {/* Standard Rooms */}
-      {hasPlatformPermission('can_manage_salons') && <StandardRoomManager />}
-
-      {/* Standard Services */}
-      {hasPlatformPermission('can_manage_salons') && <StandardServiceManager />}
-
       {/* Subscription Alert Settings */}
       {hasPlatformPermission('can_manage_settings') && <SubscriptionAlertSettings />}
-
-      {/* Announcements */}
-      {hasPlatformPermission('can_manage_announcements') && <AnnouncementManager mode="super_admin" />}
-
-      {/* Popup Announcements */}
-      {hasPlatformPermission('can_manage_popups') && <PopupManager mode="super_admin" />}
-
-      {/* User Management */}
-      {hasPlatformPermission('can_manage_users') && <SuperAdminUserManager />}
-
-      {/* Platform Staff Manager - only for non-helper super admins */}
-      {!isHelper && <PlatformStaffManager />}
 
       {/* Ticket Manager */}
       <TicketManager />

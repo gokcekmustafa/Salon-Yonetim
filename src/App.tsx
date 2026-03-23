@@ -84,6 +84,12 @@ const App = () => (
               <Route path="/book/:salonSlug" element={<BookingPage />} />
               <Route path="/admin/salonlar" element={<SuperAdminRoute><SuperAdminSalonsPage /></SuperAdminRoute>} />
               <Route path="/admin/veriler" element={<SuperAdminRoute><SuperAdminDataPage /></SuperAdminRoute>} />
+              <Route path="/admin/standart-odalar" element={<SuperAdminRoute><StandardRoomsPage /></SuperAdminRoute>} />
+              <Route path="/admin/standart-hizmetler" element={<SuperAdminRoute><StandardServicesPage /></SuperAdminRoute>} />
+              <Route path="/admin/duyurular" element={<SuperAdminRoute><PlatformAnnouncementsPage /></SuperAdminRoute>} />
+              <Route path="/admin/popuplar" element={<SuperAdminRoute><PlatformPopupsPage /></SuperAdminRoute>} />
+              <Route path="/admin/kullanicilar" element={<SuperAdminRoute><UserManagementPage /></SuperAdminRoute>} />
+              <Route path="/admin/platform-personelleri" element={<SuperAdminRoute><PlatformStaffPage /></SuperAdminRoute>} />
               <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
               <Route path="/musteriler" element={<AdminRoute><CustomersPage /></AdminRoute>} />
               <Route path="/randevular" element={<AdminRoute><AppointmentsPage /></AdminRoute>} />
