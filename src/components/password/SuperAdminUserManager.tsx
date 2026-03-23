@@ -294,6 +294,27 @@ export function SuperAdminUserManager() {
     (u.email || '').toLowerCase().includes(search.toLowerCase())
   );
 
+  // Separate platform admins from salon users
+  const platformAdmins = filtered.filter(u => u.roles.includes('super_admin'));
+  const salonUsers = filtered.filter(u => !u.roles.includes('super_admin'));
+
+  // Group salon users: salon_admins and their staff
+  const salonAdmins = salonUsers.filter(u => u.roles.includes('salon_admin'));
+  const staffUsers = salonUsers.filter(u => !u.roles.includes('salon_admin'));
+
+  // Group staff by salon_id under their salon admin
+  const getSalonStaff = (salonId: string) =>
+    staffUsers.filter(u => u.memberships.some(m => m.salon_id === salonId));
+
+  // Staff not belonging to any salon admin's salon
+  const assignedStaffIds = new Set<string>();
+  salonAdmins.forEach(admin => {
+    admin.memberships.forEach(m => {
+      getSalonStaff(m.salon_id).forEach(s => assignedStaffIds.add(s.id));
+    });
+  });
+  const unassignedStaff = staffUsers.filter(u => !assignedStaffIds.has(u.id));
+
   const roleLabel = (role: string) => {
     switch (role) {
       case 'super_admin': return 'Super Admin';
