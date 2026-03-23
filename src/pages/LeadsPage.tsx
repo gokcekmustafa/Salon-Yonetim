@@ -270,6 +270,7 @@ export default function LeadsPage() {
   );
 
   return (
+    <StaffPageGuard permissionKey="page_leads" featureLabel="Aday Müşteriler">
     <div className="page-container animate-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
