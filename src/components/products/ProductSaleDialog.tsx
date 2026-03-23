@@ -92,6 +92,7 @@ export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash', 
         const { error: saleErr } = await supabase.from('product_sales').insert({
           salon_id: salonId,
           product_id: item.product_id,
+          customer_id: selectedCustomerId || null,
           quantity: item.quantity,
           unit_price: item.unit_price,
           total_price: item.quantity * item.unit_price,
