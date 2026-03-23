@@ -23,9 +23,11 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   paymentMethod?: string;
+  customerId?: string;
+  customerName?: string;
 }
 
-export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash' }: Props) {
+export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash', customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
   const qc = useQueryClient();
   const salonId = currentSalonId;
@@ -34,6 +36,17 @@ export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash' }
   const [selectedProductId, setSelectedProductId] = useState('');
   const [saving, setSaving] = useState(false);
   const [method, setMethod] = useState(paymentMethod);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(customerId || '');
+
+  const { data: customers = [] } = useQuery({
+    queryKey: ['customers_for_sale', salonId],
+    queryFn: async () => {
+      if (!salonId) return [];
+      const { data } = await supabase.from('customers').select('id, name, phone').eq('salon_id', salonId).order('name');
+      return data || [];
+    },
+    enabled: !!salonId && open,
+  });
 
   const { data: products = [] } = useQuery({
     queryKey: ['products', salonId],
@@ -79,6 +92,7 @@ export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash' }
         const { error: saleErr } = await supabase.from('product_sales').insert({
           salon_id: salonId,
           product_id: item.product_id,
+          customer_id: (selectedCustomerId && selectedCustomerId !== 'none') ? selectedCustomerId : null,
           quantity: item.quantity,
           unit_price: item.unit_price,
           total_price: item.quantity * item.unit_price,
@@ -140,6 +154,20 @@ export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash' }
         </DialogHeader>
 
         <div className="space-y-3">
+          {!customerId && (
+            <div>
+              <Label className="text-xs">Müşteri (Opsiyonel)</Label>
+              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Müşteri seçin (opsiyonel)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Kayıtsız Satış</SelectItem>
+                  {customers.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ''}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex gap-2">
             <Select value={selectedProductId} onValueChange={setSelectedProductId}>
               <SelectTrigger className="flex-1"><SelectValue placeholder="Ürün seçin" /></SelectTrigger>

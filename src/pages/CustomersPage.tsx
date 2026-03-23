@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Pencil, Trash2, History, Users, Loader2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, History, Users, Loader2, ShoppingCart } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
 import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
+import { CustomerSaleDialog } from '@/components/sales/CustomerSaleDialog';
+import { CustomerSalesHistory } from '@/components/sales/CustomerSalesHistory';
 
 const CUSTOMER_COLUMNS: ColumnMapping[] = [
   { excelHeader: 'Ad Soyad', dbKey: 'name', required: true },
@@ -51,10 +53,13 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [saleDialogOpen, setSaleDialogOpen] = useState(false);
+  const [salesHistoryOpen, setSalesHistoryOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<DbCustomer | null>(null);
   const [editing, setEditing] = useState<DbCustomer | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [saleCustomer, setSaleCustomer] = useState<DbCustomer | null>(null);
   useFormGuard(dialogOpen);
 
   useEffect(() => {
@@ -107,16 +112,31 @@ export default function CustomersPage() {
     if (editing) {
       await updateCustomer(editing.id, { name: form.name, phone: form.phone, ...optionals });
       toast.success('Müşteri güncellendi.');
+      setSaving(false);
+      setDialogOpen(false);
     } else {
-      await addCustomer({ name: form.name, phone: form.phone, ...optionals });
+      const result = await addCustomer({ name: form.name, phone: form.phone, ...optionals });
       toast.success('Müşteri eklendi.');
+      setSaving(false);
+      setDialogOpen(false);
+      // Auto-open sale dialog for new customer
+      if (result && !result.error) {
+        // Find the newly added customer from refreshed list
+        setTimeout(() => {
+          const newCustomer = customers.find(c => c.phone === form.phone && c.name === form.name);
+          if (newCustomer) {
+            setSaleCustomer(newCustomer);
+            setSaleDialogOpen(true);
+          }
+        }, 500);
+      }
     }
-    setSaving(false);
-    setDialogOpen(false);
   };
 
   const handleDelete = async (c: DbCustomer) => { await deleteCustomer(c.id); toast.success('Müşteri silindi.'); };
   const openHistory = (c: DbCustomer) => { setSelectedCustomer(c); setHistoryOpen(true); };
+  const openSale = (c: DbCustomer) => { setSaleCustomer(c); setSaleDialogOpen(true); };
+  const openSalesHistory = (c: DbCustomer) => { setSaleCustomer(c); setSalesHistoryOpen(true); };
 
   const customerAppointments = selectedCustomer
     ? appointments.filter(a => a.customer_id === selectedCustomer.id).sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
@@ -209,6 +229,8 @@ export default function CustomersPage() {
                 </div>
               </div>
               <div className="flex gap-0.5">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-green-600" onClick={() => openSale(c)} title="Satış"><ShoppingCart className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openSalesHistory(c)} title="Satış Geçmişi"><History className="h-3.5 w-3.5" /></Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openHistory(c)}><History className="h-3.5 w-3.5" /></Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -263,6 +285,8 @@ export default function CustomersPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => openSale(c)} title="Satış"><ShoppingCart className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => openSalesHistory(c)} title="Satış Geçmişi"><History className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => openHistory(c)}><History className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={() => handleDelete(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -362,6 +386,26 @@ export default function CustomersPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Customer Sale Dialog */}
+      {saleCustomer && (
+        <CustomerSaleDialog
+          open={saleDialogOpen}
+          onOpenChange={setSaleDialogOpen}
+          customerId={saleCustomer.id}
+          customerName={saleCustomer.name}
+        />
+      )}
+
+      {/* Customer Sales History */}
+      {saleCustomer && (
+        <CustomerSalesHistory
+          open={salesHistoryOpen}
+          onOpenChange={setSalesHistoryOpen}
+          customerId={saleCustomer.id}
+          customerName={saleCustomer.name}
+        />
+      )}
     </div>
     </StaffPageGuard>
   );
