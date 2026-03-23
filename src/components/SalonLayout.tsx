@@ -101,6 +101,9 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
               <p className="text-sm font-bold text-foreground truncate">{salon?.name || 'Salon'}</p>
               <p className="text-[11px] text-muted-foreground leading-none mt-0.5">{today}</p>
             </div>
+            <div className="hidden sm:block ml-2">
+              <BranchSelector />
+            </div>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
