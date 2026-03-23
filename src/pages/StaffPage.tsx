@@ -21,7 +21,7 @@ const STAFF_COLUMNS: ColumnMapping[] = [
 
 export default function StaffPage() {
   const { hasPermission } = usePermissions();
-  const { staff, addStaff, branches, loading, appointments, services, customers, payments, refetch } = useSalonData();
+  const { staff, addStaff, branches, loading, appointments, services, customers, payments, refetch } = useBranchFilteredData();
   const [addOpen, setAddOpen] = useState(false);
   const [detailStaff, setDetailStaff] = useState<DbStaff | null>(null);
   useFormGuard(addOpen || !!detailStaff);

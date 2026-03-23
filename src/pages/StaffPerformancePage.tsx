@@ -45,7 +45,7 @@ function getDateRange(range: TimeRange): { start: Date; end: Date } {
 export default function StaffPerformancePage() {
   const { hasPermission } = usePermissions();
   const { currentSalonId, isSuperAdmin } = useAuth();
-  const { staff, appointments, payments, loading: salonLoading } = useSalonData();
+  const { staff, appointments, payments, loading: salonLoading } = useBranchFilteredData();
 
   const [timeRange, setTimeRange] = useState<TimeRange>('monthly');
   const [selectedStaffId, setSelectedStaffId] = useState<string>('all');

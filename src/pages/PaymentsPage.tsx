@@ -28,7 +28,7 @@ const BOX_ICONS: Record<string, React.ElementType> = {
 
 export default function PaymentsPage() {
   const { hasPermission } = usePermissions();
-  const { payments, appointments, customers, services, loading } = useSalonData();
+  const { payments, appointments, customers, services, loading } = useBranchFilteredData();
   const { currentSalonId } = useAuth();
   const [dateRange, setDateRange] = useState<DateRange>('monthly');
   const [cashBoxes, setCashBoxes] = useState<CashBox[]>([]);

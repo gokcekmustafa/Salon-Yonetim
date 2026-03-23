@@ -69,7 +69,7 @@ function getDateRange(range: TimeRange) {
 export default function StaffSalaryPage() {
   const { hasPermission } = usePermissions();
   const { user, currentSalonId } = useAuth();
-  const { staff, loading: salonLoading } = useSalonData();
+  const { staff, loading: salonLoading } = useBranchFilteredData();
   const queryClient = useQueryClient();
   const salonId = currentSalonId;
 

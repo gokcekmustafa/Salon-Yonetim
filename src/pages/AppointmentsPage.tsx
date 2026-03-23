@@ -45,7 +45,7 @@ export default function AppointmentsPage() {
   const {
     appointments, customers, staff, services, branches,
     addAppointment, updateAppointment, addPayment, hasConflict, refetch,
-  } = useSalonData();
+  } = useBranchFilteredData();
 
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [listGroupMode, setListGroupMode] = useState<ListGroupMode>(null);

@@ -45,7 +45,7 @@ const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no
 
 export default function CustomersPage() {
   const { hasPermission } = usePermissions();
-  const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, loading } = useSalonData();
+  const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, loading } = useBranchFilteredData();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);

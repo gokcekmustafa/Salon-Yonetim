@@ -49,7 +49,7 @@ type CashBox = { id: string; name: string; payment_method: string; salon_id: str
 type CashTx = { id: string; cash_box_id: string | null; amount: number; type: string; description: string | null; transaction_date: string; payment_method: string; salon_id: string };
 
 export default function ReportsPage() {
-  const { appointments, payments, customers, staff, services, branches } = useSalonData();
+  const { appointments, payments, customers, staff, services, branches } = useBranchFilteredData();
   const { currentSalonId } = useAuth();
 
   const [dateRange, setDateRange] = useState<DateRange>('monthly');
