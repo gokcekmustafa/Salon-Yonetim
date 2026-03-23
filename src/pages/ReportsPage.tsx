@@ -676,6 +676,6 @@ export default function ReportsPage() {
         </>
       )}
     </div>
-  );
     </StaffPageGuard>
+  );
 }

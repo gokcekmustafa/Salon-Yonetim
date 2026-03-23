@@ -520,6 +520,6 @@ export default function ServicesPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

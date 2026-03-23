@@ -716,6 +716,6 @@ export default function ContractsPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

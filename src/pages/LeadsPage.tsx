@@ -620,6 +620,6 @@ export default function LeadsPage() {
         </SheetContent>
       </Sheet>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

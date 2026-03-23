@@ -537,6 +537,6 @@ export default function StaffSalaryPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

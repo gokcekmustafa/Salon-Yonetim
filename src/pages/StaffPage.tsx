@@ -129,6 +129,6 @@ export default function StaffPage() {
         />
       )}
     </div>
-  );
     </StaffPageGuard>
+  );
 }

@@ -147,6 +147,6 @@ export default function BranchesPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

@@ -424,6 +424,6 @@ export default function InstallmentsPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

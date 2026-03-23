@@ -629,6 +629,6 @@ export default function CashPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

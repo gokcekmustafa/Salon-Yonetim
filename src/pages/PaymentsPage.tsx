@@ -276,6 +276,6 @@ export default function PaymentsPage() {
         ))}
       </Tabs>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

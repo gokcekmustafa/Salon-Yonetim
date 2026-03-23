@@ -1128,6 +1128,6 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
         </DialogContent>
       </Dialog>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

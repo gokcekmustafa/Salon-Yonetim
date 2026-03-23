@@ -363,6 +363,6 @@ export default function CustomersPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

@@ -393,6 +393,6 @@ export default function RoomsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
     </StaffPageGuard>
+  );
 }

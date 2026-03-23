@@ -362,6 +362,6 @@ export default function StaffPerformancePage() {
         </CardContent>
       </Card>
     </div>
-  );
     </StaffPageGuard>
+  );
 }
