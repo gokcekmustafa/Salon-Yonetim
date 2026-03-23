@@ -1760,6 +1760,39 @@ export type Database = {
         }
         Relationships: []
       }
+      standard_services: {
+        Row: {
+          category_name: string
+          created_at: string
+          duration: number
+          id: string
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category_name: string
+          created_at?: string
+          duration?: number
+          id?: string
+          name: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category_name?: string
+          created_at?: string
+          duration?: number
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           assigned_to: string | null
