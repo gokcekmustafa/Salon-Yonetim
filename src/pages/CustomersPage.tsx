@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useSalonData, DbCustomer } from '@/hooks/useSalonData';
+import { DbCustomer } from '@/hooks/useSalonData';
+import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,7 +45,7 @@ const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no
 
 export default function CustomersPage() {
   const { hasPermission } = usePermissions();
-  const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, loading } = useSalonData();
+  const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, loading } = useBranchFilteredData();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);

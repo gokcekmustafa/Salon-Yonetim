@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useFormGuard } from '@/hooks/useFormGuard';
-import { useSalonData, DbStaff } from '@/hooks/useSalonData';
+import { DbStaff } from '@/hooks/useSalonData';
+import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,7 +21,7 @@ const STAFF_COLUMNS: ColumnMapping[] = [
 
 export default function StaffPage() {
   const { hasPermission } = usePermissions();
-  const { staff, addStaff, branches, loading, appointments, services, customers, payments, refetch } = useSalonData();
+  const { staff, addStaff, branches, loading, appointments, services, customers, payments, refetch } = useBranchFilteredData();
   const [addOpen, setAddOpen] = useState(false);
   const [detailStaff, setDetailStaff] = useState<DbStaff | null>(null);
   useFormGuard(addOpen || !!detailStaff);

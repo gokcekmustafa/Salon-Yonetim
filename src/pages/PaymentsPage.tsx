@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useSalonData } from '@/hooks/useSalonData';
+import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,7 @@ const BOX_ICONS: Record<string, React.ElementType> = {
 
 export default function PaymentsPage() {
   const { hasPermission } = usePermissions();
-  const { payments, appointments, customers, services, loading } = useSalonData();
+  const { payments, appointments, customers, services, loading } = useBranchFilteredData();
   const { currentSalonId } = useAuth();
   const [dateRange, setDateRange] = useState<DateRange>('monthly');
   const [cashBoxes, setCashBoxes] = useState<CashBox[]>([]);

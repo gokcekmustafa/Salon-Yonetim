@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSalonData } from '@/hooks/useSalonData';
+import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +45,7 @@ function getDateRange(range: TimeRange): { start: Date; end: Date } {
 export default function StaffPerformancePage() {
   const { hasPermission } = usePermissions();
   const { currentSalonId, isSuperAdmin } = useAuth();
-  const { staff, appointments, payments, loading: salonLoading } = useSalonData();
+  const { staff, appointments, payments, loading: salonLoading } = useBranchFilteredData();
 
   const [timeRange, setTimeRange] = useState<TimeRange>('monthly');
   const [selectedStaffId, setSelectedStaffId] = useState<string>('all');

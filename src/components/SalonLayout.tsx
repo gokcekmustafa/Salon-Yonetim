@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useSalonNavigation } from '@/hooks/useSalonNavigation';
 import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { BranchSelector } from '@/components/BranchSelector';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -100,6 +101,9 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
               <p className="text-sm font-bold text-foreground truncate">{salon?.name || 'Salon'}</p>
               <p className="text-[11px] text-muted-foreground leading-none mt-0.5">{today}</p>
             </div>
+            <div className="hidden sm:block ml-2">
+              <BranchSelector />
+            </div>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -189,7 +193,11 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
         </div>
 
         {mobileMenuOpen && (
-          <nav className="lg:hidden border-t px-4 py-3 flex flex-wrap gap-2" style={{ borderColor: '#e8e8e8' }}>
+          <nav className="lg:hidden border-t px-4 py-3 flex flex-col gap-2" style={{ borderColor: '#e8e8e8' }}>
+            <div className="sm:hidden mb-1">
+              <BranchSelector />
+            </div>
+            <div className="flex flex-wrap gap-2">
             {topbarItems.map((item) => (
               <button
                 key={item.key}
@@ -229,6 +237,7 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            </div>
           </nav>
         )}
       </header>

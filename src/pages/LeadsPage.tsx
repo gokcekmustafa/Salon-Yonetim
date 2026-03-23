@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
-import { useSalonData } from '@/hooks/useSalonData';
+import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -66,7 +66,7 @@ const NOTE_TYPE_COLORS: Record<string, string> = {
 export default function LeadsPage() {
   const { hasPermission } = usePermissions();
   const { user, currentSalonId, isSuperAdmin, isSalonAdmin } = useAuth();
-  const { addCustomer, staff: salonStaff } = useSalonData();
+  const { addCustomer, staff: salonStaff } = useBranchFilteredData();
 
   const activeStaff = salonStaff.filter(s => s.is_active);
   const [leads, setLeads] = useState<Lead[]>([]);
