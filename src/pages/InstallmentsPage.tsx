@@ -163,6 +163,7 @@ export default function InstallmentsPage() {
   const getInstPayments = (instId: string) => payments.filter(p => p.installment_id === instId);
 
   return (
+    <StaffPageGuard permissionKey="page_installments" featureLabel="Taksitler">
     <div className="page-container animate-in">
       <div className="page-header">
         <div>
