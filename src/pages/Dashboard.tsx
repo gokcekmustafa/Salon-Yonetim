@@ -17,6 +17,24 @@ export default function Dashboard() {
   const { appointments, customers, payments, staff, services, loading, salon } = useBranchFilteredData();
   const navigate = useNavigate();
 
+  const { data: overdueInstallments = [] } = useQuery({
+    queryKey: ['overdue_installments_dashboard', currentSalonId],
+    queryFn: async () => {
+      if (!currentSalonId) return [];
+      const today = format(startOfDay(new Date()), 'yyyy-MM-dd');
+      const { data } = await supabase
+        .from('installment_payments')
+        .select('*, installments(customer_id)')
+        .eq('salon_id', currentSalonId)
+        .eq('is_paid', false)
+        .lt('due_date', today)
+        .order('due_date')
+        .limit(5);
+      return data || [];
+    },
+    enabled: !!currentSalonId,
+  });
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="flex flex-col items-center gap-3">
