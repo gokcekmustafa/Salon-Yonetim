@@ -60,7 +60,7 @@ const mainMenu: MenuItem[] = [
   { title: 'Hizmetler', url: '/hizmetler', icon: Scissors, permissionKey: 'can_manage_services' },
   { title: 'Personel Yönetimi', url: '/personel', icon: UserCheck, permissionKey: 'can_manage_staff' },
   { title: 'Şubeler', url: '/subeler', icon: Building2, permissionKey: 'can_add_branches' },
-  { title: 'Aday Müşteriler', url: '/adaylar', icon: Users, permissionKey: 'can_manage_leads' },
+  { title: 'Aday Müşteriler', url: '/adaylar', icon: Users, roles: ['salon_admin', 'staff'], permissionKey: 'can_manage_leads' },
   { title: 'Sözleşmeler', url: '/sozlesmeler', icon: FileText, permissionKey: 'can_manage_customers' },
 ];
 
