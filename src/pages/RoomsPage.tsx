@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, DoorOpen, Pencil, Trash2, Loader2, Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, DoorOpen, Pencil, Trash2, Loader2, Users, ListPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Room {
@@ -24,6 +25,14 @@ interface Room {
   created_at: string;
 }
 
+interface StandardRoom {
+  id: string;
+  name: string;
+  room_number: string | null;
+  capacity: number | null;
+  description: string | null;
+}
+
 export default function RoomsPage() {
   const { currentSalonId } = useAuth();
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -32,12 +41,20 @@ export default function RoomsPage() {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [deleteRoom, setDeleteRoom] = useState<Room | null>(null);
   const [saving, setSaving] = useState(false);
-  useFormGuard(dialogOpen);
 
   const [name, setName] = useState('');
   const [roomNumber, setRoomNumber] = useState('');
   const [capacity, setCapacity] = useState('1');
   const [description, setDescription] = useState('');
+
+  // Standard room import state
+  const [stdDialogOpen, setStdDialogOpen] = useState(false);
+  const [stdRooms, setStdRooms] = useState<StandardRoom[]>([]);
+  const [stdLoading, setStdLoading] = useState(false);
+  const [stdSelected, setStdSelected] = useState<Set<string>>(new Set());
+  const [stdImporting, setStdImporting] = useState(false);
+
+  useFormGuard(dialogOpen || stdDialogOpen);
 
   const fetchRooms = useCallback(async () => {
     if (!currentSalonId) return;
@@ -102,6 +119,57 @@ export default function RoomsPage() {
     fetchRooms();
   };
 
+  // Standard room import
+  const openStdImport = async () => {
+    setStdDialogOpen(true);
+    setStdLoading(true);
+    setStdSelected(new Set());
+    const { data } = await supabase.from('standard_rooms').select('*').order('name');
+    setStdRooms((data as StandardRoom[]) || []);
+    setStdLoading(false);
+  };
+
+  const toggleStdRoom = (id: string) => {
+    setStdSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllStd = () => {
+    if (stdSelected.size === stdRooms.length) {
+      setStdSelected(new Set());
+    } else {
+      setStdSelected(new Set(stdRooms.map(r => r.id)));
+    }
+  };
+
+  const handleStdImport = async () => {
+    if (!currentSalonId || stdSelected.size === 0) return;
+    setStdImporting(true);
+
+    const selected = stdRooms.filter(r => stdSelected.has(r.id));
+    const rows = selected.map(r => ({
+      name: r.name,
+      room_number: r.room_number,
+      capacity: r.capacity || 1,
+      description: r.description,
+      salon_id: currentSalonId,
+    }));
+
+    const { error } = await supabase.from('rooms').insert(rows as any);
+    if (error) {
+      toast.error('Hata: ' + error.message);
+    } else {
+      toast.success(`${rows.length} oda başarıyla eklendi`);
+    }
+
+    setStdImporting(false);
+    setStdDialogOpen(false);
+    fetchRooms();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -119,9 +187,14 @@ export default function RoomsPage() {
             Seans odalarını yönetin
           </p>
         </div>
-        <Button onClick={openAdd} className="rounded-full gap-1.5">
-          <Plus className="h-4 w-4" /> Oda Ekle
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={openStdImport} className="rounded-full gap-1.5">
+            <ListPlus className="h-4 w-4" /> Standart Listeden Ekle
+          </Button>
+          <Button onClick={openAdd} className="rounded-full gap-1.5">
+            <Plus className="h-4 w-4" /> Oda Ekle
+          </Button>
+        </div>
       </div>
 
       {rooms.length === 0 ? (
@@ -131,9 +204,14 @@ export default function RoomsPage() {
             <p className="text-muted-foreground" style={{ fontSize: '14px' }}>
               Henüz oda eklenmemiş
             </p>
-            <Button variant="outline" onClick={openAdd} className="rounded-full gap-1.5">
-              <Plus className="h-4 w-4" /> İlk Odayı Ekle
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={openStdImport} className="rounded-full gap-1.5">
+                <ListPlus className="h-4 w-4" /> Standart Listeden Ekle
+              </Button>
+              <Button variant="outline" onClick={openAdd} className="rounded-full gap-1.5">
+                <Plus className="h-4 w-4" /> İlk Odayı Ekle
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (
@@ -225,6 +303,71 @@ export default function RoomsPage() {
             <Button onClick={handleSave} disabled={saving || !name.trim()} className="rounded-full">
               {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Kaydet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Standard Rooms Import Dialog */}
+      <Dialog open={stdDialogOpen} onOpenChange={setStdDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListPlus className="h-5 w-5 text-primary" />
+              Standart Odalardan Ekle
+            </DialogTitle>
+            <DialogDescription>Eklemek istediğiniz odaları seçin.</DialogDescription>
+          </DialogHeader>
+          {stdLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : stdRooms.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-2">
+              <DoorOpen className="h-10 w-10 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">Henüz standart oda tanımlanmamış</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <div className="flex items-center gap-3 py-2 px-3 rounded-lg bg-muted/30 mb-2">
+                <Checkbox
+                  checked={stdSelected.size === stdRooms.length && stdRooms.length > 0}
+                  onCheckedChange={toggleAllStd}
+                />
+                <span className="text-sm font-bold">Tümünü Seç</span>
+                <Badge variant="secondary" className="text-[10px]">{stdRooms.length}</Badge>
+              </div>
+              {stdRooms.map(room => (
+                <div key={room.id} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-muted/50">
+                  <Checkbox
+                    checked={stdSelected.has(room.id)}
+                    onCheckedChange={() => toggleStdRoom(room.id)}
+                  />
+                  <DoorOpen className="h-4 w-4 text-primary/60 shrink-0" />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium">{room.name}</span>
+                    {room.room_number && (
+                      <span className="text-xs text-muted-foreground ml-2">#{room.room_number}</span>
+                    )}
+                  </div>
+                  {room.capacity && (
+                    <Badge variant="secondary" className="gap-1 text-[10px]">
+                      <Users className="h-2.5 w-2.5" /> {room.capacity}
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStdDialogOpen(false)}>İptal</Button>
+            <Button
+              onClick={handleStdImport}
+              disabled={stdImporting || stdSelected.size === 0}
+              className="rounded-full gap-1.5"
+            >
+              {stdImporting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {stdSelected.size > 0 ? `${stdSelected.size} Oda Ekle` : 'Seçim Yapın'}
             </Button>
           </DialogFooter>
         </DialogContent>
