@@ -341,7 +341,6 @@ export default function LeadsPage() {
               {filtered.map(lead => {
                 const sc = STATUS_CONFIG[lead.status] || STATUS_CONFIG.new;
                 return (
-    <StaffPageGuard permissionKey="page_leads" featureLabel="Aday Müşteriler">
                   <TableRow key={lead.id} className="group cursor-pointer hover:bg-muted/30" onClick={() => openDetail(lead)}>
                     <TableCell>
                       <div className="flex items-center gap-3">

@@ -667,7 +667,6 @@ export default function ContractsPage() {
             const data = previewContract.filled_data as Record<string, string>;
             const instPayments = getContractInstallments(previewContract);
             return (
-    <StaffPageGuard permissionKey="page_contracts" featureLabel="Sözleşmeler">
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div><span className="font-medium text-muted-foreground">Şablon:</span><p>{previewContract.template_name}</p></div>

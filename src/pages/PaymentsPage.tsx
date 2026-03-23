@@ -118,6 +118,7 @@ export default function PaymentsPage() {
   const periodLabel = dateRange === 'daily' ? 'Bugün' : dateRange === 'weekly' ? 'Bu Hafta' : dateRange === 'monthly' ? 'Bu Ay' : 'Bu Yıl';
 
   return (
+    <StaffPageGuard permissionKey="page_cash" featureLabel="Ödemeler">
     <div className="page-container animate-in space-y-5">
       <div className="page-header">
         <div><h1 className="page-title">Kasa & Ödemeler</h1><p className="page-subtitle">Ödeme geçmişi ve kasa bazlı gelir takibi</p></div>
