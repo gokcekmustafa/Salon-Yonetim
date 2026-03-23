@@ -449,14 +449,6 @@ export function SuperAdminUserManager() {
               )}
             </div>
           )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
         </CardContent>
       </Card>
 
