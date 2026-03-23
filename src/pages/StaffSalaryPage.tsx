@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSalonData } from '@/hooks/useSalonData';
+import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

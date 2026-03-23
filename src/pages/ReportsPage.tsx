@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useSalonData } from '@/hooks/useSalonData';
+import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
