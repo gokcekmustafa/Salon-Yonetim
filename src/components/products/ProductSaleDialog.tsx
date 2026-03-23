@@ -154,6 +154,20 @@ export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash', 
         </DialogHeader>
 
         <div className="space-y-3">
+          {!customerId && (
+            <div>
+              <Label className="text-xs">Müşteri (Opsiyonel)</Label>
+              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Müşteri seçin (opsiyonel)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Kayıtsız Satış</SelectItem>
+                  {customers.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ''}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex gap-2">
             <Select value={selectedProductId} onValueChange={setSelectedProductId}>
               <SelectTrigger className="flex-1"><SelectValue placeholder="Ürün seçin" /></SelectTrigger>
