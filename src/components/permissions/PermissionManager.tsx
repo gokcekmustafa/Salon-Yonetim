@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Shield, Calendar, Users, UserCheck, Wallet, LayoutDashboard, Bell, MessageSquare, Building2, Scissors, UserPlus, Globe } from 'lucide-react';
+import { Loader2, Shield, Calendar, Users, UserCheck, Wallet, LayoutDashboard, Bell, MessageSquare, Building2, Scissors, UserPlus, Globe, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { PERMISSION_LABELS, type SalonPermissions } from '@/hooks/usePermissions';
