@@ -39,25 +39,14 @@ export function useOnlineHeartbeat() {
     sendHeartbeat();
     const interval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
 
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') sendHeartbeat();
-      else setOffline();
-    };
-
     const handleBeforeUnload = () => {
-      // Use sendBeacon for reliable offline signal
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/user_online_status?user_id=eq.${user.id}`;
-      const body = JSON.stringify({ is_online: false, last_seen_at: new Date().toISOString() });
-      navigator.sendBeacon?.(url); // best-effort
       setOffline();
     };
 
-    document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       setOffline();
     };
