@@ -34,7 +34,7 @@ type FormState = {
   username: string;
 };
 
-const ROLE_OPTIONS = ['Estetisyen', 'Satış Temsilcisi', 'Aracı'];
+const ROLE_OPTIONS = ['İşletme Sahibi', 'Estetisyen', 'Satış Temsilcisi', 'Aracı'];
 const USERNAME_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PHONE_REGEX = /^05\d{2} \d{3} \d{2} \d{2}$/;
 

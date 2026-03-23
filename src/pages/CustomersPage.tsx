@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useSalonData, DbCustomer } from '@/hooks/useSalonData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,11 +39,12 @@ const SOURCE_OPTIONS = [
 ];
 const getSourceLabel = (val: string | null) => SOURCE_OPTIONS.find(o => o.value === val)?.label ?? val ?? '-';
 
-const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '', customer_type: 'installment' };
+const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '', customer_type: 'installment', assigned_staff_id: '', assigned_staff_other: '' };
 
 export default function CustomersPage() {
   const { hasPermission } = usePermissions();
   const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, loading } = useSalonData();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -50,6 +52,15 @@ export default function CustomersPage() {
   const [editing, setEditing] = useState<DbCustomer | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('yeni') === '1' && !loading) {
+      setEditing(null);
+      setForm(emptyForm);
+      setDialogOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, loading]);
 
   if (!hasPermission('can_manage_customers')) return <NoPermission feature="Müşteri Yönetimi" />;
   if (loading) return (
@@ -70,6 +81,7 @@ export default function CustomersPage() {
       tc_kimlik_no: c.tc_kimlik_no || '', address: c.address || '', secondary_phone: c.secondary_phone || '',
       source_type: c.source_type || '', source_detail: c.source_detail || '',
       customer_type: c.customer_type || 'installment',
+      assigned_staff_id: (c as any).assigned_staff_id || '', assigned_staff_other: '',
     });
     setDialogOpen(true);
   };
@@ -86,6 +98,7 @@ export default function CustomersPage() {
       source_type: form.source_type || null,
       source_detail: form.source_detail || null,
       customer_type: form.customer_type,
+      assigned_staff_id: form.assigned_staff_id === '__other__' ? null : (form.assigned_staff_id || null),
     };
     if (editing) {
       await updateCustomer(editing.id, { name: form.name, phone: form.phone, ...optionals });
@@ -176,8 +189,8 @@ export default function CustomersPage() {
                 <div className="space-y-0.5 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-sm">{c.name}</p>
-                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : 'default'} className="text-[10px]">
-                      {c.customer_type === 'single_session' ? 'Tek Seans' : 'Taksitli'}
+                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : c.customer_type === 'cash' ? 'outline' : 'default'} className="text-[10px]">
+                      {c.customer_type === 'single_session' ? 'Tek Seans' : c.customer_type === 'cash' ? 'Peşin' : 'Taksitli'}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">{c.phone}</p>
@@ -228,8 +241,8 @@ export default function CustomersPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : 'default'} className="text-[10px]">
-                      {c.customer_type === 'single_session' ? 'Tek Seans' : 'Taksitli'}
+                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : c.customer_type === 'cash' ? 'outline' : 'default'} className="text-[10px]">
+                      {c.customer_type === 'single_session' ? 'Tek Seans' : c.customer_type === 'cash' ? 'Peşin' : 'Taksitli'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
@@ -276,10 +289,14 @@ export default function CustomersPage() {
                 <SelectContent>
                   <SelectItem value="installment">Taksitli Müşteri</SelectItem>
                   <SelectItem value="single_session">Tek Seans Müşteri</SelectItem>
+                  <SelectItem value="cash">Peşin Müşteri</SelectItem>
                 </SelectContent>
               </Select>
               {form.customer_type === 'single_session' && (
                 <p className="text-xs text-muted-foreground">Tek seans müşterilerde taksit sistemi devre dışıdır, ödemeler doğrudan kasaya gider.</p>
+              )}
+              {form.customer_type === 'cash' && (
+                <p className="text-xs text-muted-foreground">Peşin müşterilerde ödeme tek seferde alınır.</p>
               )}
             </div>
             <div className="space-y-2">
@@ -294,6 +311,21 @@ export default function CustomersPage() {
             {form.source_type && (
               <div className="space-y-2"><Label className="text-xs font-semibold">Kaynak Detayı <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input value={form.source_detail} onChange={e => set('source_detail', e.target.value)} placeholder="Kaynak adı veya tanımı yazın..." className="h-10" /></div>
             )}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">İşlem Yapan Personel <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label>
+              <Select value={form.assigned_staff_id} onValueChange={v => set('assigned_staff_id', v)}>
+                <SelectTrigger className="h-10"><SelectValue placeholder="Personel seçin" /></SelectTrigger>
+                <SelectContent>
+                  {staff.filter((s: any) => s.is_active !== false).map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                  <SelectItem value="__other__">Diğer</SelectItem>
+                </SelectContent>
+              </Select>
+              {form.assigned_staff_id === '__other__' && (
+                <Input value={form.assigned_staff_other} onChange={e => set('assigned_staff_other', e.target.value)} placeholder="Personel adını yazın..." className="h-10" />
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
