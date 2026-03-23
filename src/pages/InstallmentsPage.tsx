@@ -56,6 +56,9 @@ export default function InstallmentsPage() {
   const [formCount, setFormCount] = useState('3');
   const [formNotes, setFormNotes] = useState('');
   const [formStartDate, setFormStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [formInterval, setFormInterval] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly');
+  const [formDownPayment, setFormDownPayment] = useState('0');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'overdue' | 'upcoming'>('all');
 
   const salonId = currentSalonId;
 
