@@ -53,10 +53,13 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [saleDialogOpen, setSaleDialogOpen] = useState(false);
+  const [salesHistoryOpen, setSalesHistoryOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<DbCustomer | null>(null);
   const [editing, setEditing] = useState<DbCustomer | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [saleCustomer, setSaleCustomer] = useState<DbCustomer | null>(null);
   useFormGuard(dialogOpen);
 
   useEffect(() => {
