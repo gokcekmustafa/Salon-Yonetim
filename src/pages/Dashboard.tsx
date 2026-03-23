@@ -1,12 +1,14 @@
 import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Wallet, TrendingUp, Loader2, Clock, Plus, BarChart3, UserCheck, CircleDot } from 'lucide-react';
-import { format, isToday, parseISO, isSameMonth } from 'date-fns';
+import { Calendar, Users, Wallet, TrendingUp, Loader2, Clock, Plus, BarChart3, UserCheck, CircleDot, AlertTriangle } from 'lucide-react';
+import { format, isToday, parseISO, isSameMonth, isBefore, startOfDay, addDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import { SubscriptionAlert } from '@/components/notifications/SubscriptionAlert';
 
