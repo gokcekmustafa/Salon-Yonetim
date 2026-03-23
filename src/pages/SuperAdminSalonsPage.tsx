@@ -29,6 +29,7 @@ import { PlatformStaffManager } from '@/components/admin/PlatformStaffManager';
 import { TicketManager } from '@/components/admin/TicketManager';
 import { RegistrationRequestManager } from '@/components/admin/RegistrationRequestManager';
 import { StandardRoomManager } from '@/components/admin/StandardRoomManager';
+import { StandardServiceManager } from '@/components/admin/StandardServiceManager';
 import { usePlatformPermissions } from '@/hooks/usePlatformPermissions';
 
 type Salon = {
@@ -400,6 +401,9 @@ export default function SuperAdminSalonsPage() {
 
       {/* Standard Rooms */}
       {hasPlatformPermission('can_manage_salons') && <StandardRoomManager />}
+
+      {/* Standard Services */}
+      {hasPlatformPermission('can_manage_salons') && <StandardServiceManager />}
 
       {/* Subscription Alert Settings */}
       {hasPlatformPermission('can_manage_settings') && <SubscriptionAlertSettings />}

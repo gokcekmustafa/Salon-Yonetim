@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, Scissors, Loader2, ChevronDown, ChevronRight, FolderPlus, Download } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Pencil, Trash2, Scissors, Loader2, ChevronDown, ChevronRight, FolderPlus, Download, ListPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
@@ -17,6 +18,14 @@ import { NoPermission } from '@/components/permissions/NoPermission';
 type ServiceCategory = {
   id: string; salon_id: string; name: string; sort_order: number; created_at: string;
 };
+
+interface StandardService {
+  id: string;
+  category_name: string;
+  name: string;
+  duration: number;
+  price: number;
+}
 
 const DEFAULT_CATEGORIES = [
   { name: 'LAZER EPİLASYON', services: ['BEL','ENSE','ALIN','SIRT','POPO ÜSTÜ','ÜST BACAK','TÜM KOL','YARIM KOL','TÜM BACAK','YARIM BACAK','KOLTUK ALTI','GENİTAL','TÜM YÜZ','FAUL','BIYIK','ÇENE','BOYUN','GÖĞÜS ARASI','GÖĞÜS UCU','GÖBEK','GÖBEK ÇİZGİSİ','POPO ARASI','GÖĞÜS'] },
@@ -44,6 +53,14 @@ export default function ServicesPage() {
   const [saving, setSaving] = useState(false);
   const [loadingDefaults, setLoadingDefaults] = useState(false);
 
+  // Standard services import state
+  const [stdDialogOpen, setStdDialogOpen] = useState(false);
+  const [stdServices, setStdServices] = useState<StandardService[]>([]);
+  const [stdLoading, setStdLoading] = useState(false);
+  const [stdSelected, setStdSelected] = useState<Set<string>>(new Set());
+  const [stdExpandedCats, setStdExpandedCats] = useState<Set<string>>(new Set());
+  const [stdImporting, setStdImporting] = useState(false);
+
   const fetchCategories = useCallback(async () => {
     if (!currentSalonId) return;
     const { data } = await supabase.from('service_categories').select('*').eq('salon_id', currentSalonId).order('sort_order');
@@ -51,8 +68,6 @@ export default function ServicesPage() {
   }, [currentSalonId]);
 
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
-
-  // Kategoriler varsayılan olarak kapalı başlar.
 
   if (!hasPermission('can_manage_services')) return <NoPermission feature="Hizmet Yönetimi" />;
   if (loading) return (
@@ -176,6 +191,89 @@ export default function ServicesPage() {
     setLoadingDefaults(false);
   };
 
+  // Standard services import
+  const openStdImport = async () => {
+    setStdDialogOpen(true);
+    setStdLoading(true);
+    setStdSelected(new Set());
+    setStdExpandedCats(new Set());
+    const { data } = await supabase.from('standard_services').select('*').order('category_name').order('sort_order');
+    setStdServices((data as StandardService[]) || []);
+    setStdLoading(false);
+  };
+
+  const stdCategories = [...new Set(stdServices.map(s => s.category_name))];
+
+  const toggleStdCat = (cat: string) => {
+    setStdExpandedCats(prev => {
+      const next = new Set(prev);
+      next.has(cat) ? next.delete(cat) : next.add(cat);
+      return next;
+    });
+  };
+
+  const toggleStdService = (id: string) => {
+    setStdSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleStdCategory = (cat: string) => {
+    const catSvcs = stdServices.filter(s => s.category_name === cat);
+    const allSelected = catSvcs.every(s => stdSelected.has(s.id));
+    setStdSelected(prev => {
+      const next = new Set(prev);
+      catSvcs.forEach(s => allSelected ? next.delete(s.id) : next.add(s.id));
+      return next;
+    });
+  };
+
+  const handleStdImport = async () => {
+    if (!currentSalonId || stdSelected.size === 0) return;
+    setStdImporting(true);
+
+    const selected = stdServices.filter(s => stdSelected.has(s.id));
+    const catNames = [...new Set(selected.map(s => s.category_name))];
+
+    // Create or find categories
+    const catMap: Record<string, string> = {};
+    for (const catName of catNames) {
+      const existing = categories.find(c => c.name.toUpperCase() === catName.toUpperCase());
+      if (existing) {
+        catMap[catName] = existing.id;
+      } else {
+        const { data } = await supabase.from('service_categories')
+          .insert({ name: catName, salon_id: currentSalonId, sort_order: categories.length + catNames.indexOf(catName) })
+          .select('id').single();
+        if (data) catMap[catName] = data.id;
+      }
+    }
+
+    // Insert services
+    const rows = selected
+      .filter(s => catMap[s.category_name])
+      .map(s => ({
+        name: s.name,
+        salon_id: currentSalonId,
+        category_id: catMap[s.category_name],
+        duration: s.duration,
+        price: s.price,
+      }));
+
+    if (rows.length > 0) {
+      const { error } = await supabase.from('services').insert(rows);
+      if (error) toast.error('Hata: ' + error.message);
+      else toast.success(`${rows.length} hizmet başarıyla eklendi`);
+    }
+
+    setStdImporting(false);
+    setStdDialogOpen(false);
+    fetchCategories();
+    refetch();
+  };
+
   return (
     <div className="page-container animate-in">
       <div className="page-header">
@@ -190,6 +288,9 @@ export default function ServicesPage() {
               Varsayılan Hizmetleri Yükle
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={openStdImport} className="gap-1.5">
+            <ListPlus className="h-4 w-4" /> Standart Listeden Ekle
+          </Button>
           <Button variant="outline" size="sm" onClick={() => { setEditingCat(null); setCatName(''); setCatDialogOpen(true); }} className="gap-1.5">
             <FolderPlus className="h-4 w-4" /> Kategori Ekle
           </Button>
@@ -337,6 +438,82 @@ export default function ServicesPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setSvcDialogOpen(false)}>İptal</Button>
             <Button onClick={handleSaveService} disabled={saving} className="btn-gradient">{saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Kaydet</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Standard Services Import Dialog */}
+      <Dialog open={stdDialogOpen} onOpenChange={setStdDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListPlus className="h-5 w-5 text-primary" />
+              Standart Hizmetlerden Ekle
+            </DialogTitle>
+            <DialogDescription>Eklemek istediğiniz hizmetleri seçin. Mevcut kategoriler eşleştirilir, yoksa yeni oluşturulur.</DialogDescription>
+          </DialogHeader>
+          {stdLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : stdServices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-2">
+              <Scissors className="h-10 w-10 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">Henüz standart hizmet tanımlanmamış</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {stdCategories.map(cat => {
+                const catSvcs = stdServices.filter(s => s.category_name === cat);
+                const isExpanded = stdExpandedCats.has(cat);
+                const allSelected = catSvcs.every(s => stdSelected.has(s.id));
+                const someSelected = catSvcs.some(s => stdSelected.has(s.id));
+                return (
+                  <div key={cat} className="rounded-xl border border-border/60 overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/30">
+                      <Checkbox
+                        checked={allSelected}
+                        // @ts-ignore
+                        indeterminate={someSelected && !allSelected}
+                        onCheckedChange={() => toggleStdCategory(cat)}
+                      />
+                      <button onClick={() => toggleStdCat(cat)} className="flex items-center gap-2 flex-1 text-left">
+                        {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                        <span className="text-sm font-bold">{cat}</span>
+                        <Badge variant="secondary" className="text-[10px]">{catSvcs.length}</Badge>
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <div className="px-3 pb-2 pt-1 space-y-1">
+                        {catSvcs.map(svc => (
+                          <div key={svc.id} className="flex items-center gap-3 py-1 px-2 rounded-lg hover:bg-muted/50">
+                            <Checkbox
+                              checked={stdSelected.has(svc.id)}
+                              onCheckedChange={() => toggleStdService(svc.id)}
+                            />
+                            <Scissors className="h-3 w-3 text-primary/60 shrink-0" />
+                            <span className="text-sm flex-1">{svc.name}</span>
+                            <span className="text-xs text-muted-foreground">{svc.duration} dk</span>
+                            <span className="text-xs font-bold tabular-nums">₺{Number(svc.price).toLocaleString('tr-TR')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStdDialogOpen(false)}>İptal</Button>
+            <Button
+              onClick={handleStdImport}
+              disabled={stdImporting || stdSelected.size === 0}
+              className="btn-gradient gap-1.5"
+            >
+              {stdImporting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {stdSelected.size > 0 ? `${stdSelected.size} Hizmet Ekle` : 'Seçim Yapın'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
