@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormGuard } from '@/hooks/useFormGuard';
 import { useSalonData, DbBranch } from '@/hooks/useSalonData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ export default function BranchesPage() {
   const [editing, setEditing] = useState<DbBranch | null>(null);
   const [form, setForm] = useState({ name: '', address: '', phone: '', is_active: true });
   const [saving, setSaving] = useState(false);
+  useFormGuard(dialogOpen);
 
   if (!hasPermission('can_add_branches')) return <NoPermission feature="Şube Yönetimi" />;
 

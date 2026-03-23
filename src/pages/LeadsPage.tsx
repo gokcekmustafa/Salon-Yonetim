@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -80,6 +81,7 @@ export default function LeadsPage() {
   const [editing, setEditing] = useState<Lead | null>(null);
   const [form, setForm] = useState({ name: '', email: '', phone: '', source: '', status: 'new' as LeadStatus, assigned_staff_id: '' });
   const [saving, setSaving] = useState(false);
+  useFormGuard(dialogOpen);
 
   // Detail sheet
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);

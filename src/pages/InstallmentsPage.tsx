@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData } from '@/hooks/useSalonData';
@@ -44,6 +45,7 @@ export default function InstallmentsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [payDialogOpen, setPayDialogOpen] = useState(false);
+  useFormGuard(dialogOpen || payDialogOpen);
   const [selectedPayment, setSelectedPayment] = useState<InstallmentPayment | null>(null);
   const [payMethod, setPayMethod] = useState('cash');
 

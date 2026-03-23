@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSalonData, DbCustomer } from '@/hooks/useSalonData';
+import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ export default function CustomersPage() {
   const [editing, setEditing] = useState<DbCustomer | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  useFormGuard(dialogOpen);
 
   useEffect(() => {
     if (searchParams.get('yeni') === '1' && !loading) {

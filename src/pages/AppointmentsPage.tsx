@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData, DbAppointment } from '@/hooks/useSalonData';
@@ -51,6 +52,7 @@ export default function AppointmentsPage() {
   const [filteredStaffId, setFilteredStaffId] = useState<string | null>(null);
   const [filteredBranchId, setFilteredBranchId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  useFormGuard(dialogOpen);
   const [detailApt, setDetailApt] = useState<DbAppointment | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState('');

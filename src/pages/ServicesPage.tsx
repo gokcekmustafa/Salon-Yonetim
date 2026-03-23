@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData, DbService } from '@/hooks/useSalonData';
@@ -39,6 +40,7 @@ export default function ServicesPage() {
   const [editingSvc, setEditingSvc] = useState<DbService | null>(null);
   const [svcCatId, setSvcCatId] = useState<string | null>(null);
   const [svcForm, setSvcForm] = useState({ name: '', duration: '60', price: '0' });
+  useFormGuard(catDialogOpen || svcDialogOpen);
   const [saving, setSaving] = useState(false);
   const [loadingDefaults, setLoadingDefaults] = useState(false);
 
