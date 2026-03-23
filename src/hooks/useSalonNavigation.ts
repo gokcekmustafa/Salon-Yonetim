@@ -17,7 +17,8 @@ export type SalonNavigationKey =
   | 'subeler'
   | 'odalar'
   | 'sozlesmeler'
-  | 'maas';
+  | 'maas'
+  | 'urunler';
 
 export type SalonNavigationItem = {
   key: SalonNavigationKey;
