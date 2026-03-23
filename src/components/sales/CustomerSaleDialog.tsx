@@ -8,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Plus, Trash2, ShoppingCart, Scissors, Package, FileText, CalendarPlus, AlertTriangle } from 'lucide-react';
+import { Loader2, Plus, Trash2, ShoppingCart, Scissors, Package, AlertTriangle, CreditCard } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useFormGuard } from '@/hooks/useFormGuard';
+import { InstallmentPlanDialog } from './InstallmentPlanDialog';
 
 interface Props {
   open: boolean;
@@ -48,6 +48,8 @@ export function CustomerSaleDialog({ open, onOpenChange, customerId, customerNam
   const [selectedProductId, setSelectedProductId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [saving, setSaving] = useState(false);
+  const [installmentDialogOpen, setInstallmentDialogOpen] = useState(false);
+  const [pendingSaleTotal, setPendingSaleTotal] = useState(0);
 
   useFormGuard(open);
 
@@ -114,6 +116,23 @@ export function CustomerSaleDialog({ open, onOpenChange, customerId, customerNam
 
   const handleSave = async () => {
     if (!salonId || !user || (serviceItems.length === 0 && productItems.length === 0)) return;
+
+    // If installment selected, open installment dialog instead
+    if (paymentMethod === 'installment') {
+      if (!customerId) {
+        toast.error('Taksitli ödeme için müşteri seçilmelidir');
+        return;
+      }
+      setPendingSaleTotal(grandTotal);
+      setInstallmentDialogOpen(true);
+      return;
+    }
+
+    await processSale(paymentMethod);
+  };
+
+  const processSale = async (method: string) => {
+    if (!salonId || !user) return;
     setSaving(true);
     try {
       // Service sales
@@ -125,7 +144,7 @@ export function CustomerSaleDialog({ open, onOpenChange, customerId, customerNam
           quantity: item.quantity,
           unit_price: item.unit_price,
           total_price: item.quantity * item.unit_price,
-          payment_method: paymentMethod,
+          payment_method: method === 'installment' ? 'installment' : method,
           sold_by: user.id,
         });
         if (error) throw error;
@@ -140,7 +159,7 @@ export function CustomerSaleDialog({ open, onOpenChange, customerId, customerNam
           quantity: item.quantity,
           unit_price: item.unit_price,
           total_price: item.quantity * item.unit_price,
-          payment_method: paymentMethod,
+          payment_method: method === 'installment' ? 'installment' : method,
           sold_by: user.id,
         });
         if (saleErr) throw saleErr;
@@ -161,30 +180,31 @@ export function CustomerSaleDialog({ open, onOpenChange, customerId, customerNam
         if (newStock === 0) toast.warning(`${item.name} stokta kalmadı!`);
       }
 
-      // Cash transaction - service sales
-      if (serviceTotal > 0) {
-        const { error: cashErr } = await supabase.from('cash_transactions').insert({
-          salon_id: salonId,
-          type: 'income',
-          amount: serviceTotal,
-          description: `Hizmet satışı${customerName ? ` - ${customerName}` : ''}: ${serviceItems.map(i => `${i.name} x${i.quantity}`).join(', ')}`,
-          payment_method: paymentMethod,
-          created_by: user.id,
-        });
-        if (cashErr) throw cashErr;
-      }
+      // Cash transactions (only for non-installment)
+      if (method !== 'installment') {
+        if (serviceTotal > 0) {
+          const { error: cashErr } = await supabase.from('cash_transactions').insert({
+            salon_id: salonId,
+            type: 'income',
+            amount: serviceTotal,
+            description: `Hizmet satışı${customerName ? ` - ${customerName}` : ''}: ${serviceItems.map(i => `${i.name} x${i.quantity}`).join(', ')}`,
+            payment_method: method,
+            created_by: user.id,
+          });
+          if (cashErr) throw cashErr;
+        }
 
-      // Cash transaction - product sales
-      if (productTotal > 0) {
-        const { error: cashErr } = await supabase.from('cash_transactions').insert({
-          salon_id: salonId,
-          type: 'income',
-          amount: productTotal,
-          description: `Ürün satışı${customerName ? ` - ${customerName}` : ''}: ${productItems.map(i => `${i.name} x${i.quantity}`).join(', ')}`,
-          payment_method: paymentMethod,
-          created_by: user.id,
-        });
-        if (cashErr) throw cashErr;
+        if (productTotal > 0) {
+          const { error: cashErr } = await supabase.from('cash_transactions').insert({
+            salon_id: salonId,
+            type: 'income',
+            amount: productTotal,
+            description: `Ürün satışı${customerName ? ` - ${customerName}` : ''}: ${productItems.map(i => `${i.name} x${i.quantity}`).join(', ')}`,
+            payment_method: method,
+            created_by: user.id,
+          });
+          if (cashErr) throw cashErr;
+        }
       }
 
       qc.invalidateQueries({ queryKey: ['products', salonId] });
@@ -201,6 +221,12 @@ export function CustomerSaleDialog({ open, onOpenChange, customerId, customerNam
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleInstallmentComplete = async () => {
+    // Process the sale records (without cash entry - installments handle that)
+    await processSale('installment');
+    setInstallmentDialogOpen(false);
   };
 
   const renderItemRow = (
@@ -241,105 +267,132 @@ export function CustomerSaleDialog({ open, onOpenChange, customerId, customerNam
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            {customerName ? `Satış — ${customerName}` : 'Satış'}
-          </DialogTitle>
-          <DialogDescription>Hizmet ve ürün satışı yapın</DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              {customerName ? `Satış — ${customerName}` : 'Satış'}
+            </DialogTitle>
+            <DialogDescription>Hizmet ve ürün satışı yapın</DialogDescription>
+          </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="services" className="gap-1">
-              <Scissors className="h-3.5 w-3.5" /> Hizmetler
-              {serviceItems.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px]">{serviceItems.length}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="products" className="gap-1">
-              <Package className="h-3.5 w-3.5" /> Ürünler
-              {productItems.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px]">{productItems.length}</Badge>}
-            </TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="services" className="gap-1">
+                <Scissors className="h-3.5 w-3.5" /> Hizmetler
+                {serviceItems.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px]">{serviceItems.length}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="products" className="gap-1">
+                <Package className="h-3.5 w-3.5" /> Ürünler
+                {productItems.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px]">{productItems.length}</Badge>}
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="services" className="space-y-3 mt-3">
-            <div className="flex gap-2">
-              <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
-                <SelectTrigger className="flex-1"><SelectValue placeholder="Hizmet seçin" /></SelectTrigger>
-                <SelectContent>
-                  {services.map((s: any) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} - {s.price.toLocaleString('tr-TR')} ₺
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button size="icon" onClick={addService} disabled={!selectedServiceId}><Plus className="h-4 w-4" /></Button>
-            </div>
-            {serviceItems.length > 0 && (
-              <div className="border rounded-lg divide-y">
-                {serviceItems.map((item, idx) => renderItemRow(item, idx, 'service'))}
+            <TabsContent value="services" className="space-y-3 mt-3">
+              <div className="flex gap-2">
+                <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Hizmet seçin" /></SelectTrigger>
+                  <SelectContent>
+                    {services.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name} - {s.price.toLocaleString('tr-TR')} ₺
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button size="icon" onClick={addService} disabled={!selectedServiceId}><Plus className="h-4 w-4" /></Button>
               </div>
-            )}
-          </TabsContent>
+              {serviceItems.length > 0 && (
+                <div className="border rounded-lg divide-y">
+                  {serviceItems.map((item, idx) => renderItemRow(item, idx, 'service'))}
+                </div>
+              )}
+            </TabsContent>
 
-          <TabsContent value="products" className="space-y-3 mt-3">
-            <div className="flex gap-2">
-              <Select value={selectedProductId} onValueChange={setSelectedProductId}>
-                <SelectTrigger className="flex-1"><SelectValue placeholder="Ürün seçin" /></SelectTrigger>
-                <SelectContent>
-                  {products.map((p: any) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} (Stok: {p.current_stock}) - {p.sale_price.toLocaleString('tr-TR')} ₺
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button size="icon" onClick={addProduct} disabled={!selectedProductId}><Plus className="h-4 w-4" /></Button>
-            </div>
-            {productItems.length > 0 && (
-              <div className="border rounded-lg divide-y">
-                {productItems.map((item, idx) => renderItemRow(item, idx, 'product'))}
+            <TabsContent value="products" className="space-y-3 mt-3">
+              <div className="flex gap-2">
+                <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Ürün seçin" /></SelectTrigger>
+                  <SelectContent>
+                    {products.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name} (Stok: {p.current_stock}) - {p.sale_price.toLocaleString('tr-TR')} ₺
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button size="icon" onClick={addProduct} disabled={!selectedProductId}><Plus className="h-4 w-4" /></Button>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+              {productItems.length > 0 && (
+                <div className="border rounded-lg divide-y">
+                  {productItems.map((item, idx) => renderItemRow(item, idx, 'product'))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
 
-        {/* Payment & Totals */}
-        <div className="space-y-3 border-t pt-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-xs">Ödeme Yöntemi</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger className="w-40 mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Nakit</SelectItem>
-                  <SelectItem value="credit_card">Kredi Kartı</SelectItem>
-                  <SelectItem value="eft">EFT / Havale</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* Payment & Totals */}
+          <div className="space-y-3 border-t pt-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs">Ödeme Yöntemi</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="w-44 mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Nakit</SelectItem>
+                    <SelectItem value="credit_card">Kredi Kartı</SelectItem>
+                    <SelectItem value="eft">EFT / Havale</SelectItem>
+                    <SelectItem value="installment">
+                      <span className="flex items-center gap-1.5">
+                        <CreditCard className="h-3.5 w-3.5" /> Taksitli Ödeme
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-right space-y-0.5">
+                {serviceTotal > 0 && (
+                  <p className="text-xs text-muted-foreground">Hizmet: {serviceTotal.toLocaleString('tr-TR')} ₺</p>
+                )}
+                {productTotal > 0 && (
+                  <p className="text-xs text-muted-foreground">Ürün: {productTotal.toLocaleString('tr-TR')} ₺</p>
+                )}
+                <p className="text-lg font-bold">{grandTotal.toLocaleString('tr-TR')} ₺</p>
+              </div>
             </div>
-            <div className="text-right space-y-0.5">
-              {serviceTotal > 0 && (
-                <p className="text-xs text-muted-foreground">Hizmet: {serviceTotal.toLocaleString('tr-TR')} ₺</p>
-              )}
-              {productTotal > 0 && (
-                <p className="text-xs text-muted-foreground">Ürün: {productTotal.toLocaleString('tr-TR')} ₺</p>
-              )}
-              <p className="text-lg font-bold">{grandTotal.toLocaleString('tr-TR')} ₺</p>
-            </div>
+            {paymentMethod === 'installment' && !customerId && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> Taksitli ödeme için müşteri seçilmelidir
+              </p>
+            )}
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>İptal</Button>
-          <Button onClick={handleSave} disabled={saving || (serviceItems.length === 0 && productItems.length === 0)}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-            Satışı Tamamla
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>İptal</Button>
+            <Button onClick={handleSave} disabled={saving || (serviceItems.length === 0 && productItems.length === 0)}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              {paymentMethod === 'installment' ? 'Taksitlendir' : 'Satışı Tamamla'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {customerId && (
+        <InstallmentPlanDialog
+          open={installmentDialogOpen}
+          onOpenChange={setInstallmentDialogOpen}
+          customerId={customerId}
+          customerName={customerName || ''}
+          totalAmount={pendingSaleTotal}
+          onComplete={handleInstallmentComplete}
+          saleDescription={[
+            ...serviceItems.map(i => `${i.name} x${i.quantity}`),
+            ...productItems.map(i => `${i.name} x${i.quantity}`),
+          ].join(', ')}
+        />
+      )}
+    </>
   );
 }
