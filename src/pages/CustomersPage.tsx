@@ -289,10 +289,14 @@ export default function CustomersPage() {
                 <SelectContent>
                   <SelectItem value="installment">Taksitli Müşteri</SelectItem>
                   <SelectItem value="single_session">Tek Seans Müşteri</SelectItem>
+                  <SelectItem value="cash">Peşin Müşteri</SelectItem>
                 </SelectContent>
               </Select>
               {form.customer_type === 'single_session' && (
                 <p className="text-xs text-muted-foreground">Tek seans müşterilerde taksit sistemi devre dışıdır, ödemeler doğrudan kasaya gider.</p>
+              )}
+              {form.customer_type === 'cash' && (
+                <p className="text-xs text-muted-foreground">Peşin müşterilerde ödeme tek seferde alınır.</p>
               )}
             </div>
             <div className="space-y-2">
