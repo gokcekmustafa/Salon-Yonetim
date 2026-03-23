@@ -57,7 +57,8 @@ export default function CashPage() {
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
-  useFormGuard(dialogOpen || transferDialogOpen);
+  const [productSaleOpen, setProductSaleOpen] = useState(false);
+  useFormGuard(dialogOpen || transferDialogOpen || productSaleOpen);
   const [editingTx, setEditingTx] = useState<CashTransaction | null>(null);
   const [activeTab, setActiveTab] = useState('cash');
 
