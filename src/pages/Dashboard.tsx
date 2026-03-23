@@ -1,4 +1,4 @@
-import { useSalonData } from '@/hooks/useSalonData';
+import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
