@@ -87,27 +87,56 @@ export default function InstallmentsPage() {
       if (!salonId || !user) throw new Error('Missing');
       const total = parseFloat(formTotal);
       const count = parseInt(formCount);
+      const dp = parseFloat(formDownPayment) || 0;
       if (isNaN(total) || total <= 0) throw new Error('Geçerli tutar girin');
       if (!formCustomerId) throw new Error('Müşteri seçin');
+
+      const remaining = Math.max(0, total - dp);
+      if (remaining <= 0) throw new Error('Taksitlendirilecek tutar 0 olamaz');
+
+      // Down payment cash entry
+      if (dp > 0) {
+        const custName = customers.find(c => c.id === formCustomerId)?.name || '';
+        const { error: cashErr } = await supabase.from('cash_transactions').insert({
+          salon_id: salonId,
+          type: 'income',
+          amount: dp,
+          description: `Peşinat - ${custName}`,
+          payment_method: 'cash',
+          created_by: user.id,
+        });
+        if (cashErr) throw cashErr;
+      }
 
       const { data: inst, error } = await supabase.from('installments').insert({
         salon_id: salonId,
         customer_id: formCustomerId,
-        total_amount: total,
+        total_amount: remaining,
         installment_count: count,
         notes: formNotes || null,
         created_by: user.id,
       } as any).select('id').single();
       if (error || !inst) throw error || new Error('Failed');
 
-      const perAmount = Math.round((total / count) * 100) / 100;
-      const installmentPayments = Array.from({ length: count }, (_, i) => ({
-        installment_id: inst.id,
-        salon_id: salonId,
-        due_date: format(addMonths(new Date(formStartDate), i), 'yyyy-MM-dd'),
-        amount: i === count - 1 ? Math.round((total - perAmount * (count - 1)) * 100) / 100 : perAmount,
-        installment_number: i + 1,
-      }));
+      const perAmount = Math.round((remaining / count) * 100) / 100;
+      const installmentPayments = Array.from({ length: count }, (_, i) => {
+        let dueDate: Date;
+        const start = new Date(formStartDate);
+        if (formInterval === 'weekly') {
+          dueDate = addWeeks(start, i);
+        } else if (formInterval === 'biweekly') {
+          dueDate = addDays(start, i * 15);
+        } else {
+          dueDate = addMonths(start, i);
+        }
+        return {
+          installment_id: inst.id,
+          salon_id: salonId,
+          due_date: format(dueDate, 'yyyy-MM-dd'),
+          amount: i === count - 1 ? Math.round((remaining - perAmount * (count - 1)) * 100) / 100 : perAmount,
+          installment_number: i + 1,
+        };
+      });
 
       const { error: payErr } = await supabase.from('installment_payments').insert(installmentPayments as any);
       if (payErr) throw payErr;
@@ -115,9 +144,10 @@ export default function InstallmentsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['installments', salonId] });
       queryClient.invalidateQueries({ queryKey: ['installment_payments', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['cash_transactions'] });
       toast.success('Taksit planı oluşturuldu');
       setDialogOpen(false);
-      setFormCustomerId(''); setFormTotal(''); setFormCount('3'); setFormNotes('');
+      setFormCustomerId(''); setFormTotal(''); setFormCount('3'); setFormNotes(''); setFormDownPayment('0');
     },
     onError: (e: Error) => toast.error(e.message),
   });
