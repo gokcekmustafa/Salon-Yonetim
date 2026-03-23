@@ -241,9 +241,14 @@ export function RegistrationRequestManager() {
                       {format(new Date(req.created_at), 'dd.MM.yyyy')}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => openDetail(req)}>
-                        <Eye className="h-3.5 w-3.5" /> Detay
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => openDetail(req)}>
+                          <Eye className="h-3.5 w-3.5" /> Detay
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(req.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
