@@ -532,7 +532,7 @@ export default function LeadsPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  {!selectedLead.converted_customer_id && (
+                  {!selectedLead.converted_customer_id && selectedLead.status !== 'won' && (
                     <Button onClick={() => handleConvert(selectedLead)} variant="outline" className="gap-2 flex-1 text-success hover:text-success">
                       <ArrowRightLeft className="h-4 w-4" /> Müşteriye Dönüştür
                     </Button>
@@ -540,9 +540,11 @@ export default function LeadsPage() {
                   <Button onClick={() => openEdit(selectedLead)} variant="outline" className="gap-2">
                     Düzenle
                   </Button>
-                  <Button onClick={() => handleDelete(selectedLead)} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {canDeleteLead(selectedLead) && (
+                    <Button onClick={() => handleDelete(selectedLead)} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
 
                 {selectedLead.converted_customer_id && (
