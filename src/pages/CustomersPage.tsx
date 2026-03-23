@@ -39,7 +39,7 @@ const SOURCE_OPTIONS = [
 ];
 const getSourceLabel = (val: string | null) => SOURCE_OPTIONS.find(o => o.value === val)?.label ?? val ?? '-';
 
-const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '', customer_type: 'installment' };
+const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '', customer_type: 'installment', assigned_staff_id: '', assigned_staff_other: '' };
 
 export default function CustomersPage() {
   const { hasPermission } = usePermissions();
