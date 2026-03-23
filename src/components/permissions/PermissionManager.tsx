@@ -21,6 +21,7 @@ const ICONS: Record<string, React.ReactNode> = {
   can_manage_services: <Scissors className="h-4 w-4" />,
   can_manage_leads: <UserPlus className="h-4 w-4" />,
   can_manage_online_booking: <Globe className="h-4 w-4" />,
+  can_delete_leads: <Trash2 className="h-4 w-4" />,
 };
 
 const ALL_KEYS = Object.keys(PERMISSION_LABELS) as (keyof SalonPermissions)[];
