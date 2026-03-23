@@ -224,6 +224,17 @@ export default function InstallmentsPage() {
         </Button>
       </div>
 
+      {/* Filter Buttons */}
+      <div className="flex gap-2">
+        <Button size="sm" variant={filterStatus === 'all' ? 'default' : 'outline'} onClick={() => setFilterStatus('all')}>Tümü</Button>
+        <Button size="sm" variant={filterStatus === 'overdue' ? 'destructive' : 'outline'} onClick={() => setFilterStatus('overdue')}>
+          Gecikmiş ({overduePayments.length})
+        </Button>
+        <Button size="sm" variant={filterStatus === 'upcoming' ? 'default' : 'outline'} onClick={() => setFilterStatus('upcoming')}>
+          Yaklaşan
+        </Button>
+      </div>
+
       {/* KPIs */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         <div className="stat-card p-5">
