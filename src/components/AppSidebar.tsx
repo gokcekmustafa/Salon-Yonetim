@@ -40,6 +40,8 @@ import {
   TrendingUp,
   LifeBuoy,
   Package,
+  Megaphone,
+  MessageSquare,
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
@@ -84,6 +86,12 @@ const otherMenu: MenuItem[] = [
 const superAdminMenu: MenuItem[] = [
   { title: 'Platform Yönetimi', url: '/admin/salonlar', icon: Shield, roles: ['super_admin'], platformPermKey: 'can_manage_salons' },
   { title: 'Tüm Veriler', url: '/admin/veriler', icon: BarChart3, roles: ['super_admin'], platformPermKey: 'can_manage_data' },
+  { title: 'Standart Odalar', url: '/admin/standart-odalar', icon: DoorOpen, roles: ['super_admin'], platformPermKey: 'can_manage_salons' },
+  { title: 'Standart Hizmetler', url: '/admin/standart-hizmetler', icon: Scissors, roles: ['super_admin'], platformPermKey: 'can_manage_salons' },
+  { title: 'Platform Duyuruları', url: '/admin/duyurular', icon: Megaphone, roles: ['super_admin'], platformPermKey: 'can_manage_announcements' },
+  { title: 'Platform Popup Duyuruları', url: '/admin/popuplar', icon: MessageSquare, roles: ['super_admin'], platformPermKey: 'can_manage_popups' },
+  { title: 'Kullanıcı Yönetimi', url: '/admin/kullanicilar', icon: Users, roles: ['super_admin'], platformPermKey: 'can_manage_users' },
+  { title: 'Platform Personelleri', url: '/admin/platform-personelleri', icon: UserCheck, roles: ['super_admin'] },
 ];
 
 export function AppSidebar() {
