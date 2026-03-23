@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 /**
  * Warns user before leaving page when a form is open.
  * Uses beforeunload for tab close/refresh and
  * overrides sidebar navigation via popstate for back/forward.
+ * 
+ * Does NOT interfere with visibility changes (tab switching).
  */
 export function useFormGuard(isFormOpen: boolean) {
   // Handle browser tab close / refresh
