@@ -64,6 +64,7 @@ export function RegistrationRequestManager() {
     const { data, error } = await (supabase as any)
       .from('company_registration_requests')
       .select('*')
+      .neq('status', 'approved')
       .order('created_at', { ascending: false });
 
     if (error) {
