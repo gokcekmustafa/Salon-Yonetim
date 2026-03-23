@@ -31,6 +31,12 @@ import RoomsPage from "./pages/RoomsPage";
 import ProductsPage from "./pages/ProductsPage";
 import SuperAdminSalonsPage from "./pages/SuperAdminSalonsPage";
 import SuperAdminDataPage from "./pages/SuperAdminDataPage";
+import StandardRoomsPage from "./pages/admin/StandardRoomsPage";
+import StandardServicesPage from "./pages/admin/StandardServicesPage";
+import PlatformAnnouncementsPage from "./pages/admin/PlatformAnnouncementsPage";
+import PlatformPopupsPage from "./pages/admin/PlatformPopupsPage";
+import UserManagementPage from "./pages/admin/UserManagementPage";
+import PlatformStaffPage from "./pages/admin/PlatformStaffPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AuditPage from "./pages/AuditPage";
 import SupportPage from "./pages/SupportPage";
@@ -78,6 +84,12 @@ const App = () => (
               <Route path="/book/:salonSlug" element={<BookingPage />} />
               <Route path="/admin/salonlar" element={<SuperAdminRoute><SuperAdminSalonsPage /></SuperAdminRoute>} />
               <Route path="/admin/veriler" element={<SuperAdminRoute><SuperAdminDataPage /></SuperAdminRoute>} />
+              <Route path="/admin/standart-odalar" element={<SuperAdminRoute><StandardRoomsPage /></SuperAdminRoute>} />
+              <Route path="/admin/standart-hizmetler" element={<SuperAdminRoute><StandardServicesPage /></SuperAdminRoute>} />
+              <Route path="/admin/duyurular" element={<SuperAdminRoute><PlatformAnnouncementsPage /></SuperAdminRoute>} />
+              <Route path="/admin/popuplar" element={<SuperAdminRoute><PlatformPopupsPage /></SuperAdminRoute>} />
+              <Route path="/admin/kullanicilar" element={<SuperAdminRoute><UserManagementPage /></SuperAdminRoute>} />
+              <Route path="/admin/platform-personelleri" element={<SuperAdminRoute><PlatformStaffPage /></SuperAdminRoute>} />
               <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
               <Route path="/musteriler" element={<AdminRoute><CustomersPage /></AdminRoute>} />
               <Route path="/randevular" element={<AdminRoute><AppointmentsPage /></AdminRoute>} />

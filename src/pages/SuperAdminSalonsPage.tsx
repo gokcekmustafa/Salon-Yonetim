@@ -21,15 +21,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { SuperAdminUserManager } from '@/components/password/SuperAdminUserManager';
-import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
 import { SubscriptionAlertSettings } from '@/components/notifications/SubscriptionAlertSettings';
-import { PopupManager } from '@/components/popup/PopupManager';
 import { PermissionManager } from '@/components/permissions/PermissionManager';
-import { PlatformStaffManager } from '@/components/admin/PlatformStaffManager';
 import { TicketManager } from '@/components/admin/TicketManager';
 import { RegistrationRequestManager } from '@/components/admin/RegistrationRequestManager';
-import { StandardRoomManager } from '@/components/admin/StandardRoomManager';
-import { StandardServiceManager } from '@/components/admin/StandardServiceManager';
 import { usePlatformPermissions } from '@/hooks/usePlatformPermissions';
 
 type Salon = {
@@ -399,26 +394,8 @@ export default function SuperAdminSalonsPage() {
       {/* Registration Requests */}
       {hasPlatformPermission('can_manage_salons') && <RegistrationRequestManager />}
 
-      {/* Standard Rooms */}
-      {hasPlatformPermission('can_manage_salons') && <StandardRoomManager />}
-
-      {/* Standard Services */}
-      {hasPlatformPermission('can_manage_salons') && <StandardServiceManager />}
-
       {/* Subscription Alert Settings */}
       {hasPlatformPermission('can_manage_settings') && <SubscriptionAlertSettings />}
-
-      {/* Announcements */}
-      {hasPlatformPermission('can_manage_announcements') && <AnnouncementManager mode="super_admin" />}
-
-      {/* Popup Announcements */}
-      {hasPlatformPermission('can_manage_popups') && <PopupManager mode="super_admin" />}
-
-      {/* User Management */}
-      {hasPlatformPermission('can_manage_users') && <SuperAdminUserManager />}
-
-      {/* Platform Staff Manager - only for non-helper super admins */}
-      {!isHelper && <PlatformStaffManager />}
 
       {/* Ticket Manager */}
       <TicketManager />
