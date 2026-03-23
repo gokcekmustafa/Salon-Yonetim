@@ -121,7 +121,7 @@ export default function InstallmentsPage() {
 
   const markPaidMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedPayment) throw new Error('No payment');
+      if (!selectedPayment || !salonId || !user) throw new Error('No payment');
       const { error } = await supabase.from('installment_payments').update({
         is_paid: true,
         paid_amount: selectedPayment.amount,
@@ -129,9 +129,25 @@ export default function InstallmentsPage() {
         payment_method: payMethod,
       } as any).eq('id', selectedPayment.id);
       if (error) throw error;
+
+      // Find installment to get customer name
+      const inst = installments.find(i => i.id === selectedPayment.installment_id);
+      const custName = inst ? getCustomerName(inst.customer_id) : '';
+
+      // Auto cash transaction
+      const { error: cashErr } = await supabase.from('cash_transactions').insert({
+        salon_id: salonId,
+        type: 'income',
+        amount: selectedPayment.amount,
+        description: `Taksit tahsilatı - ${custName} (Taksit ${selectedPayment.installment_number})`,
+        payment_method: payMethod,
+        created_by: user.id,
+      });
+      if (cashErr) throw cashErr;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['installment_payments', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['cash_transactions'] });
       toast.success('Taksit ödendi olarak işaretlendi');
       setPayDialogOpen(false);
       setSelectedPayment(null);
