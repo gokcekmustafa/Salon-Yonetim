@@ -470,6 +470,7 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
   if (!hasPermission('can_manage_appointments')) return <NoPermission feature="Randevu Yönetimi" />;
 
   return (
+    <StaffPageGuard permissionKey="page_appointments" featureLabel="Randevular">
     <div className="page-container animate-in">
       {/* Header */}
       <div className="flex flex-col gap-3">
@@ -873,7 +874,6 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
                             {group.services.map(s => {
                               const isSelected = form.serviceIds.includes(s.id);
                               return (
-    <StaffPageGuard permissionKey="page_appointments" featureLabel="Randevular">
                                 <label
                                   key={s.id}
                                   className="flex items-start gap-1.5 p-2 rounded-md cursor-pointer transition-colors border"

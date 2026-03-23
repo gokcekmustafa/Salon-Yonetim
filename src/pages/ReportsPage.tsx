@@ -297,6 +297,7 @@ export default function ReportsPage() {
   const periodLabel = dateRange === 'daily' ? 'Günlük' : dateRange === 'weekly' ? 'Haftalık' : dateRange === 'monthly' ? 'Aylık' : 'Yıllık';
 
   return (
+    <StaffPageGuard permissionKey="page_reports" featureLabel="Raporlar">
     <div className="page-container animate-in space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -441,7 +442,6 @@ export default function ReportsPage() {
             {cashBoxSummaries.map(box => {
               const Icon = CASH_BOX_ICONS[box.payment_method] || Wallet;
               return (
-    <StaffPageGuard permissionKey="page_reports" featureLabel="Raporlar">
                 <Card key={box.id}>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">{box.name}</CardTitle>

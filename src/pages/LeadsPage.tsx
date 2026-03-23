@@ -19,8 +19,8 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import {
 import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
+import {
   Plus, Search, UserPlus, Phone, Mail, MessageSquare, Loader2, StickyNote,
   ArrowRightLeft, ChevronRight, Trash2, Send, Handshake, XCircle, Eye, Clock
 } from 'lucide-react';
@@ -270,6 +270,7 @@ export default function LeadsPage() {
   );
 
   return (
+    <StaffPageGuard permissionKey="page_leads" featureLabel="Aday Müşteriler">
     <div className="page-container animate-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -340,7 +341,6 @@ export default function LeadsPage() {
               {filtered.map(lead => {
                 const sc = STATUS_CONFIG[lead.status] || STATUS_CONFIG.new;
                 return (
-    <StaffPageGuard permissionKey="page_leads" featureLabel="Aday Müşteriler">
                   <TableRow key={lead.id} className="group cursor-pointer hover:bg-muted/30" onClick={() => openDetail(lead)}>
                     <TableCell>
                       <div className="flex items-center gap-3">

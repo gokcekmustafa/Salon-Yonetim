@@ -284,6 +284,7 @@ export default function CashPage() {
   };
 
   return (
+    <StaffPageGuard permissionKey="page_payments" featureLabel="Kasa Yönetimi">
     <div className="page-container animate-in">
       <div className="page-header">
         <div>
@@ -601,7 +602,6 @@ export default function CashPage() {
                   {cashBoxes.filter(b => b.is_active).map(b => {
                     const bal = boxBalances.find(bb => bb.id === b.id);
                     return (
-    <StaffPageGuard permissionKey="page_payments" featureLabel="Kasa Yönetimi">
                       <SelectItem key={b.id} value={b.id}>
                         {b.name} — Bakiye: ₺{(bal?.balance || 0).toLocaleString('tr-TR')}
                       </SelectItem>

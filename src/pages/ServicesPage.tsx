@@ -276,6 +276,7 @@ export default function ServicesPage() {
   };
 
   return (
+    <StaffPageGuard permissionKey="page_services" featureLabel="Hizmetler">
     <div className="page-container animate-in">
       <div className="page-header">
         <div>
@@ -470,7 +471,6 @@ export default function ServicesPage() {
                 const allSelected = catSvcs.every(s => stdSelected.has(s.id));
                 const someSelected = catSvcs.some(s => stdSelected.has(s.id));
                 return (
-    <StaffPageGuard permissionKey="page_services" featureLabel="Hizmetler">
                   <div key={cat} className="rounded-xl border border-border/60 overflow-hidden">
                     <div className="flex items-center gap-2 px-3 py-2 bg-muted/30">
                       <Checkbox
