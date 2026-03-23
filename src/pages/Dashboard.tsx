@@ -12,7 +12,7 @@ import { SubscriptionAlert } from '@/components/notifications/SubscriptionAlert'
 
 export default function Dashboard() {
   const { isSuperAdmin, currentSalonId, profile } = useAuth();
-  const { appointments, customers, payments, staff, services, loading, salon } = useSalonData();
+  const { appointments, customers, payments, staff, services, loading, salon } = useBranchFilteredData();
   const navigate = useNavigate();
 
   if (loading) return (
