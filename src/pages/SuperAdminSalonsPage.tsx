@@ -21,15 +21,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { SuperAdminUserManager } from '@/components/password/SuperAdminUserManager';
-import { AnnouncementManager } from '@/components/notifications/AnnouncementManager';
 import { SubscriptionAlertSettings } from '@/components/notifications/SubscriptionAlertSettings';
-import { PopupManager } from '@/components/popup/PopupManager';
 import { PermissionManager } from '@/components/permissions/PermissionManager';
-import { PlatformStaffManager } from '@/components/admin/PlatformStaffManager';
 import { TicketManager } from '@/components/admin/TicketManager';
 import { RegistrationRequestManager } from '@/components/admin/RegistrationRequestManager';
-import { StandardRoomManager } from '@/components/admin/StandardRoomManager';
-import { StandardServiceManager } from '@/components/admin/StandardServiceManager';
 import { usePlatformPermissions } from '@/hooks/usePlatformPermissions';
 
 type Salon = {
