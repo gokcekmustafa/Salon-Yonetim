@@ -26,7 +26,6 @@ import {
   UserCheck,
   Wallet,
   Settings,
-  
   Building2,
   BarChart3,
   Globe,
@@ -40,6 +39,7 @@ import {
   CreditCard,
   TrendingUp,
   LifeBuoy,
+  Package,
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
@@ -62,6 +62,7 @@ const mainMenu: MenuItem[] = [
   { title: 'Şubeler', url: '/subeler', icon: Building2, permissionKey: 'can_add_branches' },
   { title: 'Aday Müşteriler', url: '/adaylar', icon: Users, roles: ['salon_admin', 'staff'], permissionKey: 'can_manage_leads' },
   { title: 'Sözleşmeler', url: '/sozlesmeler', icon: FileText, permissionKey: 'can_manage_customers' },
+  { title: 'Ürünler', url: '/urunler', icon: Package },
 ];
 
 const financeMenu: MenuItem[] = [

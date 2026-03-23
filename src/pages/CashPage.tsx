@@ -26,6 +26,7 @@ import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
+import { ProductSaleDialog } from '@/components/products/ProductSaleDialog';
 
 type CashBox = { id: string; salon_id: string; name: string; payment_method: string; is_active: boolean };
 type CashTransaction = {
@@ -56,7 +57,8 @@ export default function CashPage() {
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
-  useFormGuard(dialogOpen || transferDialogOpen);
+  const [productSaleOpen, setProductSaleOpen] = useState(false);
+  useFormGuard(dialogOpen || transferDialogOpen || productSaleOpen);
   const [editingTx, setEditingTx] = useState<CashTransaction | null>(null);
   const [activeTab, setActiveTab] = useState('cash');
 
@@ -333,6 +335,9 @@ export default function CashPage() {
           </Button>
           <Button variant="destructive" className="gap-2 flex-1 sm:flex-initial" onClick={openAddExpense}>
             <TrendingDown className="h-4 w-4" /> Gider Gir
+          </Button>
+          <Button variant="secondary" className="gap-2 flex-1 sm:flex-initial" onClick={() => setProductSaleOpen(true)}>
+            <Receipt className="h-4 w-4" /> Ürün Satışı
           </Button>
         </div>
       </div>
@@ -628,6 +633,8 @@ export default function CashPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ProductSaleDialog open={productSaleOpen} onOpenChange={setProductSaleOpen} />
     </div>
     </StaffPageGuard>
   );

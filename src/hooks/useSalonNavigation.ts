@@ -17,7 +17,8 @@ export type SalonNavigationKey =
   | 'subeler'
   | 'odalar'
   | 'sozlesmeler'
-  | 'maas';
+  | 'maas'
+  | 'urunler';
 
 export type SalonNavigationItem = {
   key: SalonNavigationKey;
@@ -46,6 +47,7 @@ const NAVIGATION_ITEMS: Omit<SalonNavigationItem, 'isVisible'>[] = [
   { key: 'odalar', title: 'Odalar', url: '/odalar', locked: false, placement: 'more', defaultOrder: 11 },
   { key: 'sozlesmeler', title: 'Sözleşmeler', url: '/sozlesmeler', locked: false, placement: 'more', defaultOrder: 12 },
   { key: 'maas', title: 'Maaş & Ödeme', url: '/maas', locked: false, placement: 'more', defaultOrder: 13 },
+  { key: 'urunler', title: 'Ürünler', url: '/urunler', locked: false, placement: 'more', defaultOrder: 14 },
 ];
 
 const isRelevantPayload = (

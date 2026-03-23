@@ -1132,6 +1132,159 @@ export type Database = {
           },
         ]
       }
+      product_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          salon_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          salon_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          salon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_sales: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          id: string
+          payment_method: string
+          product_id: string
+          quantity: number
+          salon_id: string
+          sold_by: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          id?: string
+          payment_method?: string
+          product_id: string
+          quantity?: number
+          salon_id: string
+          sold_by: string
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          id?: string
+          payment_method?: string
+          product_id?: string
+          quantity?: number
+          salon_id?: string
+          sold_by?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sales_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sales_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          barcode: string | null
+          category_id: string | null
+          created_at: string
+          current_stock: number
+          description: string | null
+          id: string
+          is_active: boolean
+          min_stock_alert: number
+          name: string
+          purchase_price: number
+          sale_price: number
+          salon_id: string
+          updated_at: string
+        }
+        Insert: {
+          barcode?: string | null
+          category_id?: string | null
+          created_at?: string
+          current_stock?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          min_stock_alert?: number
+          name: string
+          purchase_price?: number
+          sale_price?: number
+          salon_id: string
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string | null
+          category_id?: string | null
+          created_at?: string
+          current_stock?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          min_stock_alert?: number
+          name?: string
+          purchase_price?: number
+          sale_price?: number
+          salon_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1792,6 +1945,54 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          product_id: string
+          quantity: number
+          salon_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          product_id: string
+          quantity: number
+          salon_id: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          product_id?: string
+          quantity?: number
+          salon_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       support_tickets: {
         Row: {

@@ -17,6 +17,7 @@ export const STAFF_PAGE_PERMISSIONS = [
   { key: 'page_contracts', label: 'Sözleşmeler', path: '/sozlesmeler' },
   { key: 'page_payments', label: 'Ödemeler', path: '/kasa-yonetimi' },
   { key: 'page_rooms', label: 'Odalar', path: '/odalar' },
+  { key: 'page_products', label: 'Ürünler', path: '/urunler' },
 ] as const;
 
 export type StaffPagePermissionKey = typeof STAFF_PAGE_PERMISSIONS[number]['key'];
