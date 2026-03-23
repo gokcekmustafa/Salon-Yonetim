@@ -103,6 +103,9 @@ export function AppSidebar() {
   const { hasPlatformPermission } = usePlatformPermissions();
   const { branding } = useBranding();
 
+  // When super admin is NOT managing a salon, hide salon-specific menus
+  const showSalonMenus = !isSuperAdmin || isManagingSalon;
+
   const filterByRole = (items: MenuItem[]) =>
     items.filter(item => {
       // Role check
