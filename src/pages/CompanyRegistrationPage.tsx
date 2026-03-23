@@ -218,7 +218,7 @@ export default function CompanyRegistrationPage() {
     const username = form.username.trim();
     if (!username) nextErrors.username = 'Kullanıcı adı zorunludur.';
     else if (!USERNAME_REGEX.test(username)) {
-      nextErrors.username = 'Kullanıcı adı küçük harf, rakam ve tire içerebilir.';
+      nextErrors.username = 'Kullanıcı adı küçük harf, rakam, nokta ve alt çizgi içerebilir.';
     } else if (usernameAvailable === false) {
       nextErrors.username = 'Bu kullanıcı adı kullanılamıyor.';
     }
