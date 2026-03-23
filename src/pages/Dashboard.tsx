@@ -113,6 +113,36 @@ export default function Dashboard() {
         />
       )}
 
+      {overdueInstallments.length > 0 && (
+        <Card className="border-destructive/40 bg-destructive/5" style={salonCard}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" /> Gecikmiş Taksitler ({overdueInstallments.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {overdueInstallments.map((p: any) => {
+              const custId = p.installments?.customer_id;
+              const custName = custId ? (customers.find(c => c.id === custId)?.name || '-') : '-';
+              return (
+                <div key={p.id} className="flex items-center justify-between p-2.5 rounded-lg border border-destructive/20 bg-card">
+                  <div>
+                    <p className="text-sm font-medium">{custName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Taksit {p.installment_number} • Vade: {format(parseISO(p.due_date), 'd MMM yyyy', { locale: tr })}
+                    </p>
+                  </div>
+                  <span className="font-bold text-sm text-destructive">₺{Number(p.amount).toLocaleString('tr-TR')}</span>
+                </div>
+              );
+            })}
+            <Button variant="outline" size="sm" className="w-full mt-1" onClick={() => navigate('/taksitler')}>
+              Tüm Taksitleri Gör
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <div>
         <h1 className={isSalon ? 'font-bold tracking-tight' : 'page-title'} style={isSalon ? { fontSize: '22px' } : undefined}>
           Anasayfa
