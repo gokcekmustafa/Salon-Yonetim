@@ -65,7 +65,7 @@ const NOTE_TYPE_COLORS: Record<string, string> = {
 
 export default function LeadsPage() {
   const { hasPermission } = usePermissions();
-  const { user, currentSalonId, isSuperAdmin } = useAuth();
+  const { user, currentSalonId, isSuperAdmin, isSalonAdmin } = useAuth();
   const { addCustomer, staff: salonStaff } = useSalonData();
 
   const activeStaff = salonStaff.filter(s => s.is_active);
