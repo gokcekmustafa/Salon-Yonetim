@@ -241,8 +241,8 @@ export default function CustomersPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : 'default'} className="text-[10px]">
-                      {c.customer_type === 'single_session' ? 'Tek Seans' : 'Taksitli'}
+                    <Badge variant={c.customer_type === 'single_session' ? 'secondary' : c.customer_type === 'cash' ? 'outline' : 'default'} className="text-[10px]">
+                      {c.customer_type === 'single_session' ? 'Tek Seans' : c.customer_type === 'cash' ? 'Peşin' : 'Taksitli'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
