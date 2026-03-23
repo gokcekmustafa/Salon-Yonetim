@@ -240,7 +240,6 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
             </div>
           </nav>
         )}
-        )}
       </header>
 
       <main className="flex-1 p-5 overflow-auto">
