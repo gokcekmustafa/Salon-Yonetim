@@ -29,6 +29,7 @@ import { PlatformStaffManager } from '@/components/admin/PlatformStaffManager';
 import { TicketManager } from '@/components/admin/TicketManager';
 import { RegistrationRequestManager } from '@/components/admin/RegistrationRequestManager';
 import { StandardRoomManager } from '@/components/admin/StandardRoomManager';
+import { StandardServiceManager } from '@/components/admin/StandardServiceManager';
 import { usePlatformPermissions } from '@/hooks/usePlatformPermissions';
 
 type Salon = {
