@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Key, Loader2, Eye, EyeOff, Search, ShieldCheck, Plus, UserPlus, Trash2, Mail, Lock, Building2, UserCog } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Users, Key, Loader2, Eye, EyeOff, Search, ShieldCheck, Plus, UserPlus, Trash2, Mail, Lock, Building2, UserCog, ChevronDown, ChevronRight, Shield, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -43,6 +44,165 @@ function PasswordReveal({ password }: { password: string }) {
         {visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
       </button>
     </div>
+  );
+}
+
+interface UserRowProps {
+  user: EnrichedUser;
+  roleLabel: (role: string) => string;
+  roleColor: (role: string) => string;
+  showSalons?: boolean;
+  onReset: (user: EnrichedUser) => void;
+  onEmail: (user: EnrichedUser) => void;
+  onMember: (user: EnrichedUser) => void;
+  onDelete: (user: EnrichedUser) => void;
+  indent?: boolean;
+}
+
+function UserRow({ user, roleLabel, roleColor, showSalons = false, onReset, onEmail, onMember, onDelete, indent }: UserRowProps) {
+  return (
+    <TableRow className="group">
+      <TableCell>
+        <div className={`flex items-center gap-3 ${indent ? 'pl-4' : ''}`}>
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold text-primary">
+              {(user.full_name || user.email || '?')[0].toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <p className="text-sm font-medium">{user.full_name || '—'}</p>
+            <p className="text-xs text-muted-foreground md:hidden">{user.email}</p>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="hidden md:table-cell">
+        <span className="text-sm text-muted-foreground">{user.email}</span>
+      </TableCell>
+      <TableCell className="hidden lg:table-cell">
+        {user.stored_password ? (
+          <PasswordReveal password={user.stored_password} />
+        ) : (
+          <span className="text-xs text-muted-foreground italic">—</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-wrap gap-1">
+          {user.roles.map(role => (
+            <Badge key={role} variant="secondary" className={`text-[10px] font-semibold ${roleColor(role)}`}>
+              {roleLabel(role)}
+            </Badge>
+          ))}
+          {user.roles.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+        </div>
+      </TableCell>
+      {showSalons && (
+        <TableCell className="hidden lg:table-cell">
+          <div className="flex flex-wrap gap-1">
+            {user.memberships.map(m => (
+              <Badge key={m.salon_id} variant="outline" className="text-[10px]">{m.salon_name}</Badge>
+            ))}
+            {user.memberships.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+          </div>
+        </TableCell>
+      )}
+      <TableCell>
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button variant="ghost" size="icon" onClick={() => onMember(user)} className="h-8 w-8" title="Rol & Salon Ata">
+            <UserCog className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onEmail(user)} className="h-8 w-8" title="E-posta güncelle">
+            <Mail className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onReset(user)} className="h-8 w-8" title="Şifre sıfırla">
+            <Key className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onDelete(user)} className="h-8 w-8 text-destructive hover:text-destructive" title="Kullanıcıyı sil">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+interface SalonAdminGroupProps {
+  admin: EnrichedUser;
+  staffList: EnrichedUser[];
+  roleLabel: (role: string) => string;
+  roleColor: (role: string) => string;
+  onReset: (user: EnrichedUser) => void;
+  onEmail: (user: EnrichedUser) => void;
+  onMember: (user: EnrichedUser) => void;
+  onDelete: (user: EnrichedUser) => void;
+}
+
+function SalonAdminGroup({ admin, staffList, roleLabel, roleColor, onReset, onEmail, onMember, onDelete }: SalonAdminGroupProps) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="rounded-lg border border-border/60 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 bg-muted/20 hover:bg-muted/40 transition-colors">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-full bg-info/10 flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold text-info">
+              {(admin.full_name || admin.email || '?')[0].toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <p className="text-sm font-semibold">{admin.full_name || '—'}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-muted-foreground">{admin.email}</span>
+              {admin.memberships.map(m => (
+                <Badge key={m.salon_id} variant="outline" className="text-[9px]">{m.salon_name}</Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {admin.stored_password && (
+            <div className="hidden lg:block">
+              <PasswordReveal password={admin.stored_password} />
+            </div>
+          )}
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={() => onMember(admin)} className="h-7 w-7" title="Rol & Salon Ata">
+              <UserCog className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => onEmail(admin)} className="h-7 w-7" title="E-posta güncelle">
+              <Mail className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => onReset(admin)} className="h-7 w-7" title="Şifre sıfırla">
+              <Key className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => onDelete(admin)} className="h-7 w-7 text-destructive hover:text-destructive" title="Sil">
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          {staffList.length > 0 && (
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground">
+                <Users className="h-3.5 w-3.5" />
+                {staffList.length} Personel
+                {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+              </Button>
+            </CollapsibleTrigger>
+          )}
+        </div>
+      </div>
+      {staffList.length > 0 && (
+        <CollapsibleContent>
+          <div className="border-t border-border/40">
+            <Table>
+              <TableBody>
+                {staffList.map(staff => (
+                  <UserRow key={staff.id} user={staff} roleLabel={roleLabel} roleColor={roleColor} showSalons={false} indent
+                    onReset={onReset} onEmail={onEmail} onMember={onMember} onDelete={onDelete} />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CollapsibleContent>
+      )}
+    </Collapsible>
   );
 }
 
@@ -294,6 +454,27 @@ export function SuperAdminUserManager() {
     (u.email || '').toLowerCase().includes(search.toLowerCase())
   );
 
+  // Separate platform admins from salon users
+  const platformAdmins = filtered.filter(u => u.roles.includes('super_admin'));
+  const salonUsers = filtered.filter(u => !u.roles.includes('super_admin'));
+
+  // Group salon users: salon_admins and their staff
+  const salonAdmins = salonUsers.filter(u => u.roles.includes('salon_admin'));
+  const staffUsers = salonUsers.filter(u => !u.roles.includes('salon_admin'));
+
+  // Group staff by salon_id under their salon admin
+  const getSalonStaff = (salonId: string) =>
+    staffUsers.filter(u => u.memberships.some(m => m.salon_id === salonId));
+
+  // Staff not belonging to any salon admin's salon
+  const assignedStaffIds = new Set<string>();
+  salonAdmins.forEach(admin => {
+    admin.memberships.forEach(m => {
+      getSalonStaff(m.salon_id).forEach(s => assignedStaffIds.add(s.id));
+    });
+  });
+  const unassignedStaff = staffUsers.filter(u => !assignedStaffIds.has(u.id));
+
   const roleLabel = (role: string) => {
     switch (role) {
       case 'super_admin': return 'Super Admin';
@@ -350,88 +531,81 @@ export function SuperAdminUserManager() {
               <p className="text-sm text-muted-foreground">Kullanıcı bulunamadı</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-border/60">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="font-semibold">Kullanıcı</TableHead>
-                    <TableHead className="font-semibold hidden md:table-cell">E-posta</TableHead>
-                    <TableHead className="font-semibold hidden lg:table-cell">Şifre</TableHead>
-                    <TableHead className="font-semibold">Roller</TableHead>
-                    <TableHead className="font-semibold hidden lg:table-cell">Salonlar</TableHead>
-                    <TableHead className="w-32"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map(user => (
-                    <TableRow key={user.id} className="group">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-primary">
-                              {(user.full_name || user.email || '?')[0].toUpperCase()}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{user.full_name || '—'}</p>
-                            <p className="text-xs text-muted-foreground md:hidden">{user.email}</p>
-                          </div>
+            <div className="space-y-6">
+              {/* Platform Yöneticileri */}
+              {platformAdmins.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-1">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Platform Yöneticileri</h3>
+                    <Badge variant="secondary" className="text-[10px]">{platformAdmins.length}</Badge>
+                  </div>
+                  <div className="overflow-x-auto rounded-lg border border-border/60">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="font-semibold">Kullanıcı</TableHead>
+                          <TableHead className="font-semibold hidden md:table-cell">E-posta</TableHead>
+                          <TableHead className="font-semibold hidden lg:table-cell">Şifre</TableHead>
+                          <TableHead className="font-semibold">Roller</TableHead>
+                          <TableHead className="w-32"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {platformAdmins.map(user => (
+                          <UserRow key={user.id} user={user} roleLabel={roleLabel} roleColor={roleColor} showSalons={false}
+                            onReset={openReset} onEmail={openEmailUpdate} onMember={openMemberManage} onDelete={handleDelete} />
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              {/* İşletme Sahipleri & Personelleri */}
+              {(salonAdmins.length > 0 || unassignedStaff.length > 0) && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-1">
+                    <Crown className="h-4 w-4 text-warning" />
+                    <h3 className="text-sm font-semibold text-foreground">İşletme Sahipleri & Personelleri</h3>
+                    <Badge variant="secondary" className="text-[10px]">{salonAdmins.length + staffUsers.length}</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {salonAdmins.map(admin => {
+                      const adminSalonIds = admin.memberships.map(m => m.salon_id);
+                      const adminStaff = staffUsers.filter(u => u.memberships.some(m => adminSalonIds.includes(m.salon_id)));
+                      return (
+                        <SalonAdminGroup
+                          key={admin.id}
+                          admin={admin}
+                          staffList={adminStaff}
+                          roleLabel={roleLabel}
+                          roleColor={roleColor}
+                          onReset={openReset}
+                          onEmail={openEmailUpdate}
+                          onMember={openMemberManage}
+                          onDelete={handleDelete}
+                        />
+                      );
+                    })}
+                    {unassignedStaff.length > 0 && (
+                      <div className="rounded-lg border border-border/60 overflow-hidden">
+                        <div className="px-4 py-3 bg-muted/30 border-b border-border/40">
+                          <p className="text-xs font-semibold text-muted-foreground">Salona Atanmamış Personeller</p>
                         </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <span className="text-sm text-muted-foreground">{user.email}</span>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {user.stored_password ? (
-                          <PasswordReveal password={user.stored_password} />
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {user.roles.map(role => (
-                            <Badge key={role} variant="secondary" className={`text-[10px] font-semibold ${roleColor(role)}`}>
-                              {roleLabel(role)}
-                            </Badge>
-                          ))}
-                          {user.roles.length === 0 && (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="flex flex-wrap gap-1">
-                          {user.memberships.map(m => (
-                            <Badge key={m.salon_id} variant="outline" className="text-[10px]">
-                              {m.salon_name}
-                            </Badge>
-                          ))}
-                          {user.memberships.length === 0 && (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" onClick={() => openMemberManage(user)} className="h-8 w-8" title="Rol & Salon Ata">
-                            <UserCog className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => openEmailUpdate(user)} className="h-8 w-8" title="E-posta güncelle">
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => openReset(user)} className="h-8 w-8" title="Şifre sıfırla">
-                            <Key className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(user)} className="h-8 w-8 text-destructive hover:text-destructive" title="Kullanıcıyı sil">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        <Table>
+                          <TableBody>
+                            {unassignedStaff.map(user => (
+                              <UserRow key={user.id} user={user} roleLabel={roleLabel} roleColor={roleColor} showSalons
+                                onReset={openReset} onEmail={openEmailUpdate} onMember={openMemberManage} onDelete={handleDelete} />
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
