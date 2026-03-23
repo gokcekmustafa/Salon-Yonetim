@@ -29,6 +29,7 @@ const ALL_GRANTED: SalonPermissions = {
   can_manage_services: true,
   can_manage_leads: true,
   can_manage_online_booking: true,
+  can_delete_leads: true,
 };
 
 export const PERMISSION_LABELS: Record<keyof SalonPermissions, string> = {
