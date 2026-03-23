@@ -633,6 +633,8 @@ export default function CashPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ProductSaleDialog open={productSaleOpen} onOpenChange={setProductSaleOpen} />
     </div>
     </StaffPageGuard>
   );
