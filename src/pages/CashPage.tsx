@@ -336,6 +336,9 @@ export default function CashPage() {
           <Button variant="destructive" className="gap-2 flex-1 sm:flex-initial" onClick={openAddExpense}>
             <TrendingDown className="h-4 w-4" /> Gider Gir
           </Button>
+          <Button variant="secondary" className="gap-2 flex-1 sm:flex-initial" onClick={() => setProductSaleOpen(true)}>
+            <Receipt className="h-4 w-4" /> Ürün Satışı
+          </Button>
         </div>
       </div>
 
