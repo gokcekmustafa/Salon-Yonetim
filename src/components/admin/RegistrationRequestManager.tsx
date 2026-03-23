@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { ClipboardList, Check, X, Loader2, Eye, Search } from 'lucide-react';
+import { ClipboardList, Check, X, Loader2, Eye, Search, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -64,6 +64,7 @@ export function RegistrationRequestManager() {
     const { data, error } = await (supabase as any)
       .from('company_registration_requests')
       .select('*')
+      .neq('status', 'approved')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -156,6 +157,21 @@ export function RegistrationRequestManager() {
     setRejecting(false);
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Bu başvuruyu silmek istediğinize emin misiniz?')) return;
+    const { error } = await (supabase as any)
+      .from('company_registration_requests')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast.error('Silme işlemi başarısız');
+    } else {
+      toast.success('Başvuru silindi');
+      fetchRequests();
+    }
+  };
+
   const filtered = requests.filter(r =>
     r.company_name.toLowerCase().includes(search.toLowerCase()) ||
     r.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -225,9 +241,14 @@ export function RegistrationRequestManager() {
                       {format(new Date(req.created_at), 'dd.MM.yyyy')}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => openDetail(req)}>
-                        <Eye className="h-3.5 w-3.5" /> Detay
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => openDetail(req)}>
+                          <Eye className="h-3.5 w-3.5" /> Detay
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(req.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
