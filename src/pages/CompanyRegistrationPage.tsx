@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { sanitizeUsername } from '@/lib/usernameUtils';
 import { TURKEY_CITIES, getDistrictsByCity, getNeighborhoodsByDistrict } from '@/lib/turkeyLocations';
 
 type FormState = {
@@ -35,7 +36,7 @@ type FormState = {
 };
 
 const ROLE_OPTIONS = ['İşletme Sahibi', 'Estetisyen', 'Satış Temsilcisi', 'Aracı'];
-const USERNAME_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const USERNAME_REGEX = /^[a-z0-9][a-z0-9._]*$/;
 const PHONE_REGEX = /^05\d{2} \d{3} \d{2} \d{2}$/;
 
 const INITIAL_FORM: FormState = {
@@ -217,7 +218,7 @@ export default function CompanyRegistrationPage() {
     const username = form.username.trim();
     if (!username) nextErrors.username = 'Kullanıcı adı zorunludur.';
     else if (!USERNAME_REGEX.test(username)) {
-      nextErrors.username = 'Kullanıcı adı küçük harf, rakam ve tire içerebilir.';
+      nextErrors.username = 'Kullanıcı adı küçük harf, rakam, nokta ve alt çizgi içerebilir.';
     } else if (usernameAvailable === false) {
       nextErrors.username = 'Bu kullanıcı adı kullanılamıyor.';
     }
@@ -465,7 +466,7 @@ export default function CompanyRegistrationPage() {
                       value={form.username}
                       onChange={(e) => {
                         setManualUsernameEdit(true);
-                        setField('username', e.target.value.toLowerCase());
+                        setField('username', sanitizeUsername(e.target.value));
                       }}
                     />
                     {usernameChecking && <p className="text-xs text-muted-foreground">Kullanıcı adı kontrol ediliyor...</p>}
