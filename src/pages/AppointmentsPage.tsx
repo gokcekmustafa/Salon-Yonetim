@@ -49,6 +49,7 @@ export default function AppointmentsPage() {
     addAppointment, updateAppointment, addPayment, hasConflict, refetch,
   } = useBranchFilteredData();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [listGroupMode, setListGroupMode] = useState<ListGroupMode>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
