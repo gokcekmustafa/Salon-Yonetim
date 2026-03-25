@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -60,6 +61,9 @@ export default function CustomersPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [saleCustomer, setSaleCustomer] = useState<DbCustomer | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<DbCustomer | null>(null);
+  const [deleteBlocked, setDeleteBlocked] = useState(false);
   useFormGuard(dialogOpen);
 
   useEffect(() => {
@@ -133,7 +137,27 @@ export default function CustomersPage() {
     }
   };
 
-  const handleDelete = async (c: DbCustomer) => { await deleteCustomer(c.id); toast.success('Müşteri silindi.'); };
+  const handleDeleteClick = (c: DbCustomer) => {
+    const now = new Date();
+    const hasActiveAppointments = appointments.some(a =>
+      a.customer_id === c.id && a.status !== 'iptal' && new Date(a.start_time) >= now
+    );
+    if (hasActiveAppointments) {
+      setDeleteBlocked(true);
+    } else {
+      setDeleteBlocked(false);
+    }
+    setCustomerToDelete(c);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!customerToDelete) return;
+    await deleteCustomer(customerToDelete.id);
+    toast.success('Müşteri silindi.');
+    setDeleteConfirmOpen(false);
+    setCustomerToDelete(null);
+  };
   const openHistory = (c: DbCustomer) => { setSelectedCustomer(c); setHistoryOpen(true); };
   const openSale = (c: DbCustomer) => { setSaleCustomer(c); setSaleDialogOpen(true); };
   const openSalesHistory = (c: DbCustomer) => { setSaleCustomer(c); setSalesHistoryOpen(true); };
@@ -233,7 +257,7 @@ export default function CustomersPage() {
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openSalesHistory(c)} title="Satış Geçmişi"><History className="h-3.5 w-3.5" /></Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openHistory(c)}><History className="h-3.5 w-3.5" /></Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteClick(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
             </div>
           </div>
@@ -289,7 +313,7 @@ export default function CustomersPage() {
                       <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => openSalesHistory(c)} title="Satış Geçmişi"><History className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => openHistory(c)}><History className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={() => handleDelete(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={() => handleDeleteClick(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -406,6 +430,30 @@ export default function CustomersPage() {
           customerName={saleCustomer.name}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteBlocked ? 'Müşteri Silinemez' : 'Müşteriyi Sil'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteBlocked
+                ? `"${customerToDelete?.name}" adlı müşterinin ileri tarihli aktif randevusu bulunmaktadır. Önce randevuları iptal edin veya tamamlayın.`
+                : `"${customerToDelete?.name}" adlı müşteriyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            {!deleteBlocked && (
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Sil
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     </StaffPageGuard>
   );
