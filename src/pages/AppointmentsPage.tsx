@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,6 +49,7 @@ export default function AppointmentsPage() {
     addAppointment, updateAppointment, addPayment, hasConflict, refetch,
   } = useBranchFilteredData();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [listGroupMode, setListGroupMode] = useState<ListGroupMode>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -187,6 +189,14 @@ export default function AppointmentsPage() {
     });
     setDialogOpen(true);
   };
+
+  // Auto-open new appointment dialog from URL param
+  useEffect(() => {
+    if (searchParams.get('yeniRandevu') === '1') {
+      openAdd();
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
 
   // Multi-service totals
   const selectedServices = services.filter(s => form.serviceIds.includes(s.id));

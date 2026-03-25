@@ -214,7 +214,7 @@ export default function Dashboard() {
                 ? 'w-full mt-3 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 border-0'
                 : 'w-full mt-3 gap-2'}
               style={isSalon ? { fontSize: '14px' } : undefined}
-              onClick={() => navigate('/randevular')}
+              onClick={() => navigate('/randevular?yeniRandevu=1')}
             >
               <Plus className="h-4 w-4" />
               Yeni randevu ekle
