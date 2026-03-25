@@ -12,6 +12,7 @@ export type DbCustomer = {
   birth_date: string | null; notes: string | null; created_at: string; updated_at: string;
   tc_kimlik_no: string | null; address: string | null; secondary_phone: string | null;
   source_type: string | null; source_detail: string | null; customer_type: string;
+  branch_id: string | null;
 };
 export type DbService = {
   id: string; salon_id: string; name: string; duration: number;
@@ -30,6 +31,7 @@ export type DbAppointment = {
 export type DbPayment = {
   id: string; salon_id: string; appointment_id: string | null; amount: number;
   payment_type: string; payment_date: string; created_at: string;
+  branch_id: string | null;
 };
 export type DbNotificationSettings = {
   id: string; salon_id: string; whatsapp_enabled: boolean; sms_enabled: boolean;
@@ -43,7 +45,7 @@ export type DbSalon = {
 };
 
 export function useSalonData() {
-  const { user, currentSalonId, isSuperAdmin } = useAuth();
+  const { user, currentSalonId, isSuperAdmin, isSalonAdmin, isStaff, currentBranchId } = useAuth();
   const [loading, setLoading] = useState(true);
   const [branches, setBranches] = useState<DbBranch[]>([]);
   const [customers, setCustomers] = useState<DbCustomer[]>([]);
@@ -98,14 +100,42 @@ export function useSalonData() {
       return;
     }
 
+    const isStaffOnly = isStaff && !isSuperAdmin && !isSalonAdmin;
+    if (isStaffOnly && !currentBranchId) {
+      setSalon(null);
+      setBranches([]);
+      setCustomers([]);
+      setServices([]);
+      setStaff([]);
+      setAppointments([]);
+      setPayments([]);
+      setNotificationSettings(null);
+      setLoading(false);
+      return;
+    }
+
+    const branchesQuery = supabase.from('branches').select('*').eq('salon_id', salonId).order('name');
+    const customersQuery = supabase.from('customers').select('*').eq('salon_id', salonId).order('name');
+    const staffQuery = supabase.from('staff').select('*').eq('salon_id', salonId).order('name');
+    const appointmentsQuery = supabase.from('appointments').select('*').eq('salon_id', salonId).order('start_time', { ascending: false });
+    const paymentsQuery = supabase.from('payments').select('*').eq('salon_id', salonId).order('payment_date', { ascending: false });
+
+    if (isStaffOnly && currentBranchId) {
+      branchesQuery.eq('id', currentBranchId);
+      customersQuery.eq('branch_id', currentBranchId);
+      staffQuery.eq('branch_id', currentBranchId);
+      appointmentsQuery.eq('branch_id', currentBranchId);
+      paymentsQuery.eq('branch_id', currentBranchId);
+    }
+
     const [salonRes, branchRes, custRes, svcRes, staffRes, aptRes, payRes, notifRes] = await Promise.all([
       supabase.from('salons').select('id, name, slug, phone, address, is_active, logo_url, subscription_plan, subscription_expires_at, online_booking_active').eq('id', salonId).single(),
-      supabase.from('branches').select('*').eq('salon_id', salonId).order('name'),
-      supabase.from('customers').select('*').eq('salon_id', salonId).order('name'),
+      branchesQuery,
+      customersQuery,
       supabase.from('services').select('*').eq('salon_id', salonId).order('name'),
-      supabase.from('staff').select('*').eq('salon_id', salonId).order('name'),
-      supabase.from('appointments').select('*').eq('salon_id', salonId).order('start_time', { ascending: false }),
-      supabase.from('payments').select('*').eq('salon_id', salonId).order('payment_date', { ascending: false }),
+      staffQuery,
+      appointmentsQuery,
+      paymentsQuery,
       supabase.from('notification_settings').select('*').eq('salon_id', salonId).single(),
     ]);
 
@@ -119,7 +149,7 @@ export function useSalonData() {
     if (notifRes.data) setNotificationSettings(notifRes.data);
 
     setLoading(false);
-  }, [user, salonId, isSuperAdmin]);
+  }, [user, salonId, isSuperAdmin, isSalonAdmin, isStaff, currentBranchId]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -143,7 +173,7 @@ export function useSalonData() {
     return error;
   };
 
-  const addCustomer = async (data: { name: string; phone: string; birth_date?: string; notes?: string; tc_kimlik_no?: string; address?: string; secondary_phone?: string; source_type?: string; source_detail?: string }) => {
+  const addCustomer = async (data: { name: string; phone: string; birth_date?: string; notes?: string; tc_kimlik_no?: string; address?: string; secondary_phone?: string; source_type?: string; source_detail?: string; branch_id?: string | null }) => {
     if (!salonId) return { id: '', error: null };
     const { data: inserted, error } = await supabase
       .from('customers').insert({ ...data, salon_id: salonId }).select('id').single();
@@ -233,9 +263,20 @@ const updateAppointment = async (id: string, data: Partial<DbAppointment>) => {
     return null;
   };
 
-  const addPayment = async (data: { appointment_id: string; amount: number; payment_type: string }) => {
+  const addPayment = async (data: { appointment_id: string; amount: number; payment_type: string; branch_id?: string | null }) => {
     if (!salonId) return;
-    const { error } = await supabase.from('payments').insert({ ...data, salon_id: salonId });
+
+    let branchId = data.branch_id ?? null;
+    if (!branchId && data.appointment_id) {
+      const { data: appointment } = await supabase
+        .from('appointments')
+        .select('branch_id')
+        .eq('id', data.appointment_id)
+        .maybeSingle();
+      branchId = appointment?.branch_id ?? null;
+    }
+
+    const { error } = await supabase.from('payments').insert({ ...data, salon_id: salonId, branch_id: branchId });
     if (!error) fetchAll();
     return error;
   };

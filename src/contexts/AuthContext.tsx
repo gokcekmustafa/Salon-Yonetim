@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const roleSet = new Set<AppRole>((rolesRes.data || []).map(r => r.role as AppRole));
       setProfile(profileRes.data ?? null);
 
-      if (!roleSet.has('super_admin')) {
+        if (!roleSet.has('super_admin')) {
         const { data: memberships } = await supabase
           .from('salon_members')
           .select('salon_id, branch_id, role')
@@ -85,10 +85,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (fetchId !== fetchIdRef.current) return;
 
-        const firstMembership = memberships?.[0];
+          const firstMembership = memberships?.[0];
         if (firstMembership) {
+            let resolvedBranchId = firstMembership.branch_id;
+
+            if (!resolvedBranchId && firstMembership.role === 'staff') {
+              const { data: staffBranch } = await supabase
+                .from('staff')
+                .select('branch_id')
+                .eq('user_id', userId)
+                .eq('salon_id', firstMembership.salon_id)
+                .maybeSingle();
+
+              if (fetchId !== fetchIdRef.current) return;
+              resolvedBranchId = staffBranch?.branch_id ?? null;
+            }
+
           setCurrentSalonId(firstMembership.salon_id);
-          setCurrentBranchId(firstMembership.branch_id);
+            setCurrentBranchId(resolvedBranchId ?? null);
         } else {
           setCurrentSalonId(null);
           setCurrentBranchId(null);

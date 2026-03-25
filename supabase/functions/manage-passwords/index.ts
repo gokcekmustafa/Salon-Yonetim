@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
       case 'create_user': {
         if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
 
-        const { email, password, full_name, role, salon_id: assignSalonId, salon_role } = params
+        const { email, password, full_name, role, salon_id: assignSalonId, salon_role, branch_id } = params
         if (!email || !password || password.length < 6) return json({ error: 'Email ve şifre (min 6 karakter) gerekli' }, 400)
 
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -164,7 +164,10 @@ Deno.serve(async (req) => {
         
         if (assignSalonId) {
           await supabaseAdmin.from('salon_members').insert({
-            user_id: newUser.user.id, salon_id: assignSalonId, role: salon_role || 'staff',
+            user_id: newUser.user.id,
+            salon_id: assignSalonId,
+            role: salon_role || 'staff',
+            branch_id: (salon_role || 'staff') === 'staff' ? (branch_id || null) : null,
           })
         }
 
@@ -266,7 +269,7 @@ Deno.serve(async (req) => {
       // ─── Assign salon membership & role ───
       case 'assign_membership': {
         if (!isSuperAdmin) return json({ error: 'Yetkiniz yok' }, 403)
-        const { target_user_id: assignUserId, salon_id: assignSalonId2, salon_role: assignRole, global_role } = params
+        const { target_user_id: assignUserId, salon_id: assignSalonId2, salon_role: assignRole, global_role, branch_id } = params
         if (!assignUserId) return json({ error: 'target_user_id gerekli' }, 400)
 
         // Assign global role if provided
@@ -306,12 +309,20 @@ Deno.serve(async (req) => {
 
           if (existing) {
             // Update existing membership role
+            const membershipUpdate: Record<string, string | null> = { role: assignRole }
+            membershipUpdate.branch_id = assignRole === 'staff' ? (branch_id || null) : null
+
             await supabaseAdmin.from('salon_members')
-              .update({ role: assignRole })
+              .update(membershipUpdate)
               .eq('id', existing.id)
           } else {
             await supabaseAdmin.from('salon_members')
-              .insert({ user_id: assignUserId, salon_id: assignSalonId2, role: assignRole })
+              .insert({
+                user_id: assignUserId,
+                salon_id: assignSalonId2,
+                role: assignRole,
+                branch_id: assignRole === 'staff' ? (branch_id || null) : null,
+              })
           }
         }
 
@@ -371,7 +382,7 @@ Deno.serve(async (req) => {
         if (existingProfile) return json({ error: 'Bu kullanıcı adı zaten kullanılıyor' }, 400)
 
         const { data: staffRow } = await supabaseAdmin
-          .from('staff').select('user_id').eq('id', staff_id).eq('salon_id', salon_id).single()
+          .from('staff').select('user_id, branch_id').eq('id', staff_id).eq('salon_id', salon_id).single()
         if (!staffRow) return json({ error: 'Personel bulunamadı' }, 404)
         if (staffRow.user_id) return json({ error: 'Bu personelin zaten bir hesabı var' }, 400)
 
@@ -384,7 +395,12 @@ Deno.serve(async (req) => {
         if (createErr) return json({ error: createErr.message }, 400)
 
         await supabaseAdmin.from('staff').update({ user_id: newUser.user.id }).eq('id', staff_id)
-        await supabaseAdmin.from('salon_members').insert({ user_id: newUser.user.id, salon_id, role: 'staff' })
+        await supabaseAdmin.from('salon_members').insert({
+          user_id: newUser.user.id,
+          salon_id,
+          role: 'staff',
+          branch_id: staffRow.branch_id || null,
+        })
         await supabaseAdmin.from('user_roles').insert({ user_id: newUser.user.id, role: 'staff' })
         await supabaseAdmin.from('profiles').upsert(
           { user_id: newUser.user.id, full_name: full_name || username, username: username.toLowerCase() },
