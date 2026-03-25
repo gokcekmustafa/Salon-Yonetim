@@ -60,6 +60,9 @@ export default function CustomersPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [saleCustomer, setSaleCustomer] = useState<DbCustomer | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<DbCustomer | null>(null);
+  const [deleteBlocked, setDeleteBlocked] = useState(false);
   useFormGuard(dialogOpen);
 
   useEffect(() => {
