@@ -430,6 +430,30 @@ export default function CustomersPage() {
           customerName={saleCustomer.name}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteBlocked ? 'Müşteri Silinemez' : 'Müşteriyi Sil'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteBlocked
+                ? `"${customerToDelete?.name}" adlı müşterinin ileri tarihli aktif randevusu bulunmaktadır. Önce randevuları iptal edin veya tamamlayın.`
+                : `"${customerToDelete?.name}" adlı müşteriyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            {!deleteBlocked && (
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Sil
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     </StaffPageGuard>
   );
