@@ -149,7 +149,12 @@ export default function BookingPage() {
       customerId = existing.id;
     } else {
       const { data: newCust, error: custErr } = await supabase
-        .from('customers').insert({ salon_id: salon.id, name: customerName.trim(), phone: customerPhone.trim() }).select('id').single();
+        .from('customers').insert({
+          salon_id: salon.id,
+          branch_id: selectedBranchId,
+          name: customerName.trim(),
+          phone: customerPhone.trim(),
+        }).select('id').single();
       if (custErr || !newCust) { toast.error('Müşteri kaydedilemedi.'); return; }
       customerId = newCust.id;
     }
