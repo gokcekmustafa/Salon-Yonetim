@@ -554,6 +554,7 @@ export type Database = {
           address: string | null
           assigned_staff_id: string | null
           birth_date: string | null
+          branch_id: string | null
           created_at: string
           customer_type: string
           id: string
@@ -571,6 +572,7 @@ export type Database = {
           address?: string | null
           assigned_staff_id?: string | null
           birth_date?: string | null
+          branch_id?: string | null
           created_at?: string
           customer_type?: string
           id?: string
@@ -588,6 +590,7 @@ export type Database = {
           address?: string | null
           assigned_staff_id?: string | null
           birth_date?: string | null
+          branch_id?: string | null
           created_at?: string
           customer_type?: string
           id?: string
@@ -607,6 +610,13 @@ export type Database = {
             columns: ["assigned_staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
           {
@@ -937,6 +947,7 @@ export type Database = {
         Row: {
           amount: number
           appointment_id: string | null
+          branch_id: string | null
           created_at: string
           id: string
           payment_date: string
@@ -946,6 +957,7 @@ export type Database = {
         Insert: {
           amount: number
           appointment_id?: string | null
+          branch_id?: string | null
           created_at?: string
           id?: string
           payment_date?: string
@@ -955,6 +967,7 @@ export type Database = {
         Update: {
           amount?: number
           appointment_id?: string | null
+          branch_id?: string | null
           created_at?: string
           id?: string
           payment_date?: string
@@ -967,6 +980,13 @@ export type Database = {
             columns: ["appointment_id"]
             isOneToOne: false
             referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
           {
@@ -2242,11 +2262,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_branch: {
+        Args: { _branch_id: string; _salon_id: string }
+        Returns: boolean
+      }
       check_salon_permission: {
         Args: { _permission: string; _salon_id: string }
         Returns: boolean
       }
       get_email_by_username: { Args: { _username: string }; Returns: string }
+      get_staff_branch: {
+        Args: { _salon_id: string; _user_id: string }
+        Returns: string
+      }
       get_user_salon_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
