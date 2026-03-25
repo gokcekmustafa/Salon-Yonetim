@@ -1,26 +1,47 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface BranchContextType {
   selectedBranchId: string | null; // null = "Tüm Şubeler"
   setSelectedBranchId: (id: string | null) => void;
   isAllBranches: boolean;
+  isStaffLocked: boolean; // true when staff is locked to their branch
 }
 
 const BranchContext = createContext<BranchContextType>({
   selectedBranchId: null,
   setSelectedBranchId: () => {},
   isAllBranches: true,
+  isStaffLocked: false,
 });
 
 export const useBranch = () => useContext(BranchContext);
 
 export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
+  const { isStaff, isSuperAdmin, isSalonAdmin, currentBranchId } = useAuth();
+  const [selectedBranchId, setSelectedBranchIdInternal] = useState<string | null>(null);
+
+  // Staff users are locked to their assigned branch
+  const isStaffOnly = isStaff && !isSuperAdmin && !isSalonAdmin;
+  const isStaffLocked = isStaffOnly && !!currentBranchId;
+
+  // When staff logs in, lock them to their branch
+  useEffect(() => {
+    if (isStaffOnly && currentBranchId) {
+      setSelectedBranchIdInternal(currentBranchId);
+    }
+  }, [isStaffOnly, currentBranchId]);
+
+  const setSelectedBranchId = (id: string | null) => {
+    // Staff cannot change branch
+    if (isStaffLocked) return;
+    setSelectedBranchIdInternal(id);
+  };
 
   const isAllBranches = selectedBranchId === null;
 
   return (
-    <BranchContext.Provider value={{ selectedBranchId, setSelectedBranchId, isAllBranches }}>
+    <BranchContext.Provider value={{ selectedBranchId, setSelectedBranchId, isAllBranches, isStaffLocked }}>
       {children}
     </BranchContext.Provider>
   );

@@ -1,6 +1,6 @@
 import { useBranch } from '@/contexts/BranchContext';
 import { useSalonData } from '@/hooks/useSalonData';
-import { Building2, ChevronDown, Check } from 'lucide-react';
+import { Building2, ChevronDown, Check, Lock } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
 
 export function BranchSelector() {
   const { branches } = useSalonData();
-  const { selectedBranchId, setSelectedBranchId } = useBranch();
+  const { selectedBranchId, setSelectedBranchId, isStaffLocked } = useBranch();
 
   const activeBranches = branches.filter(b => b.is_active);
 
@@ -19,6 +19,17 @@ export function BranchSelector() {
 
   const selectedBranch = activeBranches.find(b => b.id === selectedBranchId);
   const label = selectedBranch ? selectedBranch.name : 'Tüm Şubeler';
+
+  // Staff locked to branch - show read-only indicator
+  if (isStaffLocked) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/60 bg-muted/50 text-sm font-medium">
+        <Building2 className="h-4 w-4 text-muted-foreground" />
+        <span className="max-w-[120px] truncate">{label}</span>
+        <Lock className="h-3 w-3 text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <DropdownMenu>
