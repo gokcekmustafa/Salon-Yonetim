@@ -3,6 +3,7 @@ import salonumLogo from '@/assets/salonum_logo.png';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useStaffPermissions } from '@/hooks/useStaffPermissions';
 import { usePlatformPermissions, type PlatformPermissions } from '@/hooks/usePlatformPermissions';
 import { useBranding } from '@/hooks/useBranding';
 import {
@@ -45,6 +46,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { SalonPermissions } from '@/hooks/usePermissions';
+import type { StaffPagePermissionKey } from '@/hooks/useStaffPermissions';
 
 interface MenuItem {
   title: string;
@@ -53,27 +55,28 @@ interface MenuItem {
   roles?: ('super_admin' | 'salon_admin' | 'staff')[];
   permissionKey?: keyof SalonPermissions;
   platformPermKey?: keyof PlatformPermissions;
+  staffPermKey?: string; // staff page permission key
 }
 
 const mainMenu: MenuItem[] = [
   { title: 'Panel', url: '/', icon: LayoutDashboard, permissionKey: 'can_view_dashboard' },
-  { title: 'Randevular', url: '/randevular', icon: Calendar, permissionKey: 'can_manage_appointments' },
-  { title: 'Müşteriler', url: '/musteriler', icon: Users, permissionKey: 'can_manage_customers' },
-  { title: 'Hizmetler', url: '/hizmetler', icon: Scissors, permissionKey: 'can_manage_services' },
-  { title: 'Personel Yönetimi', url: '/personel', icon: UserCheck, permissionKey: 'can_manage_staff' },
-  { title: 'Şubeler', url: '/subeler', icon: Building2, permissionKey: 'can_add_branches' },
-  { title: 'Aday Müşteriler', url: '/adaylar', icon: Users, roles: ['salon_admin', 'staff'], permissionKey: 'can_manage_leads' },
-  { title: 'Sözleşmeler', url: '/sozlesmeler', icon: FileText, permissionKey: 'can_manage_customers' },
-  { title: 'Ürünler', url: '/urunler', icon: Package },
+  { title: 'Randevular', url: '/randevular', icon: Calendar, permissionKey: 'can_manage_appointments', staffPermKey: 'page_appointments' },
+  { title: 'Müşteriler', url: '/musteriler', icon: Users, permissionKey: 'can_manage_customers', staffPermKey: 'page_customers' },
+  { title: 'Hizmetler', url: '/hizmetler', icon: Scissors, permissionKey: 'can_manage_services', staffPermKey: 'page_services' },
+  { title: 'Personel Yönetimi', url: '/personel', icon: UserCheck, permissionKey: 'can_manage_staff', staffPermKey: 'page_staff' },
+  { title: 'Şubeler', url: '/subeler', icon: Building2, permissionKey: 'can_add_branches', staffPermKey: 'page_branches' },
+  { title: 'Aday Müşteriler', url: '/adaylar', icon: Users, roles: ['salon_admin', 'staff'], permissionKey: 'can_manage_leads', staffPermKey: 'page_leads' },
+  { title: 'Sözleşmeler', url: '/sozlesmeler', icon: FileText, permissionKey: 'can_manage_customers', staffPermKey: 'page_contracts' },
+  { title: 'Ürünler', url: '/urunler', icon: Package, staffPermKey: 'page_products' },
 ];
 
 const financeMenu: MenuItem[] = [
-  { title: 'Ödemeler', url: '/kasa', icon: Wallet, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
-  { title: 'Kasa Yönetimi', url: '/kasa-yonetimi', icon: BadgeDollarSign, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
-  { title: 'Taksitler', url: '/taksitler', icon: CreditCard, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
-  { title: 'Raporlar', url: '/raporlar', icon: BarChart3, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_payments' },
-  { title: 'Performans', url: '/performans', icon: TrendingUp, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_staff' },
-  { title: 'Maaş & Ödeme', url: '/maas', icon: Wallet, roles: ['super_admin', 'salon_admin'], permissionKey: 'can_manage_staff' },
+  { title: 'Ödemeler', url: '/kasa', icon: Wallet, permissionKey: 'can_manage_payments', staffPermKey: 'page_cash' },
+  { title: 'Kasa Yönetimi', url: '/kasa-yonetimi', icon: BadgeDollarSign, permissionKey: 'can_manage_payments', staffPermKey: 'page_payments' },
+  { title: 'Taksitler', url: '/taksitler', icon: CreditCard, permissionKey: 'can_manage_payments', staffPermKey: 'page_installments' },
+  { title: 'Raporlar', url: '/raporlar', icon: BarChart3, permissionKey: 'can_manage_payments', staffPermKey: 'page_reports' },
+  { title: 'Performans', url: '/performans', icon: TrendingUp, permissionKey: 'can_manage_staff', staffPermKey: 'page_performance' },
+  { title: 'Maaş & Ödeme', url: '/maas', icon: Wallet, permissionKey: 'can_manage_staff', staffPermKey: 'page_salary' },
 ];
 
 const otherMenu: MenuItem[] = [
@@ -98,8 +101,9 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { roles, isSuperAdmin, isManagingSalon } = useAuth();
+  const { roles, isSuperAdmin, isSalonAdmin, isStaff, isManagingSalon } = useAuth();
   const { hasPermission } = usePermissions();
+  const { hasPagePermission } = useStaffPermissions();
   const { hasPlatformPermission } = usePlatformPermissions();
   const { branding } = useBranding();
 
@@ -112,6 +116,10 @@ export function AppSidebar() {
       if (item.roles && !item.roles.some(r => roles.includes(r))) return false;
       // Permission check (super admin bypasses salon permissions)
       if (item.permissionKey && !isSuperAdmin && !hasPermission(item.permissionKey)) return false;
+      // Staff page permission check - for staff users only
+      if (item.staffPermKey && isStaff && !isSuperAdmin && !isSalonAdmin) {
+        if (!hasPagePermission(item.staffPermKey)) return false;
+      }
       // Platform permission check for super admin helpers
       if (item.platformPermKey && isSuperAdmin && !hasPlatformPermission(item.platformPermKey)) return false;
       return true;

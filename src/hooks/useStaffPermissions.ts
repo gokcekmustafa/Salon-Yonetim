@@ -55,7 +55,8 @@ export function useStaffPermissions() {
       .eq('staff_id', staffRow.id)
       .maybeSingle();
 
-    setPermissions((detail?.permissions as Record<string, boolean>) || {});
+    const perms = (detail?.permissions as Record<string, boolean>) || {};
+    setPermissions(perms);
     setLoading(false);
   }, [user, isStaff, isSuperAdmin, isSalonAdmin, currentSalonId]);
 
@@ -63,10 +64,13 @@ export function useStaffPermissions() {
 
   const hasPagePermission = useCallback((key: string): boolean => {
     if (isSuperAdmin || isSalonAdmin) return true;
-    // If no permissions set at all, default all to true (backward compat)
-    if (Object.keys(permissions).length === 0) return true;
-    return permissions[key] !== false;
-  }, [permissions, isSuperAdmin, isSalonAdmin]);
+    if (!isStaff) return true;
+    // If no permissions record exists at all, default all to false (deny by default for staff)
+    // This ensures that when admin hasn't configured permissions yet, staff has no access
+    // But if permissions object exists and this key is not set, also deny
+    if (Object.keys(permissions).length === 0) return false;
+    return permissions[key] === true;
+  }, [permissions, isSuperAdmin, isSalonAdmin, isStaff]);
 
   return { permissions, loading, hasPagePermission, refetch: fetchPermissions };
 }
