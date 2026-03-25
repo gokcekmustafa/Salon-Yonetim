@@ -192,11 +192,11 @@ export default function AppointmentsPage() {
 
   // Auto-open new appointment dialog from URL param
   useEffect(() => {
-    if (searchParams.get('yeniRandevu') === '1' && !loading) {
+    if (searchParams.get('yeniRandevu') === '1') {
       openAdd();
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams, loading]);
+  }, [searchParams]);
 
   // Multi-service totals
   const selectedServices = services.filter(s => form.serviceIds.includes(s.id));
