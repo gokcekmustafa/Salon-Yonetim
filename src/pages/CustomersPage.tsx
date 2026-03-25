@@ -136,7 +136,27 @@ export default function CustomersPage() {
     }
   };
 
-  const handleDelete = async (c: DbCustomer) => { await deleteCustomer(c.id); toast.success('Müşteri silindi.'); };
+  const handleDeleteClick = (c: DbCustomer) => {
+    const now = new Date();
+    const hasActiveAppointments = appointments.some(a =>
+      a.customer_id === c.id && a.status !== 'iptal' && new Date(a.start_time) >= now
+    );
+    if (hasActiveAppointments) {
+      setDeleteBlocked(true);
+    } else {
+      setDeleteBlocked(false);
+    }
+    setCustomerToDelete(c);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!customerToDelete) return;
+    await deleteCustomer(customerToDelete.id);
+    toast.success('Müşteri silindi.');
+    setDeleteConfirmOpen(false);
+    setCustomerToDelete(null);
+  };
   const openHistory = (c: DbCustomer) => { setSelectedCustomer(c); setHistoryOpen(true); };
   const openSale = (c: DbCustomer) => { setSaleCustomer(c); setSaleDialogOpen(true); };
   const openSalesHistory = (c: DbCustomer) => { setSaleCustomer(c); setSalesHistoryOpen(true); };
