@@ -11,7 +11,7 @@ import { DashboardKPICards } from '@/components/dashboard/DashboardKPICards';
 import { DashboardWeeklyChart } from '@/components/dashboard/DashboardWeeklyChart';
 import { DashboardTodayTimeline } from '@/components/dashboard/DashboardTodayTimeline';
 import { DashboardStaffPerformance } from '@/components/dashboard/DashboardStaffPerformance';
-import { DashboardOccupancy } from '@/components/dashboard/DashboardOccupancy';
+import { DashboardInstallmentTracker } from '@/components/dashboard/DashboardInstallmentTracker';
 import { DashboardQuickActions } from '@/components/dashboard/DashboardQuickActions';
 import { DashboardOverdueAlert } from '@/components/dashboard/DashboardOverdueAlert';
 import { DashboardBirthdays } from '@/components/dashboard/DashboardBirthdays';
@@ -122,7 +122,7 @@ export default function Dashboard() {
             services={services}
             staff={staff}
           />
-          <DashboardOccupancy completed={completed} inSession={inSession} waiting={waiting} total={todayAppointments.length} />
+          <DashboardInstallmentTracker customers={customers} />
         </div>
         <div className="lg:col-span-2 space-y-4">
           <div>
