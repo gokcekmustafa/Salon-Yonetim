@@ -122,7 +122,7 @@ export default function Dashboard() {
             services={services}
             staff={staff}
           />
-          <DashboardOccupancy completed={completed} inSession={inSession} waiting={waiting} total={todayAppointments.length} />
+          <DashboardInstallmentTracker customers={customers} />
         </div>
         <div className="lg:col-span-2 space-y-4">
           <div>
