@@ -1,21 +1,24 @@
 import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar, Users, Wallet, TrendingUp, Loader2, Clock, Plus, BarChart3, UserCheck, CircleDot, AlertTriangle } from 'lucide-react';
-import { format, isToday, parseISO, isSameMonth, isBefore, startOfDay, addDays } from 'date-fns';
+import { Loader2 } from 'lucide-react';
+import { format, isToday, parseISO, isSameMonth, startOfDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import { SubscriptionAlert } from '@/components/notifications/SubscriptionAlert';
+import { DashboardKPICards } from '@/components/dashboard/DashboardKPICards';
+import { DashboardWeeklyChart } from '@/components/dashboard/DashboardWeeklyChart';
+import { DashboardTodayTimeline } from '@/components/dashboard/DashboardTodayTimeline';
+import { DashboardStaffPerformance } from '@/components/dashboard/DashboardStaffPerformance';
+import { DashboardOccupancy } from '@/components/dashboard/DashboardOccupancy';
+import { DashboardQuickActions } from '@/components/dashboard/DashboardQuickActions';
+import { DashboardOverdueAlert } from '@/components/dashboard/DashboardOverdueAlert';
+import { DashboardBirthdays } from '@/components/dashboard/DashboardBirthdays';
 
 export default function Dashboard() {
   const { isSuperAdmin, currentSalonId, profile } = useAuth();
   const { appointments, customers, payments, staff, services, loading, salon } = useBranchFilteredData();
-  const navigate = useNavigate();
 
   const { data: overdueInstallments = [] } = useQuery({
     queryKey: ['overdue_installments_dashboard', currentSalonId],
@@ -70,42 +73,17 @@ export default function Dashboard() {
     .map(([id, count]) => ({ name: getName(staff, id), count }))
     .sort((a, b) => b.count - a.count);
 
-  const getStatusConfig = (a: any) => {
-    if (a.status === 'tamamlandi' || a.session_status === 'completed') {
-      return { label: 'Tamamlandı', dotClass: 'bg-success', badgeClass: 'bg-success/10 text-success border-success/20' };
-    }
-    if (a.session_status === 'in_session') {
-      return { label: 'Şu an', dotClass: 'bg-accent', badgeClass: 'bg-accent/10 text-accent border-accent/20' };
-    }
-    return { label: 'Bekliyor', dotClass: 'bg-primary', badgeClass: 'bg-primary/10 text-primary border-primary/20' };
-  };
+  // Occupancy stats
+  const completed = todayAppointments.filter(a => a.status === 'tamamlandi' || a.session_status === 'completed').length;
+  const inSession = todayAppointments.filter(a => a.session_status === 'in_session').length;
+  const waiting = todayAppointments.length - completed - inSession;
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Kullanıcı';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
 
-  const kpis = [
-    { label: 'Bugünün Randevuları', value: todayAppointments.length, icon: Calendar, iconClass: 'text-primary bg-primary/10' },
-    { label: 'Günlük Gelir', value: `₺${dailyRevenue.toLocaleString('tr-TR')}`, icon: Wallet, iconClass: 'text-success bg-success/10' },
-    { label: 'Aylık Gelir', value: `₺${monthlyTotal.toLocaleString('tr-TR')}`, icon: TrendingUp, iconClass: 'text-accent bg-accent/10' },
-    { label: 'Toplam Müşteri', value: customers.length, icon: Users, iconClass: 'text-warning bg-warning/10' },
-  ];
-
-  const quickActions = [
-    { label: 'Randevular', icon: Calendar, onClick: () => navigate('/randevular'), color: 'text-primary bg-primary/5 hover:bg-primary/10 border-primary/20' },
-    { label: 'Yeni Müşteri', icon: Plus, onClick: () => navigate('/musteriler?yeni=1'), color: 'text-success bg-success/5 hover:bg-success/10 border-success/20' },
-    { label: 'Personel', icon: UserCheck, onClick: () => navigate('/personel'), color: 'text-accent bg-accent/5 hover:bg-accent/10 border-accent/20' },
-    { label: 'Rapor Gör', icon: BarChart3, onClick: () => navigate('/raporlar'), color: 'text-warning bg-warning/5 hover:bg-warning/10 border-warning/20' },
-  ];
-
-  // Salon-specific inline styles only for salon users
-  const isSalon = !isSuperAdmin;
-  const salonCard = isSalon
-    ? { borderRadius: '12px', border: '0.5px solid #e8e8e8', boxShadow: 'none' } as React.CSSProperties
-    : undefined;
-
   return (
-    <div className={isSalon ? 'space-y-6 animate-in' : 'page-container animate-in'}>
+    <div className="space-y-4 animate-in">
       {salon && (
         <SubscriptionAlert
           expiresAt={salon.subscription_expires_at}
@@ -113,166 +91,51 @@ export default function Dashboard() {
         />
       )}
 
-      {overdueInstallments.length > 0 && (
-        <Card className="border-destructive/40 bg-destructive/5" style={salonCard}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-destructive flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" /> Gecikmiş Taksitler ({overdueInstallments.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {overdueInstallments.map((p: any) => {
-              const custId = p.installments?.customer_id;
-              const custName = custId ? (customers.find(c => c.id === custId)?.name || '-') : '-';
-              return (
-                <div key={p.id} className="flex items-center justify-between p-2.5 rounded-lg border border-destructive/20 bg-card">
-                  <div>
-                    <p className="text-sm font-medium">{custName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Taksit {p.installment_number} • Vade: {format(parseISO(p.due_date), 'd MMM yyyy', { locale: tr })}
-                    </p>
-                  </div>
-                  <span className="font-bold text-sm text-destructive">₺{Number(p.amount).toLocaleString('tr-TR')}</span>
-                </div>
-              );
-            })}
-            <Button variant="outline" size="sm" className="w-full mt-1" onClick={() => navigate('/taksitler')}>
-              Tüm Taksitleri Gör
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      <div>
-        <h1 className={isSalon ? 'font-bold tracking-tight' : 'page-title'} style={isSalon ? { fontSize: '22px' } : undefined}>
-          Anasayfa
-        </h1>
-        <p className={isSalon ? 'text-muted-foreground mt-1' : 'page-subtitle mt-1'} style={isSalon ? { fontSize: '14px' } : undefined}>
-          {greeting}, {firstName} 👋 · Bugün {todayAppointments.length} randevunuz var{todayAppointments.length === 0 ? '.' : ` · ${format(new Date(), 'd MMMM yyyy, EEEE', { locale: tr })}`}
-        </p>
+      {/* Header */}
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-lg font-bold tracking-tight">{greeting}, {firstName} 👋</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {format(new Date(), 'd MMMM yyyy, EEEE', { locale: tr })} · {todayAppointments.length} randevu
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {kpis.map(kpi => (
-          <div key={kpi.label} className={isSalon ? 'bg-card p-5' : 'stat-card p-5'} style={salonCard}>
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <p className="font-semibold text-muted-foreground uppercase tracking-wider" style={{ fontSize: isSalon ? '12px' : '11px' }}>{kpi.label}</p>
-                <p className={isSalon ? 'font-bold tracking-tight tabular-nums' : 'text-2xl font-bold tracking-tight tabular-nums'} style={isSalon ? { fontSize: '22px' } : undefined}>{kpi.value}</p>
-              </div>
-              <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${kpi.iconClass}`}>
-                <kpi.icon className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* KPIs */}
+      <DashboardKPICards data={{
+        todayAppointments: todayAppointments.length,
+        dailyRevenue,
+        monthlyTotal,
+        totalCustomers: customers.length,
+      }} />
+
+      {/* Overdue Alert */}
+      <DashboardOverdueAlert overdueInstallments={overdueInstallments} customers={customers} />
+
+      {/* Main Grid: Chart + Timeline */}
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-5">
+        <div className="lg:col-span-3 space-y-4">
+          <DashboardWeeklyChart payments={payments} />
+          <DashboardStaffPerformance staffCounts={activeStaffToday} />
+        </div>
+        <div className="lg:col-span-2 space-y-4">
+          <DashboardTodayTimeline
+            appointments={todayAppointments}
+            getName={getName}
+            customers={customers}
+            services={services}
+            staff={staff}
+          />
+          <DashboardOccupancy completed={completed} inSession={inSession} waiting={waiting} total={todayAppointments.length} />
+        </div>
       </div>
 
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        <Card className={isSalon ? 'lg:col-span-2' : 'lg:col-span-2 shadow-soft border-border/60'} style={salonCard}>
-          <CardHeader className="pb-3">
-            <CardTitle style={{ fontSize: '14px' }} className="font-semibold flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Clock className="h-3.5 w-3.5 text-primary" />
-              </div>
-              Bugünün Randevuları
-              <Badge variant="secondary" className="ml-auto text-[10px]">{todayAppointments.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {todayAppointments.length === 0 ? (
-              <div className="py-10 text-center">
-                <Calendar className="h-10 w-10 mx-auto text-muted-foreground/25 mb-3" />
-                <p className="text-sm font-medium text-muted-foreground">Bugün randevu yok</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">Yeni randevu ekleyerek başlayın.</p>
-              </div>
-            ) : (
-              todayAppointments.map(apt => {
-                const status = getStatusConfig(apt);
-                return (
-                  <div key={apt.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors">
-                    <div className="w-14 text-right shrink-0">
-                      <span className="text-sm font-bold tabular-nums">{format(parseISO(apt.start_time), 'HH:mm')}</span>
-                    </div>
-                    <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${status.dotClass}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{getName(customers, apt.customer_id)}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {getName(services, apt.service_id)} · {getName(staff, apt.staff_id)}
-                      </p>
-                    </div>
-                    <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border shrink-0 ${status.badgeClass}`}>
-                      {status.label}
-                    </span>
-                  </div>
-                );
-              })
-            )}
-            <Button
-              variant="outline"
-              className={isSalon
-                ? 'w-full mt-3 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 border-0'
-                : 'w-full mt-3 gap-2'}
-              style={isSalon ? { fontSize: '14px' } : undefined}
-              onClick={() => navigate('/randevular?yeniRandevu=1')}
-            >
-              <Plus className="h-4 w-4" />
-              Yeni randevu ekle
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <Card className={isSalon ? '' : 'shadow-soft border-border/60'} style={salonCard}>
-            <CardHeader className="pb-3">
-              <CardTitle style={{ fontSize: '14px' }} className="font-semibold">Hızlı İşlemler</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                {quickActions.map(action => (
-                  <button
-                    key={action.label}
-                    onClick={action.onClick}
-                    className={`flex flex-col items-center justify-center gap-2 p-4 border transition-all duration-200 ${action.color}`}
-                    style={{ borderRadius: '12px' }}
-                  >
-                    <action.icon className="h-5 w-5" />
-                    <span style={{ fontSize: '12px' }} className="font-semibold">{action.label}</span>
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className={isSalon ? '' : 'shadow-soft border-border/60'} style={salonCard}>
-            <CardHeader className="pb-3">
-              <CardTitle style={{ fontSize: '14px' }} className="font-semibold flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-success/10 flex items-center justify-center">
-                  <UserCheck className="h-3.5 w-3.5 text-success" />
-                </div>
-                Personel Durumu
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {activeStaffToday.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4" style={{ fontSize: '13px' }}>Bugün aktif personel yok</p>
-              ) : (
-                <div className="space-y-2">
-                  {activeStaffToday.map(s => (
-                    <div key={s.name} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-xs font-bold text-primary">{s.name.charAt(0)}</span>
-                        </div>
-                        <span className="font-medium" style={{ fontSize: '14px' }}>{s.name}</span>
-                      </div>
-                      <Badge variant="secondary" className="text-[10px]">{s.count} randevu</Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      {/* Bottom Row */}
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+        <DashboardBirthdays customers={customers} />
+        <div>
+          <p className="text-[12px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Hızlı İşlemler</p>
+          <DashboardQuickActions />
         </div>
       </div>
     </div>
