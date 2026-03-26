@@ -112,13 +112,9 @@ export default function Dashboard() {
       {/* Overdue Alert */}
       <DashboardOverdueAlert overdueInstallments={overdueInstallments} customers={customers} />
 
-      {/* Main Grid: Chart + Timeline */}
+      {/* Top Row: Timeline + Occupancy (left) | Quick Actions (right) */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-5">
         <div className="lg:col-span-3 space-y-4">
-          <DashboardWeeklyChart payments={payments} />
-          <DashboardStaffPerformance staffCounts={activeStaffToday} />
-        </div>
-        <div className="lg:col-span-2 space-y-4">
           <DashboardTodayTimeline
             appointments={todayAppointments}
             getName={getName}
@@ -128,15 +124,19 @@ export default function Dashboard() {
           />
           <DashboardOccupancy completed={completed} inSession={inSession} waiting={waiting} total={todayAppointments.length} />
         </div>
+        <div className="lg:col-span-2 space-y-4">
+          <div>
+            <p className="text-[12px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Hızlı İşlemler</p>
+            <DashboardQuickActions />
+          </div>
+          <DashboardBirthdays customers={customers} />
+        </div>
       </div>
 
-      {/* Bottom Row */}
+      {/* Bottom Row: Staff Performance + Weekly Chart side by side */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        <DashboardBirthdays customers={customers} />
-        <div>
-          <p className="text-[12px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Hızlı İşlemler</p>
-          <DashboardQuickActions />
-        </div>
+        <DashboardStaffPerformance staffCounts={activeStaffToday} />
+        <DashboardWeeklyChart payments={payments} />
       </div>
     </div>
   );
