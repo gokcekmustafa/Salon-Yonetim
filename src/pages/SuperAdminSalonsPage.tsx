@@ -65,12 +65,31 @@ export default function SuperAdminSalonsPage() {
   const [formPlan, setFormPlan] = useState<string>('free');
   const [formActive, setFormActive] = useState(true);
   const [formExpiry, setFormExpiry] = useState('');
+  const [formOwnerFullName, setFormOwnerFullName] = useState('');
+  const [formOwnerPhone, setFormOwnerPhone] = useState('');
+  const [formOwnerTitle, setFormOwnerTitle] = useState('');
+  const [formSubscriptionDuration, setFormSubscriptionDuration] = useState<string>('unlimited');
 
   // Owner fields (only for new salon creation)
   const [ownerEmail, setOwnerEmail] = useState('');
   const [ownerPassword, setOwnerPassword] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [showOwnerPassword, setShowOwnerPassword] = useState(false);
+
+  const calcExpiry = (duration: string) => {
+    if (duration === 'unlimited') return '';
+    const now = new Date();
+    if (duration === '1month') now.setMonth(now.getMonth() + 1);
+    else if (duration === '3months') now.setMonth(now.getMonth() + 3);
+    else if (duration === '6months') now.setMonth(now.getMonth() + 6);
+    else if (duration === '1year') now.setFullYear(now.getFullYear() + 1);
+    return now.toISOString().split('T')[0];
+  };
+
+  const handleDurationChange = (val: string) => {
+    setFormSubscriptionDuration(val);
+    setFormExpiry(calcExpiry(val));
+  };
 
   // Logo state
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
