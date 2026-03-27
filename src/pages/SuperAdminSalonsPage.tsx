@@ -130,6 +130,8 @@ export default function SuperAdminSalonsPage() {
   const openCreate = () => {
     setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress('');
     setFormPlan('free'); setFormActive(true); setFormExpiry('');
+    setFormOwnerFullName(''); setFormOwnerPhone(''); setFormOwnerTitle('');
+    setFormSubscriptionDuration('unlimited');
     setOwnerEmail(''); setOwnerPassword(''); setOwnerName(''); setShowOwnerPassword(false);
     setLogoPreview(null); setLogoFile(null); setEditingLogoUrl(null);
     setDialogOpen(true);
@@ -140,6 +142,8 @@ export default function SuperAdminSalonsPage() {
     setFormPhone(salon.phone || ''); setFormAddress(salon.address || '');
     setFormPlan(salon.subscription_plan); setFormActive(salon.is_active);
     setFormExpiry((salon as any).subscription_expires_at ? (salon as any).subscription_expires_at.split('T')[0] : '');
+    setFormOwnerFullName(''); setFormOwnerPhone(''); setFormOwnerTitle('');
+    setFormSubscriptionDuration((salon as any).subscription_expires_at ? 'custom' : 'unlimited');
     setLogoPreview(null); setLogoFile(null); setEditingLogoUrl(salon.logo_url);
     setDialogOpen(true);
   };
