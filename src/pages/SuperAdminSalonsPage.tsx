@@ -65,12 +65,31 @@ export default function SuperAdminSalonsPage() {
   const [formPlan, setFormPlan] = useState<string>('free');
   const [formActive, setFormActive] = useState(true);
   const [formExpiry, setFormExpiry] = useState('');
+  const [formOwnerFullName, setFormOwnerFullName] = useState('');
+  const [formOwnerPhone, setFormOwnerPhone] = useState('');
+  const [formOwnerTitle, setFormOwnerTitle] = useState('');
+  const [formSubscriptionDuration, setFormSubscriptionDuration] = useState<string>('unlimited');
 
   // Owner fields (only for new salon creation)
   const [ownerEmail, setOwnerEmail] = useState('');
   const [ownerPassword, setOwnerPassword] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [showOwnerPassword, setShowOwnerPassword] = useState(false);
+
+  const calcExpiry = (duration: string) => {
+    if (duration === 'unlimited') return '';
+    const now = new Date();
+    if (duration === '1month') now.setMonth(now.getMonth() + 1);
+    else if (duration === '3months') now.setMonth(now.getMonth() + 3);
+    else if (duration === '6months') now.setMonth(now.getMonth() + 6);
+    else if (duration === '1year') now.setFullYear(now.getFullYear() + 1);
+    return now.toISOString().split('T')[0];
+  };
+
+  const handleDurationChange = (val: string) => {
+    setFormSubscriptionDuration(val);
+    setFormExpiry(calcExpiry(val));
+  };
 
   // Logo state
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -111,6 +130,8 @@ export default function SuperAdminSalonsPage() {
   const openCreate = () => {
     setEditing(null); setFormName(''); setFormSlug(''); setFormPhone(''); setFormAddress('');
     setFormPlan('free'); setFormActive(true); setFormExpiry('');
+    setFormOwnerFullName(''); setFormOwnerPhone(''); setFormOwnerTitle('');
+    setFormSubscriptionDuration('unlimited');
     setOwnerEmail(''); setOwnerPassword(''); setOwnerName(''); setShowOwnerPassword(false);
     setLogoPreview(null); setLogoFile(null); setEditingLogoUrl(null);
     setDialogOpen(true);
@@ -121,6 +142,8 @@ export default function SuperAdminSalonsPage() {
     setFormPhone(salon.phone || ''); setFormAddress(salon.address || '');
     setFormPlan(salon.subscription_plan); setFormActive(salon.is_active);
     setFormExpiry((salon as any).subscription_expires_at ? (salon as any).subscription_expires_at.split('T')[0] : '');
+    setFormOwnerFullName(''); setFormOwnerPhone(''); setFormOwnerTitle('');
+    setFormSubscriptionDuration((salon as any).subscription_expires_at ? 'custom' : 'unlimited');
     setLogoPreview(null); setLogoFile(null); setEditingLogoUrl(salon.logo_url);
     setDialogOpen(true);
   };
@@ -457,11 +480,45 @@ export default function SuperAdminSalonsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">Telefon</Label>
+                  <Label className="text-xs font-semibold">Salon Telefonu</Label>
                   <Input type="tel" value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="0212 555 1234" className="h-10" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">Abonelik</Label>
+                  <Label className="text-xs font-semibold">Adres</Label>
+                  <Input value={formAddress} onChange={e => setFormAddress(e.target.value)} placeholder="İstanbul, Türkiye" className="h-10" />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* İşletme Sahibi / Yetkili Bilgileri */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">İşletme Sahibi / Yetkili</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Ad Soyad</Label>
+                  <Input value={formOwnerFullName} onChange={e => setFormOwnerFullName(e.target.value)} placeholder="Ahmet Yılmaz" className="h-10" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Unvan / Görev</Label>
+                  <Input value={formOwnerTitle} onChange={e => setFormOwnerTitle(e.target.value)} placeholder="İşletme Sahibi" className="h-10" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Yetkili Telefon</Label>
+                <Input type="tel" value={formOwnerPhone} onChange={e => setFormOwnerPhone(e.target.value)} placeholder="0532 123 4567" className="h-10" />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Abonelik Bilgileri */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Abonelik Bilgileri</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Abonelik Planı</Label>
                   <Select value={formPlan} onValueChange={setFormPlan}>
                     <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -472,37 +529,66 @@ export default function SuperAdminSalonsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              {editing && (
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">Abonelik Bitiş Tarihi</Label>
-                  <Input type="date" value={formExpiry} onChange={e => setFormExpiry(e.target.value)} className="h-10" />
-                  <p className="text-xs text-muted-foreground">Boş bırakılırsa süresiz olur</p>
+                  <Label className="text-xs font-semibold">Abonelik Süresi</Label>
+                  <Select value={formSubscriptionDuration} onValueChange={handleDurationChange}>
+                    <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1month">1 Ay</SelectItem>
+                      <SelectItem value="3months">3 Ay</SelectItem>
+                      <SelectItem value="6months">6 Ay</SelectItem>
+                      <SelectItem value="1year">1 Yıl</SelectItem>
+                      <SelectItem value="unlimited">Süresiz</SelectItem>
+                      <SelectItem value="custom">Özel Tarih</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {formSubscriptionDuration !== 'unlimited' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Başlangıç Tarihi</Label>
+                    <Input type="date" value={new Date().toISOString().split('T')[0]} disabled className="h-10 bg-muted/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Bitiş Tarihi</Label>
+                    <Input
+                      type="date"
+                      value={formExpiry}
+                      onChange={e => { setFormExpiry(e.target.value); setFormSubscriptionDuration('custom'); }}
+                      className="h-10"
+                    />
+                  </div>
                 </div>
               )}
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold">Adres</Label>
-                <Input value={formAddress} onChange={e => setFormAddress(e.target.value)} placeholder="İstanbul, Türkiye" className="h-10" />
-              </div>
-              {editing && (
-                <div className="flex items-center justify-between py-1">
-                  <Label className="text-xs font-semibold">Aktif</Label>
-                  <Switch checked={formActive} onCheckedChange={setFormActive} />
-                </div>
+              {formExpiry && formSubscriptionDuration !== 'unlimited' && (
+                <p className="text-xs text-muted-foreground">
+                  Abonelik bitiş: <span className="font-semibold text-foreground">{new Date(formExpiry).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </p>
+              )}
+              {formSubscriptionDuration === 'unlimited' && (
+                <p className="text-xs text-muted-foreground">Süresiz abonelik — bitiş tarihi belirlenmeyecek.</p>
               )}
             </div>
+
+            {editing && (
+              <div className="flex items-center justify-between py-1">
+                <Label className="text-xs font-semibold">Aktif</Label>
+                <Switch checked={formActive} onCheckedChange={setFormActive} />
+              </div>
+            )}
 
             {/* Owner Account (only for new salon) */}
             {!editing && (
               <>
                 <Separator />
                 <div className="space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Salon Sahibi Hesabı</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Giriş Hesabı</h3>
                   <p className="text-xs text-muted-foreground">
-                    Salon sahibi için bir giriş hesabı oluşturun. Salon sahibi ilk girişte şifresini değiştirebilir.
+                    Salon sahibi için bir giriş hesabı oluşturun. İlk girişte şifresini değiştirebilir.
                   </p>
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">Sahip Adı</Label>
+                    <Label className="text-xs font-semibold">Kullanıcı Adı</Label>
                     <Input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Ahmet Yılmaz" className="h-10" />
                   </div>
                   <div className="space-y-2">
