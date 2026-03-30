@@ -16,8 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus, Search, Pencil, Trash2, History, Users, Loader2, ShoppingCart, CalendarPlus, FileText, CreditCard, Phone, MessageSquare, UserCheck, Filter, X, Eye } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays, differenceInYears, startOfMonth, endOfMonth, isBefore, isAfter } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -27,6 +28,7 @@ import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
 import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 import { CustomerSaleDialog } from '@/components/sales/CustomerSaleDialog';
 import { CustomerSalesHistory } from '@/components/sales/CustomerSalesHistory';
+import { useQuery } from '@tanstack/react-query';
 
 const CUSTOMER_COLUMNS: ColumnMapping[] = [
   { excelHeader: 'Ad Soyad', dbKey: 'name', required: true },
@@ -51,7 +53,6 @@ const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no
 
 type TabFilter = 'all' | 'installment' | 'single_session' | 'cash';
 
-// Row color helpers
 function getRowColorClass(customerType: string, hasDebt: boolean): string {
   if (hasDebt) return 'bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30';
   if (customerType === 'installment') return 'bg-emerald-50/60 dark:bg-emerald-950/15 hover:bg-emerald-100/80 dark:hover:bg-emerald-950/25';
@@ -66,10 +67,18 @@ function getStatusBadge(customerType: string) {
   return { label: 'Taksitli', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' };
 }
 
+function getPaymentMethodLabel(m: string) {
+  if (m === 'cash') return 'Nakit';
+  if (m === 'credit_card') return 'K.Kartı';
+  if (m === 'eft') return 'EFT';
+  return m || '-';
+}
+
 export default function CustomersPage() {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, payments, loading } = useBranchFilteredData();
+  const { currentSalonId } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [nameSearch, setNameSearch] = useState('');
   const [phoneSearch, setPhoneSearch] = useState('');
@@ -90,6 +99,44 @@ export default function CustomersPage() {
   const [detailCustomer, setDetailCustomer] = useState<DbCustomer | null>(null);
   useFormGuard(dialogOpen);
 
+  // Fetch installment data for all customers
+  const { data: installments = [] } = useQuery({
+    queryKey: ['installments_all', currentSalonId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('installments')
+        .select('*')
+        .eq('salon_id', currentSalonId!);
+      return data || [];
+    },
+    enabled: !!currentSalonId,
+  });
+
+  const { data: installmentPayments = [] } = useQuery({
+    queryKey: ['installment_payments_all', currentSalonId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('installment_payments')
+        .select('*')
+        .eq('salon_id', currentSalonId!);
+      return data || [];
+    },
+    enabled: !!currentSalonId,
+  });
+
+  // Fetch service_sales for total service cost
+  const { data: serviceSales = [] } = useQuery({
+    queryKey: ['service_sales_all', currentSalonId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('service_sales')
+        .select('*, services(name)')
+        .eq('salon_id', currentSalonId!);
+      return data || [];
+    },
+    enabled: !!currentSalonId,
+  });
+
   useEffect(() => {
     if (searchParams.get('yeni') === '1' && !loading) {
       setEditing(null);
@@ -99,19 +146,88 @@ export default function CustomersPage() {
     }
   }, [searchParams, loading]);
 
+  // Compute customer installment info
+  const customerInstallmentInfo = useMemo(() => {
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+    const info: Record<string, {
+      thisMonthAmount: number;
+      thisMonthPaid: boolean;
+      overdueCount: number;
+      overdueAmount: number;
+      totalBalance: number;
+      totalServiceCost: number;
+      totalPaid: number;
+      paymentMethod: string;
+    }> = {};
+
+    customers.forEach(c => {
+      const custInstallments = installments.filter((inst: any) => inst.customer_id === c.id);
+      let thisMonthAmount = 0;
+      let thisMonthPaid = true;
+      let overdueCount = 0;
+      let overdueAmount = 0;
+      let totalPaid = 0;
+      let totalServiceCost = 0;
+      let paymentMethod = '';
+
+      custInstallments.forEach((inst: any) => {
+        totalServiceCost += Number(inst.total_amount);
+        const instPayments = installmentPayments.filter((ip: any) => ip.installment_id === inst.id);
+        instPayments.forEach((ip: any) => {
+          const dueDate = parseISO(ip.due_date);
+          if (ip.is_paid) {
+            totalPaid += Number(ip.paid_amount || ip.amount);
+            if (!paymentMethod && ip.payment_method) paymentMethod = ip.payment_method;
+          }
+          // This month
+          if (dueDate >= monthStart && dueDate <= monthEnd) {
+            thisMonthAmount += Number(ip.amount);
+            if (!ip.is_paid) thisMonthPaid = false;
+          }
+          // Overdue
+          if (!ip.is_paid && isBefore(dueDate, monthStart)) {
+            overdueCount++;
+            overdueAmount += Number(ip.amount) - Number(ip.paid_amount || 0);
+          }
+        });
+      });
+
+      // Also add service sales total
+      const custServiceSales = serviceSales.filter((ss: any) => ss.customer_id === c.id);
+      custServiceSales.forEach((ss: any) => {
+        if (!totalServiceCost) totalServiceCost += Number(ss.total_price);
+        if (!paymentMethod && ss.payment_method) paymentMethod = ss.payment_method;
+      });
+
+      const totalBalance = totalServiceCost - totalPaid;
+
+      info[c.id] = {
+        thisMonthAmount,
+        thisMonthPaid,
+        overdueCount,
+        overdueAmount,
+        totalBalance: totalBalance > 0 ? totalBalance : 0,
+        totalServiceCost,
+        totalPaid,
+        paymentMethod: paymentMethod || 'cash',
+      };
+    });
+    return info;
+  }, [customers, installments, installmentPayments, serviceSales]);
+
   // Compute customer balances for debt detection
   const customerBalances = useMemo(() => {
     const balances: Record<string, number> = {};
-    payments.forEach(p => {
-      if (p.appointment_id) {
-        const apt = appointments.find(a => a.id === p.appointment_id);
-        if (apt) {
-          balances[apt.customer_id] = (balances[apt.customer_id] || 0) + Number(p.amount);
-        }
+    customers.forEach(c => {
+      const info = customerInstallmentInfo[c.id];
+      if (info && info.totalBalance > 0) {
+        balances[c.id] = -info.totalBalance; // negative means debt
       }
     });
     return balances;
-  }, [payments, appointments]);
+  }, [customerInstallmentInfo, customers]);
 
   // Get customer service summary for hover tooltip
   const getCustomerServiceSummary = (customerId: string) => {
@@ -133,6 +249,20 @@ export default function CustomersPage() {
     if (!sid) return null;
     return staff.find(s => s.id === sid)?.name || null;
   };
+
+  // Staff monthly sale count
+  const staffMonthlySales = useMemo(() => {
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const counts: Record<string, number> = {};
+    serviceSales.forEach((ss: any) => {
+      if (parseISO(ss.created_at) >= monthStart) {
+        const staffId = ss.sold_by || ss.staff_id;
+        if (staffId) counts[staffId] = (counts[staffId] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [serviceSales]);
 
   const tabCounts = useMemo(() => ({
     all: customers.length,
@@ -238,95 +368,209 @@ export default function CustomersPage() {
   const getName = (list: { id: string; name: string }[], id: string) => list.find(x => x.id === id)?.name ?? '-';
   const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }));
 
+  const getNextAppointment = (customerId: string) => {
+    const now = new Date();
+    return appointments
+      .filter(a => a.customer_id === customerId && a.status !== 'iptal' && new Date(a.start_time) >= now)
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())[0] || null;
+  };
 
-  const renderCustomerRow = (c: DbCustomer) => {
+  const renderCustomerRow = (c: DbCustomer, index: number) => {
     const hasDebt = (customerBalances[c.id] || 0) < 0;
     const badge = getStatusBadge(c.customer_type);
-    const custApptCount = appointments.filter(a => a.customer_id === c.id).length;
     const assignedStaff = getAssignedStaffName(c);
     const serviceSummary = getCustomerServiceSummary(c.id);
-    const lastAppt = appointments.filter(a => a.customer_id === c.id).sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())[0];
+    const instInfo = customerInstallmentInfo[c.id];
+    const nextAppt = getNextAppointment(c.id);
+    const now = new Date();
+
+    // Staff assigned_staff_id for staff tooltip
+    const staffId = (c as any).assigned_staff_id;
+    const staffSaleCount = staffId ? (staffMonthlySales[staffId] || 0) : 0;
+
+    // Age
+    const age = c.birth_date ? differenceInYears(now, parseISO(c.birth_date)) : null;
 
     return (
       <ContextMenu key={c.id}>
         <ContextMenuTrigger asChild>
           <TableRow className={`group cursor-context-menu transition-colors ${getRowColorClass(c.customer_type, hasDebt)}`}>
             {/* M. No */}
-            <TableCell className="font-mono text-xs text-muted-foreground w-16">
-              {c.id.substring(0, 6).toUpperCase()}
+            <TableCell className="font-mono text-xs text-muted-foreground w-12 text-center">
+              {index + 1}
             </TableCell>
-            {/* Ad Soyad - with hover card */}
+
+            {/* Adı Soyadı - hover: Yaş, TC */}
             <TableCell>
-              <HoverCard openDelay={300} closeDelay={100}>
-                <HoverCardTrigger asChild>
-                  <div className="flex items-center gap-2.5 cursor-pointer">
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
-                      hasDebt ? 'bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-300' : 'bg-primary/10 text-primary'
-                    }`}>
-                      {c.name.charAt(0)}
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-pointer">
+                      <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                        hasDebt ? 'bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-300' : 'bg-primary/10 text-primary'
+                      }`}>
+                        {c.name.charAt(0)}
+                      </div>
+                      <span className="font-semibold text-sm hover:underline text-primary">{c.name}</span>
                     </div>
-                    <span className="font-semibold text-sm hover:underline">{c.name}</span>
-                  </div>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80 p-0" side="right" align="start">
-                  <div className="p-3 border-b border-border bg-muted/30 rounded-t-lg">
-                    <p className="font-bold text-sm">{c.name}</p>
-                    <p className="text-xs text-muted-foreground">{c.phone}{c.secondary_phone ? ` • ${c.secondary_phone}` : ''}</p>
-                    {assignedStaff && <p className="text-xs text-muted-foreground mt-0.5">Personel: {assignedStaff}</p>}
-                  </div>
-                  {serviceSummary.length > 0 ? (
-                    <div className="p-3 space-y-1.5 max-h-48 overflow-auto">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Hizmet Özeti</p>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-foreground text-background text-xs p-2 max-w-60">
+                    <p className="font-bold">{c.name}</p>
+                    <p>Yaş: {age !== null ? age : 'Bilinmiyor'}</p>
+                    {c.tc_kimlik_no && <p>TC/Pasaport No: {c.tc_kimlik_no}</p>}
+                    {c.address && <p>Adres: {c.address}</p>}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </TableCell>
+
+            {/* Cep Tel */}
+            <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{c.phone || '-'}</TableCell>
+
+            {/* Hizmet - hover: detailed breakdown */}
+            <TableCell className="hidden lg:table-cell text-sm text-muted-foreground max-w-[160px] truncate">
+              {serviceSummary.length > 0 ? (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-pointer hover:underline">{serviceSummary.map(s => s.name).join(', ')}</span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-foreground text-background text-xs p-3 max-w-72">
+                      <p className="font-bold uppercase mb-1">{serviceSummary[0]?.name}</p>
                       {serviceSummary.map((s, i) => (
-                        <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-border/30 last:border-0">
-                          <span className="font-medium">{s.name}</span>
-                          <span className="text-muted-foreground">
-                            {s.completed}/{s.total} seans
-                            {s.cancelled > 0 && <span className="text-red-500 ml-1">({s.cancelled} iptal)</span>}
-                          </span>
-                        </div>
+                        <p key={i}>• {s.name} {s.total} / {s.completed}</p>
                       ))}
-                    </div>
-                  ) : (
-                    <div className="p-3 text-xs text-muted-foreground text-center">Henüz hizmet kaydı yok</div>
-                  )}
-                  {lastAppt && (
-                    <div className="p-2 border-t border-border bg-muted/20 rounded-b-lg">
-                      <p className="text-[10px] text-muted-foreground">
-                        Son randevu: {format(parseISO(lastAppt.start_time), 'd MMM yyyy', { locale: tr })}
-                      </p>
-                    </div>
-                  )}
-                </HoverCardContent>
-              </HoverCard>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : '-'}
             </TableCell>
-            {/* Telefon */}
-            <TableCell className="text-sm text-muted-foreground">{c.phone || '-'}</TableCell>
-            {/* Hizmet */}
-            <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-              {serviceSummary.length > 0 ? serviceSummary.map(s => s.name).join(', ') : '-'}
-            </TableCell>
+
             {/* Kayıt Tarihi */}
-            <TableCell className="hidden xl:table-cell text-xs text-muted-foreground">
+            <TableCell className="hidden xl:table-cell text-xs text-muted-foreground whitespace-nowrap">
               {format(parseISO(c.created_at), 'dd.MM.yyyy', { locale: tr })}
             </TableCell>
+
             {/* Ödeme Şekli */}
             <TableCell>
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${badge.className}`}>
                 {badge.label}
               </span>
             </TableCell>
-            {/* Randevu Sayısı */}
-            <TableCell className="hidden lg:table-cell text-center text-sm text-muted-foreground">{custApptCount}</TableCell>
-            {/* Personel */}
-            <TableCell className="hidden xl:table-cell text-sm text-muted-foreground">{assignedStaff || '-'}</TableCell>
+
+            {/* Bu Ayki Taksit */}
+            <TableCell className="hidden lg:table-cell text-xs text-center whitespace-nowrap">
+              {instInfo && instInfo.thisMonthAmount > 0 ? (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className={`cursor-pointer font-medium ${instInfo.thisMonthPaid ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {instInfo.thisMonthAmount.toLocaleString('tr-TR')} ₺
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-foreground text-background text-xs p-2">
+                      <p>{instInfo.thisMonthPaid ? '✅ Bu ayki taksit ödendi' : '⏳ Bu ayki taksit henüz ödenmedi'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : <span className="text-muted-foreground">-</span>}
+            </TableCell>
+
+            {/* Geç. Taksitler */}
+            <TableCell className="hidden lg:table-cell text-xs text-center whitespace-nowrap">
+              {instInfo && instInfo.overdueCount > 0 ? (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-pointer font-bold text-red-600">
+                        {instInfo.overdueCount} taksit
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-foreground text-background text-xs p-2">
+                      <p>⚠️ {instInfo.overdueCount} adet gecikmiş taksit</p>
+                      <p>Toplam: {instInfo.overdueAmount.toLocaleString('tr-TR')} ₺</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : <span className="text-muted-foreground">-</span>}
+            </TableCell>
+
+            {/* Bakiye - hover: Hizmet Bedeli */}
+            <TableCell className="text-xs text-right whitespace-nowrap">
+              {instInfo ? (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className={`cursor-pointer font-semibold ${instInfo.totalBalance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                        {instInfo.totalBalance > 0 ? instInfo.totalBalance.toLocaleString('tr-TR') + ' ₺' : '0,00 ₺'}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-foreground text-background text-xs p-2">
+                      <p className="font-bold">Hizmet Bedeli: {instInfo.totalServiceCost.toLocaleString('tr-TR')} ₺</p>
+                      <p>Ödenen: {instInfo.totalPaid.toLocaleString('tr-TR')} ₺</p>
+                      <p>Kalan: {instInfo.totalBalance.toLocaleString('tr-TR')} ₺</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : <span className="text-muted-foreground">0,00 ₺</span>}
+            </TableCell>
+
+            {/* Rand. Tarihi - hover: Saat ve kaç gün sonra */}
+            <TableCell className="hidden xl:table-cell text-xs text-center whitespace-nowrap">
+              {nextAppt ? (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-pointer text-primary font-medium">
+                        {format(parseISO(nextAppt.start_time), 'dd.MM.yyyy', { locale: tr })}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-foreground text-background text-xs p-2">
+                      <p>• Saat {format(parseISO(nextAppt.start_time), 'HH:mm')}</p>
+                      <p>• {differenceInDays(parseISO(nextAppt.start_time), now)} gün sonra</p>
+                      <p>• {getName(services, nextAppt.service_id)}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : <span className="text-muted-foreground">-</span>}
+            </TableCell>
+
+            {/* Satış Personeli - hover: Bu ayki satış sayısı */}
+            <TableCell className="hidden xl:table-cell text-xs text-muted-foreground whitespace-nowrap">
+              {assignedStaff ? (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-pointer hover:underline">{assignedStaff}</span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-foreground text-background text-xs p-2">
+                      <p className="font-bold">{assignedStaff}</p>
+                      <p>Bu ay ki {staffSaleCount}. satışı</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : '-'}
+            </TableCell>
+
+            {/* Araç (Kaynak) */}
+            <TableCell className="hidden xl:table-cell text-xs text-muted-foreground whitespace-nowrap">
+              {c.source_type ? getSourceLabel(c.source_type) : '-'}
+            </TableCell>
+
             {/* Durum */}
-            <TableCell>
+            <TableCell className="whitespace-nowrap">
               {hasDebt ? (
+                <Badge className="bg-red-500/90 text-white text-[10px] hover:bg-red-600">Borçsuz</Badge>
+              ) : instInfo && instInfo.overdueCount > 0 ? (
                 <Badge className="bg-red-500/90 text-white text-[10px] hover:bg-red-600">Borçlu</Badge>
               ) : (
                 <Badge className="bg-emerald-500/90 text-white text-[10px] hover:bg-emerald-600">Düzenli</Badge>
               )}
+            </TableCell>
+
+            {/* Ödeme Sözü */}
+            <TableCell className="hidden xl:table-cell text-xs text-muted-foreground whitespace-nowrap">
+              {instInfo?.paymentMethod ? getPaymentMethodLabel(instInfo.paymentMethod) : '-'}
             </TableCell>
           </TableRow>
         </ContextMenuTrigger>
@@ -420,7 +664,7 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Search Filters - menajer.im style */}
+      {/* Search Filters */}
       <Card className="shadow-soft border-border/60">
         <CardContent className="p-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -474,6 +718,7 @@ export default function CustomersPage() {
         ) : filtered.map(c => {
           const hasDebt = (customerBalances[c.id] || 0) < 0;
           const badge = getStatusBadge(c.customer_type);
+          const instInfo = customerInstallmentInfo[c.id];
           return (
             <div key={c.id} className={`card-interactive p-4 border rounded-xl ${getRowColorClass(c.customer_type, hasDebt)}`}>
               <div className="flex items-start justify-between">
@@ -489,7 +734,9 @@ export default function CustomersPage() {
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${badge.className}`}>{badge.label}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">{c.phone}</p>
-                    {hasDebt && <Badge className="bg-red-500/90 text-white text-[10px]">Borçlu</Badge>}
+                    {instInfo && instInfo.totalBalance > 0 && (
+                      <p className="text-xs font-semibold text-red-600">Bakiye: {instInfo.totalBalance.toLocaleString('tr-TR')} ₺</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-0.5">
@@ -510,28 +757,32 @@ export default function CustomersPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
-                  <TableHead className="font-semibold text-xs w-16">M. No</TableHead>
-                  <TableHead className="font-semibold text-xs">Adı Soyadı</TableHead>
-                  <TableHead className="font-semibold text-xs">Cep Tel</TableHead>
-                  <TableHead className="hidden lg:table-cell font-semibold text-xs">Hizmet</TableHead>
-                  <TableHead className="hidden xl:table-cell font-semibold text-xs">Kayıt Tarihi</TableHead>
-                  <TableHead className="font-semibold text-xs">Ödeme Şekli</TableHead>
-                  <TableHead className="hidden lg:table-cell font-semibold text-xs text-center">Randevular</TableHead>
-                  <TableHead className="hidden xl:table-cell font-semibold text-xs">Personel</TableHead>
-                  <TableHead className="font-semibold text-xs">Durum</TableHead>
+                  <TableHead className="font-semibold text-[11px] w-12 text-center">M. No</TableHead>
+                  <TableHead className="font-semibold text-[11px]">Adı Soyadı</TableHead>
+                  <TableHead className="font-semibold text-[11px]">Cep Tel</TableHead>
+                  <TableHead className="hidden lg:table-cell font-semibold text-[11px]">Hizmet</TableHead>
+                  <TableHead className="hidden xl:table-cell font-semibold text-[11px]">Kayıt Tarihi</TableHead>
+                  <TableHead className="font-semibold text-[11px]">Ödeme Şekli</TableHead>
+                  <TableHead className="hidden lg:table-cell font-semibold text-[11px] text-center">Bu Ayki Taksit</TableHead>
+                  <TableHead className="hidden lg:table-cell font-semibold text-[11px] text-center">Geç. Taksitler</TableHead>
+                  <TableHead className="font-semibold text-[11px] text-right">Bakiye</TableHead>
+                  <TableHead className="hidden xl:table-cell font-semibold text-[11px] text-center">Rand. Tarihi</TableHead>
+                  <TableHead className="hidden xl:table-cell font-semibold text-[11px]">Satış Personeli</TableHead>
+                  <TableHead className="hidden xl:table-cell font-semibold text-[11px]">Araç</TableHead>
+                  <TableHead className="font-semibold text-[11px]">Durum</TableHead>
+                  <TableHead className="hidden xl:table-cell font-semibold text-[11px]">Ödeme Sözü</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground text-sm">Müşteri bulunamadı.</TableCell></TableRow>
-                ) : filtered.map(c => renderCustomerRow(c))}
+                  <TableRow><TableCell colSpan={14} className="text-center py-12 text-muted-foreground text-sm">Müşteri bulunamadı.</TableCell></TableRow>
+                ) : filtered.map((c, i) => renderCustomerRow(c, i))}
               </TableBody>
             </Table>
           </div>
-          {/* Results count bar */}
           <div className="px-4 py-2 bg-muted/20 border-t border-border/40 text-xs text-muted-foreground flex justify-between">
             <span>Gösterilen: {filtered.length} / {customers.length} müşteri</span>
-            <span className="text-[10px]">💡 Sağ tık ile hızlı işlem menüsü</span>
+            <span className="text-[10px]">💡 Sağ tık ile hızlı işlem menüsü • Mouse ile sütunlarda gezinerek detay bilgi</span>
           </div>
         </CardContent>
       </Card>
@@ -558,7 +809,6 @@ export default function CustomersPage() {
                 <div className="col-span-2"><Label className="text-xs text-muted-foreground">Notlar</Label><p className="font-medium">{detailCustomer.notes || '-'}</p></div>
                 <div><Label className="text-xs text-muted-foreground">Kayıt Tarihi</Label><p className="font-medium">{format(parseISO(detailCustomer.created_at), 'dd.MM.yyyy HH:mm', { locale: tr })}</p></div>
               </div>
-              {/* Service summary */}
               {(() => {
                 const summary = getCustomerServiceSummary(detailCustomer.id);
                 if (summary.length === 0) return null;
@@ -601,8 +851,6 @@ export default function CustomersPage() {
                   <SelectItem value="cash">Peşin Müşteri</SelectItem>
                 </SelectContent>
               </Select>
-              {form.customer_type === 'single_session' && <p className="text-xs text-muted-foreground">Tek seans müşterilerde taksit sistemi devre dışıdır.</p>}
-              {form.customer_type === 'cash' && <p className="text-xs text-muted-foreground">Peşin müşterilerde ödeme tek seferde alınır.</p>}
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Müşteri Kaynağı <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label>
