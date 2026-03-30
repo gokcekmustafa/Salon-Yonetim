@@ -126,10 +126,13 @@ export default function CashPage() {
     });
   }, [transactions, month]);
 
-  // Calculate balances per box (all-time)
+  // Calculate balances per box (all-time) — include transactions matched by payment_method when cash_box_id is null
   const boxBalances = useMemo(() => {
     return cashBoxes.map(box => {
-      const boxTxs = transactions.filter(t => t.cash_box_id === box.id);
+      const boxTxs = transactions.filter(t =>
+        t.cash_box_id === box.id ||
+        (t.cash_box_id === null && t.payment_method === box.payment_method)
+      );
       const income = boxTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
       const expense = boxTxs.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
       return { ...box, income, expense, balance: income - expense };

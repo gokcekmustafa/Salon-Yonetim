@@ -65,6 +65,19 @@ export default function InstallmentsPage() {
 
   const salonId = currentSalonId;
 
+  // Fetch cash boxes to link transactions properly
+  const { data: cashBoxes = [] } = useQuery({
+    queryKey: ['cash_boxes', salonId],
+    queryFn: async () => {
+      if (!salonId) return [];
+      const { data } = await supabase.from('cash_boxes').select('*').eq('salon_id', salonId).order('name');
+      return (data || []) as CashBox[];
+    },
+    enabled: !!salonId,
+  });
+
+  const findCashBoxId = (method: string) => cashBoxes.find(b => b.payment_method === method)?.id || null;
+
   const { data: installments = [], isLoading: loadingInst } = useQuery({
     queryKey: ['installments', salonId],
     queryFn: async () => {
