@@ -5,7 +5,8 @@ interface BranchContextType {
   selectedBranchId: string | null; // null = "Tüm Şubeler"
   setSelectedBranchId: (id: string | null) => void;
   isAllBranches: boolean;
-  isStaffLocked: boolean; // true when staff is locked to their branch
+  isStaffLocked: boolean;
+  isBranchRequired: boolean; // true when admin must select a branch
 }
 
 const BranchContext = createContext<BranchContextType>({
@@ -13,6 +14,7 @@ const BranchContext = createContext<BranchContextType>({
   setSelectedBranchId: () => {},
   isAllBranches: true,
   isStaffLocked: false,
+  isBranchRequired: false,
 });
 
 export const useBranch = () => useContext(BranchContext);
@@ -25,6 +27,9 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const isStaffOnly = isStaff && !isSuperAdmin && !isSalonAdmin;
   const isStaffLocked = isStaffOnly && !!currentBranchId;
 
+  // Salon admins must select a branch before operating
+  const isBranchRequired = (isSalonAdmin && !isSuperAdmin) && selectedBranchId === null;
+
   // When staff logs in, lock them to their branch
   useEffect(() => {
     if (isStaffOnly && currentBranchId) {
@@ -35,13 +40,15 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const setSelectedBranchId = (id: string | null) => {
     // Staff cannot change branch
     if (isStaffLocked) return;
+    // Salon admins cannot select "all branches"
+    if ((isSalonAdmin && !isSuperAdmin) && id === null) return;
     setSelectedBranchIdInternal(id);
   };
 
   const isAllBranches = selectedBranchId === null;
 
   return (
-    <BranchContext.Provider value={{ selectedBranchId, setSelectedBranchId, isAllBranches, isStaffLocked }}>
+    <BranchContext.Provider value={{ selectedBranchId, setSelectedBranchId, isAllBranches, isStaffLocked, isBranchRequired }}>
       {children}
     </BranchContext.Provider>
   );
