@@ -4,7 +4,7 @@ import { useBranch } from '@/contexts/BranchContext';
 
 export function useBranchFilteredData() {
   const data = useRawSalonData();
-  const { selectedBranchId, isAllBranches } = useBranch();
+  const { selectedBranchId, isAllBranches, requireBranchForAction } = useBranch();
 
   const filteredStaff = useMemo(() => {
     if (isAllBranches) return data.staff;
@@ -26,23 +26,26 @@ export function useBranchFilteredData() {
     return data.payments.filter(p => p.branch_id === selectedBranchId);
   }, [data.payments, selectedBranchId, isAllBranches]);
 
-  // For new records, use the selected branch
   const addAppointment: typeof data.addAppointment = async (apptData) => {
+    if (!requireBranchForAction()) throw new Error('Branch required');
     const branchId = isAllBranches ? apptData.branch_id : selectedBranchId!;
     return data.addAppointment({ ...apptData, branch_id: branchId });
   };
 
   const addStaff: typeof data.addStaff = async (staffData) => {
+    if (!requireBranchForAction()) throw new Error('Branch required');
     const branchId = isAllBranches ? staffData.branch_id : selectedBranchId!;
     return data.addStaff({ ...staffData, branch_id: branchId });
   };
 
   const addCustomer: typeof data.addCustomer = async (customerData) => {
+    if (!requireBranchForAction()) throw new Error('Branch required');
     const branchId = isAllBranches ? customerData.branch_id ?? null : selectedBranchId!;
     return data.addCustomer({ ...customerData, branch_id: branchId });
   };
 
   const addPayment: typeof data.addPayment = async (paymentData) => {
+    if (!requireBranchForAction()) throw new Error('Branch required');
     const branchId = isAllBranches ? paymentData.branch_id ?? null : selectedBranchId!;
     return data.addPayment({ ...paymentData, branch_id: branchId });
   };
