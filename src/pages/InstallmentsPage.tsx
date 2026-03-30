@@ -51,6 +51,7 @@ export default function InstallmentsPage() {
   useFormGuard(dialogOpen || payDialogOpen);
   const [selectedPayment, setSelectedPayment] = useState<InstallmentPayment | null>(null);
   const [payMethod, setPayMethod] = useState('cash');
+  const [downPaymentMethod, setDownPaymentMethod] = useState('cash');
 
   // Form
   const [formCustomerId, setFormCustomerId] = useState('');
