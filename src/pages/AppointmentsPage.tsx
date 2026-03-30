@@ -312,6 +312,20 @@ export default function AppointmentsPage() {
   const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
   const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
 
+  // Existing appointment warning
+  const existingCustomerAppointments = useMemo(() => {
+    if (!form.customerId) return [];
+    return appointments.filter(a =>
+      a.customer_id === form.customerId &&
+      a.status !== 'iptal' &&
+      a.status !== 'tamamlandi' &&
+      new Date(a.start_time) >= new Date()
+    );
+  }, [form.customerId, appointments]);
+
+  // Duration mismatch warning
+  const durationMismatch = form.serviceIds.length > 0 && totalDuration > 0 && Number(form.duration) !== totalDuration;
+
   // Auto-set duration from selected services
   useEffect(() => {
     if (totalDuration > 0) {
