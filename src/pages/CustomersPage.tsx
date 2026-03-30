@@ -238,12 +238,6 @@ export default function CustomersPage() {
   const getName = (list: { id: string; name: string }[], id: string) => list.find(x => x.id === id)?.name ?? '-';
   const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }));
 
-  const tabCounts = useMemo(() => ({
-    all: customers.length,
-    installment: customers.filter(c => c.customer_type === 'installment').length,
-    single_session: customers.filter(c => c.customer_type === 'single_session').length,
-    cash: customers.filter(c => c.customer_type === 'cash').length,
-  }), [customers]);
 
   const renderCustomerRow = (c: DbCustomer) => {
     const hasDebt = (customerBalances[c.id] || 0) < 0;
