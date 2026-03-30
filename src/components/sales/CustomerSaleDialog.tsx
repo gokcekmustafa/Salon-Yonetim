@@ -17,6 +17,7 @@ import { InstallmentPlanDialog } from './InstallmentPlanDialog';
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSaleCompleted?: (payload: { customerId?: string; serviceIds: string[] }) => void;
   customerId?: string;
   customerName?: string;
 }
@@ -36,7 +37,7 @@ type ProductItem = {
   current_stock: number;
 };
 
-export function CustomerSaleDialog({ open, onOpenChange, customerId, customerName }: Props) {
+export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
   const qc = useQueryClient();
   const salonId = currentSalonId;
@@ -135,6 +136,8 @@ export function CustomerSaleDialog({ open, onOpenChange, customerId, customerNam
     if (!salonId || !user) return;
     setSaving(true);
     try {
+      const soldServiceIds = [...new Set(serviceItems.map(item => item.service_id))];
+
       // Service sales
       for (const item of serviceItems) {
         const { error } = await supabase.from('service_sales').insert({
@@ -215,7 +218,12 @@ export function CustomerSaleDialog({ open, onOpenChange, customerId, customerNam
       toast.success('Satış tamamlandı');
       setServiceItems([]);
       setProductItems([]);
+      setSelectedServiceId('');
+      setSelectedProductId('');
       onOpenChange(false);
+      if (customerId && soldServiceIds.length > 0) {
+        onSaleCompleted?.({ customerId, serviceIds: soldServiceIds });
+      }
     } catch (e: any) {
       toast.error(e.message || 'Satış kaydedilemedi');
     } finally {

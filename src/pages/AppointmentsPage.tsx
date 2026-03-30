@@ -32,6 +32,21 @@ import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 type ViewMode = 'day' | 'week';
 type ListGroupMode = 'room' | 'staff' | 'list' | null;
 type Room = { id: string; salon_id: string; name: string; is_active: boolean; room_number: string | null };
+type AppointmentForm = {
+  customerId: string;
+  staffId: string;
+  serviceIds: string[];
+  roomId: string;
+  date: string;
+  time: string;
+  duration: string;
+};
+type ServiceSaleLite = {
+  service_id: string;
+  customer_id: string | null;
+  quantity: number;
+  created_at: string;
+};
 
 const SESSION_STATUSES = [
   { value: 'waiting', label: 'Bekliyor' },
@@ -88,7 +103,7 @@ export default function AppointmentsPage() {
   const [savingRoom, setSavingRoom] = useState(false);
   const [showRoomManager, setShowRoomManager] = useState(false);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<AppointmentForm>({
     customerId: '',
     staffId: '',
     serviceIds: [] as string[],
@@ -101,6 +116,19 @@ export default function AppointmentsPage() {
   const activeStaff = staff.filter(s => s.is_active);
   const activeBranches = branches.filter(b => b.is_active);
   const activeRooms = rooms.filter(r => r.is_active);
+
+  const { data: serviceSales = [] } = useQuery({
+    queryKey: ['appointment_service_sales', currentSalonId],
+    queryFn: async () => {
+      if (!currentSalonId) return [] as ServiceSaleLite[];
+      const { data } = await supabase
+        .from('service_sales')
+        .select('service_id, customer_id, quantity, created_at')
+        .eq('salon_id', currentSalonId);
+      return (data || []) as ServiceSaleLite[];
+    },
+    enabled: !!currentSalonId,
+  });
 
   // Fetch service categories for accordion grouping
   type ServiceCategory = { id: string; name: string; salon_id: string; sort_order: number | null };
@@ -147,6 +175,70 @@ export default function AppointmentsPage() {
     ? activeStaff.filter(s => s.branch_id === filteredBranchId)
     : activeStaff;
 
+  const customerPurchasedServices = useMemo(() => {
+    if (!form.customerId) return [] as Array<{
+      serviceId: string;
+      name: string;
+      totalSold: number;
+      usedCount: number;
+      remainingCount: number;
+      duration: number;
+      price: number;
+      lastSoldAt: string | null;
+    }>;
+
+    const grouped = new Map<string, {
+      serviceId: string;
+      name: string;
+      totalSold: number;
+      duration: number;
+      price: number;
+      lastSoldAt: string | null;
+    }>();
+
+    serviceSales
+      .filter(sale => sale.customer_id === form.customerId)
+      .forEach(sale => {
+        const service = services.find(item => item.id === sale.service_id);
+        if (!service) return;
+
+        const current = grouped.get(sale.service_id) || {
+          serviceId: sale.service_id,
+          name: service.name,
+          totalSold: 0,
+          duration: service.duration,
+          price: service.price,
+          lastSoldAt: null,
+        };
+
+        current.totalSold += Number(sale.quantity || 1);
+        if (!current.lastSoldAt || new Date(sale.created_at) > new Date(current.lastSoldAt)) {
+          current.lastSoldAt = sale.created_at;
+        }
+
+        grouped.set(sale.service_id, current);
+      });
+
+    return Array.from(grouped.values())
+      .map(item => {
+        const usedCount = appointments.filter(appointment =>
+          appointment.customer_id === form.customerId &&
+          appointment.service_id === item.serviceId &&
+          appointment.status !== 'iptal'
+        ).length;
+
+        return {
+          ...item,
+          usedCount,
+          remainingCount: Math.max(item.totalSold - usedCount, 0),
+        };
+      })
+      .sort((a, b) => {
+        if (b.remainingCount !== a.remainingCount) return b.remainingCount - a.remainingCount;
+        return new Date(b.lastSoldAt || 0).getTime() - new Date(a.lastSoldAt || 0).getTime();
+      });
+  }, [appointments, form.customerId, serviceSales, services]);
+
   // Fetch rooms
   const fetchRooms = useCallback(async () => {
     if (!currentSalonId) return;
@@ -192,11 +284,27 @@ export default function AppointmentsPage() {
 
   // Auto-open new appointment dialog from URL param
   useEffect(() => {
-    if (searchParams.get('yeniRandevu') === '1') {
-      openAdd();
+    const shouldOpen = searchParams.get('yeniRandevu') === '1';
+    const customerId = searchParams.get('customer_id') || '';
+    const serviceIds = (searchParams.get('service_ids') || '')
+      .split(',')
+      .map(id => id.trim())
+      .filter(Boolean);
+
+    if (shouldOpen || customerId || serviceIds.length > 0) {
+      setForm({
+        customerId,
+        staffId: filteredStaffId || '',
+        serviceIds,
+        roomId: 'none',
+        date: format(currentDate, 'yyyy-MM-dd'),
+        time: '09:00',
+        duration: '60',
+      });
+      setDialogOpen(true);
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams]);
+  }, [searchParams, filteredStaffId, currentDate, setSearchParams]);
 
   // Multi-service totals
   const selectedServices = services.filter(s => form.serviceIds.includes(s.id));
@@ -842,11 +950,46 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>Müşteri</Label>
-              <Select value={form.customerId} onValueChange={v => setForm(f => ({ ...f, customerId: v }))}>
+              <Select value={form.customerId} onValueChange={v => setForm(f => ({ ...f, customerId: v, serviceIds: f.customerId === v ? f.serviceIds : [] }))}>
                 <SelectTrigger><SelectValue placeholder="Müşteri seçin" /></SelectTrigger>
                 <SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            {form.customerId && (
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label className="text-xs font-semibold">Satıştan Gelen Hizmetler</Label>
+                  {customerPurchasedServices.length > 0 && (
+                    <span className="text-xs text-muted-foreground">{customerPurchasedServices.length} hizmet</span>
+                  )}
+                </div>
+                {customerPurchasedServices.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Bu müşteriye ait satılmış hizmet bulunamadı.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {customerPurchasedServices.map(item => {
+                      const isSelected = form.serviceIds.includes(item.serviceId);
+                      return (
+                        <Button
+                          key={item.serviceId}
+                          type="button"
+                          size="sm"
+                          variant={isSelected ? 'default' : 'outline'}
+                          className="h-auto flex-col items-start gap-1 px-3 py-2 text-left"
+                          onClick={() => toggleService(item.serviceId)}
+                        >
+                          <span>{item.name}</span>
+                          <span className="text-[11px] font-normal opacity-80">
+                            Satış: {item.totalSold} • Kullanılan: {item.usedCount}
+                            {item.remainingCount > 0 ? ` • Kalan: ${item.remainingCount}` : ''}
+                          </span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Personel</Label>
               <Select value={form.staffId} onValueChange={v => setForm(f => ({ ...f, staffId: v }))}>

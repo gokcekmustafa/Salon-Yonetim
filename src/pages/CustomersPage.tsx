@@ -93,6 +93,7 @@ export default function CustomersPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [saleCustomer, setSaleCustomer] = useState<DbCustomer | null>(null);
+  const [recentSaleServiceIds, setRecentSaleServiceIds] = useState<Record<string, string[]>>({});
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<DbCustomer | null>(null);
   const [deleteBlocked, setDeleteBlocked] = useState(false);
@@ -359,7 +360,25 @@ export default function CustomersPage() {
   const openHistory = (c: DbCustomer) => { setSelectedCustomer(c); setHistoryOpen(true); };
   const openSale = (c: DbCustomer) => { setSaleCustomer(c); setSaleDialogOpen(true); };
   const openSalesHistory = (c: DbCustomer) => { setSaleCustomer(c); setSalesHistoryOpen(true); };
-  const openAppointment = (c: DbCustomer) => { navigate(`/salon/appointments?customer_id=${c.id}`); };
+  const handleSaleCompleted = ({ customerId, serviceIds }: { customerId?: string; serviceIds: string[] }) => {
+    if (!customerId || serviceIds.length === 0) return;
+    setRecentSaleServiceIds(prev => ({ ...prev, [customerId]: serviceIds }));
+    toast.success('Satış kaydedildi. Randevu ekranında hizmetler hazır gelecek.');
+  };
+
+  const openAppointment = (c: DbCustomer) => {
+    const params = new URLSearchParams({
+      yeniRandevu: '1',
+      customer_id: c.id,
+    });
+
+    const serviceIds = recentSaleServiceIds[c.id] || [];
+    if (serviceIds.length > 0) {
+      params.set('service_ids', serviceIds.join(','));
+    }
+
+    navigate(`/randevular?${params.toString()}`);
+  };
 
   const customerAppointments = selectedCustomer
     ? appointments.filter(a => a.customer_id === selectedCustomer.id).sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
@@ -606,16 +625,16 @@ export default function CustomersPage() {
               <CreditCard className="h-4 w-4" /> Ödeme İşlemleri
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-48">
-              <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => navigate(`/salon/installments?customer=${c.id}`)}>
+              <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => navigate(`/taksitler?customer=${c.id}&yeni=1`)}>
                 <CreditCard className="h-4 w-4" /> Taksit Planı
               </ContextMenuItem>
-              <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => navigate(`/salon/payments?customer=${c.id}`)}>
+              <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => navigate(`/kasa?customer=${c.id}`)}>
                 <FileText className="h-4 w-4" /> Ödeme Geçmişi
               </ContextMenuItem>
             </ContextMenuSubContent>
           </ContextMenuSub>
           <ContextMenuSeparator />
-          <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => navigate(`/salon/contracts?customer=${c.id}`)}>
+          <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => navigate(`/sozlesmeler?customer=${c.id}&yeni=1`)}>
             <FileText className="h-4 w-4" /> Sözleşmeler
           </ContextMenuItem>
           <ContextMenuSeparator />
@@ -903,7 +922,7 @@ export default function CustomersPage() {
         </DialogContent>
       </Dialog>
 
-      {saleCustomer && <CustomerSaleDialog open={saleDialogOpen} onOpenChange={setSaleDialogOpen} customerId={saleCustomer.id} customerName={saleCustomer.name} />}
+      {saleCustomer && <CustomerSaleDialog open={saleDialogOpen} onOpenChange={setSaleDialogOpen} onSaleCompleted={handleSaleCompleted} customerId={saleCustomer.id} customerName={saleCustomer.name} />}
       {saleCustomer && <CustomerSalesHistory open={salesHistoryOpen} onOpenChange={setSalesHistoryOpen} customerId={saleCustomer.id} customerName={saleCustomer.name} />}
 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>

@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +46,7 @@ export default function InstallmentsPage() {
   const { user, currentSalonId } = useAuth();
   const { customers, loading: salonLoading } = useSalonData();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [payDialogOpen, setPayDialogOpen] = useState(false);
@@ -64,6 +66,18 @@ export default function InstallmentsPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'overdue' | 'upcoming'>('all');
 
   const salonId = currentSalonId;
+
+  useEffect(() => {
+    const customerId = searchParams.get('customer');
+    const shouldOpen = searchParams.get('yeni') === '1';
+
+    if (!customerId && !shouldOpen) return;
+
+    if (customerId) setFormCustomerId(customerId);
+    if (shouldOpen) setDialogOpen(true);
+
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Fetch cash boxes to link transactions properly
   const { data: cashBoxes = [] } = useQuery({

@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,9 +32,12 @@ export default function PaymentsPage() {
   const { hasPermission } = usePermissions();
   const { payments, appointments, customers, services, loading } = useBranchFilteredData();
   const { currentSalonId } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [dateRange, setDateRange] = useState<DateRange>('monthly');
   const [cashBoxes, setCashBoxes] = useState<CashBox[]>([]);
   const [cashTransactions, setCashTransactions] = useState<CashTx[]>([]);
+  const customerFilterId = searchParams.get('customer');
+  const customerFilter = customers.find(customer => customer.id === customerFilterId) || null;
 
   useEffect(() => {
     if (!currentSalonId) return;
@@ -70,10 +74,15 @@ export default function PaymentsPage() {
     return payments.filter(p => {
       try {
         const d = parseISO(p.payment_date);
-        return isWithinInterval(d, { start: startDate, end: endDate });
+        const matchesDate = isWithinInterval(d, { start: startDate, end: endDate });
+        if (!matchesDate) return false;
+        if (!customerFilterId) return true;
+
+        const appointment = appointments.find(item => item.id === p.appointment_id);
+        return appointment?.customer_id === customerFilterId;
       } catch { return false; }
     }).sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
-  }, [payments, startDate, endDate]);
+  }, [appointments, customerFilterId, payments, startDate, endDate]);
 
   const filteredCashTx = useMemo(() => {
     return cashTransactions.filter(tx => {
@@ -121,8 +130,18 @@ export default function PaymentsPage() {
     <StaffPageGuard permissionKey="page_cash" featureLabel="Ödemeler">
     <div className="page-container animate-in space-y-5">
       <div className="page-header">
-        <div><h1 className="page-title">Kasa & Ödemeler</h1><p className="page-subtitle">Ödeme geçmişi ve kasa bazlı gelir takibi</p></div>
+        <div>
+          <h1 className="page-title">Kasa & Ödemeler</h1>
+          <p className="page-subtitle">
+            {customerFilter ? `${customerFilter.name} için ödeme geçmişi` : 'Ödeme geçmişi ve kasa bazlı gelir takibi'}
+          </p>
+        </div>
         <div className="flex gap-2 flex-wrap">
+          {customerFilter && (
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setSearchParams({}, { replace: true })}>
+              Müşteri Filtresini Temizle
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
             const headers = ['Tarih', 'Müşteri', 'Hizmet', 'Ödeme Türü', 'Tutar (₺)'];
             const rows = filteredPayments.map(p => ({
