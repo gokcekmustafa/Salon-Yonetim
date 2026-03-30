@@ -474,6 +474,36 @@ const handleComplete = async () => {
     toast.info('Randevu iptal edildi.');
   };
 
+  const handleReactivate = async () => {
+    if (!currentDetailApt || !canAdminManageAppointments) return;
+
+    const error = await updateAppointment(currentDetailApt.id, { status: 'bekliyor' });
+    if (error) {
+      toast.error('Randevu aktif edilemedi.');
+      return;
+    }
+
+    setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'bekliyor' } : prev));
+    toast.success('Randevu tekrar aktif edildi.');
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!currentDetailApt || !canAdminManageAppointments) return;
+
+    const { error } = await supabase.from('appointments').delete().eq('id', currentDetailApt.id);
+    if (error) {
+      toast.error('Randevu silinemedi.');
+      setDeleteConfirmOpen(false);
+      return;
+    }
+
+    setDeleteConfirmOpen(false);
+    setDetailOpen(false);
+    setDetailApt(null);
+    refetch();
+    toast.success('Randevu silindi.');
+  };
+
   const handleReschedule = async () => {
     if (!currentDetailApt || !canAdminManageAppointments) return;
     if (!rescheduleDate || !rescheduleTime) {
