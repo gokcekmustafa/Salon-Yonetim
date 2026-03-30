@@ -38,6 +38,8 @@ const PAYMENT_METHODS = [
   { value: 'eft', label: 'EFT / Havale' },
 ];
 
+type CashBox = { id: string; salon_id: string; name: string; payment_method: string; is_active: boolean };
+
 export default function InstallmentsPage() {
   const { hasPermission } = usePermissions();
   const { user, currentSalonId } = useAuth();
