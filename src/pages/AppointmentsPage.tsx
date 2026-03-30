@@ -83,6 +83,7 @@ export default function AppointmentsPage() {
   // Payment method selection for completing
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cash');
 
   // Fetch cash boxes for auto-routing payments
