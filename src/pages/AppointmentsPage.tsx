@@ -1247,8 +1247,16 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
             </div>
           )}
           <DialogFooter className="gap-2 sm:gap-0">
+            {canAdminManageAppointments && currentDetailApt?.status === 'iptal' && (
+              <Button variant="outline" onClick={handleReactivate}>Tekrar Aktif Et</Button>
+            )}
             {canAdminManageAppointments && currentDetailApt?.status !== 'iptal' && (
               <Button variant="destructive" onClick={() => setCancelConfirmOpen(true)}>İptal Et</Button>
+            )}
+            {canAdminManageAppointments && (
+              <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteConfirmOpen(true)}>
+                <Trash2 className="h-4 w-4 mr-1" /> Sil
+              </Button>
             )}
             {currentDetailApt?.status === 'bekliyor' && (
               <Button onClick={openCompleteDialog} className="btn-gradient">Tamamla & Ödeme Al</Button>
@@ -1264,13 +1272,31 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
           <AlertDialogHeader>
             <AlertDialogTitle>Randevuyu iptal et</AlertDialogTitle>
             <AlertDialogDescription>
-              Bu randevuyu iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+              Bu randevuyu iptal etmek istediğinize emin misiniz? İptal edilen randevuyu daha sonra tekrar aktif edebilirsiniz.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Vazgeç</AlertDialogCancel>
             <AlertDialogAction onClick={handleCancelConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Evet, İptal Et
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Randevuyu kalıcı olarak sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu randevu kalıcı olarak silinecektir ve geri alınamaz. Devam etmek istiyor musunuz?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Evet, Kalıcı Sil
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
