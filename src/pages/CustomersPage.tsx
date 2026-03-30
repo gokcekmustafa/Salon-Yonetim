@@ -134,6 +134,13 @@ export default function CustomersPage() {
     return staff.find(s => s.id === sid)?.name || null;
   };
 
+  const tabCounts = useMemo(() => ({
+    all: customers.length,
+    installment: customers.filter(c => c.customer_type === 'installment').length,
+    single_session: customers.filter(c => c.customer_type === 'single_session').length,
+    cash: customers.filter(c => c.customer_type === 'cash').length,
+  }), [customers]);
+
   if (!hasPermission('can_manage_customers')) return <NoPermission feature="Müşteri Yönetimi" />;
   if (loading) return (
     <div className="flex items-center justify-center py-20">
