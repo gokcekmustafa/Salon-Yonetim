@@ -110,7 +110,7 @@ export default function InstallmentsPage() {
       const remaining = Math.max(0, total - dp);
       if (remaining <= 0) throw new Error('Taksitlendirilecek tutar 0 olamaz');
 
-      // Down payment cash entry
+      // Down payment cash entry with proper payment method and cash_box_id
       if (dp > 0) {
         const custName = customers.find(c => c.id === formCustomerId)?.name || '';
         const { error: cashErr } = await supabase.from('cash_transactions').insert({
@@ -118,7 +118,8 @@ export default function InstallmentsPage() {
           type: 'income',
           amount: dp,
           description: `Peşinat - ${custName}`,
-          payment_method: 'cash',
+          payment_method: downPaymentMethod,
+          cash_box_id: findCashBoxId(downPaymentMethod),
           created_by: user.id,
         });
         if (cashErr) throw cashErr;
