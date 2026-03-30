@@ -507,7 +507,7 @@ export default function CashPage() {
             </div>
             <Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-44 h-9" />
           </div>
-          <CashMonthlyStats transactions={monthTransactions} cashBoxes={cashBoxes} month={month} />
+          <CashMonthlyStats transactions={monthTransactions} cashBoxes={cashBoxes} month={month} allTransactions={transactions} />
         </div>
 
         {/* ═══ DIALOGS ═══ */}
