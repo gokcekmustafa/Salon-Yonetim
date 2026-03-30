@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData } from '@/hooks/useSalonData';
@@ -39,6 +40,7 @@ export default function ContractsPage() {
   const { user, currentSalonId } = useAuth();
   const { customers, services } = useSalonData();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [templates, setTemplates] = useState<ContractTemplate[]>([]);
   const [contracts, setContracts] = useState<CustomerContract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,6 +107,18 @@ export default function ContractsPage() {
   };
 
   useEffect(() => { fetchData(); }, [salonId]);
+
+  useEffect(() => {
+    const customerId = searchParams.get('customer');
+    const shouldOpen = searchParams.get('yeni') === '1';
+
+    if (!customerId && !shouldOpen) return;
+
+    if (customerId) setSelectedCustomerId(customerId);
+    if (shouldOpen) setShowContractDialog(true);
+
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const handleUploadTemplate = async () => {
     if (!salonId || !user || !fileRef.current?.files?.[0] || !templateName.trim()) {
