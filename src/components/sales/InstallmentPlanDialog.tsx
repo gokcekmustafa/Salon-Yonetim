@@ -38,10 +38,24 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
   const salonId = currentSalonId;
 
   const [downPayment, setDownPayment] = useState('0');
+  const [downPaymentMethod, setDownPaymentMethod] = useState('cash');
   const [installmentCount, setInstallmentCount] = useState('3');
   const [interval, setInterval] = useState<IntervalType>('monthly');
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [saving, setSaving] = useState(false);
+
+  // Fetch cash boxes to link transactions properly
+  const { data: cashBoxes = [] } = useQuery({
+    queryKey: ['cash_boxes', salonId],
+    queryFn: async () => {
+      if (!salonId) return [];
+      const { data } = await supabase.from('cash_boxes').select('*').eq('salon_id', salonId).order('name');
+      return (data || []) as { id: string; payment_method: string }[];
+    },
+    enabled: !!salonId,
+  });
+
+  const findCashBoxId = (method: string) => cashBoxes.find(b => b.payment_method === method)?.id || null;
 
   useFormGuard(open);
 
