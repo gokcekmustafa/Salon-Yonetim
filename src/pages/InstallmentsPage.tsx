@@ -355,14 +355,14 @@ export default function InstallmentsPage() {
         </Card>
       )}
 
-      {/* All Installment Plans */}
+      {/* All Installment Plans - Collapsible per customer */}
       <Card className="shadow-soft border-border/60">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-primary" /> Taksit Planları
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2">
           {installments.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Henüz taksit planı yok</p>
           ) : installments.filter(inst => {
@@ -376,63 +376,76 @@ export default function InstallmentsPage() {
             const paid = instPayments.filter(p => p.is_paid).length;
             const hasOverdue = instPayments.some(p => !p.is_paid && isBefore(parseISO(p.due_date), today));
             const paidTotal = instPayments.filter(p => p.is_paid).reduce((s, p) => s + Number(p.paid_amount), 0);
+            const customer = customers.find(c => c.id === inst.customer_id);
+            const remaining = Number(inst.total_amount) - paidTotal;
 
             return (
-              <div key={inst.id} className={`p-4 rounded-xl border ${hasOverdue ? 'border-destructive/40 bg-destructive/5' : 'border-border/60'}`}>
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-sm">{getCustomerName(inst.customer_id)}</p>
-                      {hasOverdue && <Badge variant="destructive" className="text-[10px]">Gecikmiş</Badge>}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      ₺{Number(inst.total_amount).toLocaleString('tr-TR')} • {inst.installment_count} taksit • {paid}/{inst.installment_count} ödendi
-                    </p>
-                    {inst.notes && <p className="text-xs text-muted-foreground/70 mt-0.5">{inst.notes}</p>}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Kalan</p>
-                    <p className="font-bold text-sm">₺{(Number(inst.total_amount) - paidTotal).toLocaleString('tr-TR')}</p>
-                  </div>
-                </div>
-
-                {/* Progress */}
-                <div className="h-2 rounded-full bg-muted overflow-hidden mb-3">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${(paid / inst.installment_count) * 100}%` }}
-                  />
-                </div>
-
-                {/* Individual installments */}
-                <div className="space-y-1.5">
-                  {instPayments.map(p => (
-                    <div key={p.id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        {p.is_paid ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                        ) : isBefore(parseISO(p.due_date), today) ? (
-                          <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
-                        ) : (
-                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                        )}
-                        <span>Taksit {p.installment_number}</span>
-                        <span className="text-muted-foreground">{format(parseISO(p.due_date), 'd MMM yyyy', { locale: tr })}</span>
+              <Collapsible key={inst.id}>
+                <div className={`rounded-xl border transition-colors ${hasOverdue ? 'border-destructive/40 bg-destructive/5' : 'border-border/60'}`}>
+                  <CollapsibleTrigger asChild>
+                    <button className="w-full text-left p-4 flex items-center gap-3 group cursor-pointer hover:bg-muted/30 rounded-xl transition-colors">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <User className="h-4 w-4 text-primary" />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">₺{Number(p.amount).toLocaleString('tr-TR')}</span>
-                        {p.is_paid ? (
-                          <Badge variant="outline" className="text-[10px] text-green-600">
-                            {PAYMENT_METHODS.find(m => m.value === p.payment_method)?.label || 'Ödendi'}
-                          </Badge>
-                        ) : (
-                          <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={() => openPay(p)}>Öde</Button>
-                        )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm truncate">{customer?.name || '-'}</p>
+                          {hasOverdue && <Badge variant="destructive" className="text-[10px]">Gecikmiş</Badge>}
+                          {paid === inst.installment_count && <Badge variant="outline" className="text-[10px] text-green-600 border-green-600/30">Tamamlandı</Badge>}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {customer?.phone && <><Phone className="h-3 w-3 inline mr-1" />{customer.phone} • </>}
+                          ₺{Number(inst.total_amount).toLocaleString('tr-TR')} • {paid}/{inst.installment_count} ödendi
+                        </p>
+                        {inst.notes && <p className="text-[11px] text-muted-foreground/60 truncate mt-0.5">{inst.notes}</p>}
+                      </div>
+                      <div className="text-right shrink-0 mr-2">
+                        <p className="text-[10px] text-muted-foreground uppercase">Kalan</p>
+                        <p className={`font-bold text-sm ${remaining > 0 ? 'text-destructive' : 'text-green-600'}`}>₺{remaining.toLocaleString('tr-TR')}</p>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                    </button>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                    <div className="px-4 pb-4 space-y-2">
+                      {/* Progress */}
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(paid / inst.installment_count) * 100}%` }} />
+                      </div>
+
+                      {/* Individual installments */}
+                      <div className="space-y-1.5">
+                        {instPayments.map(p => (
+                          <div key={p.id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/30">
+                            <div className="flex items-center gap-2">
+                              {p.is_paid ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                              ) : isBefore(parseISO(p.due_date), today) ? (
+                                <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                              ) : (
+                                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                              )}
+                              <span>Taksit {p.installment_number}</span>
+                              <span className="text-muted-foreground">{format(parseISO(p.due_date), 'd MMM yyyy', { locale: tr })}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">₺{Number(p.amount).toLocaleString('tr-TR')}</span>
+                              {p.is_paid ? (
+                                <Badge variant="outline" className="text-[10px] text-green-600">
+                                  {PAYMENT_METHODS.find(m => m.value === p.payment_method)?.label || 'Ödendi'}
+                                </Badge>
+                              ) : (
+                                <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={(e) => { e.stopPropagation(); openPay(p); }}>Öde</Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  </CollapsibleContent>
                 </div>
-              </div>
+              </Collapsible>
             );
           })}
         </CardContent>
