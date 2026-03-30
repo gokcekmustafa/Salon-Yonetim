@@ -15,18 +15,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { format, parseISO, isSameMonth } from 'date-fns';
+import { format, parseISO, isSameMonth, isSameDay, startOfDay, subDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Loader2, ArrowUpCircle, ArrowDownCircle,
   Receipt, Pencil, Trash2, Banknote, CreditCard, Building2, Send, FileSpreadsheet, FileText,
+  Clock, Check, X,
 } from 'lucide-react';
 import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 import { ProductSaleDialog } from '@/components/products/ProductSaleDialog';
+import { CashMonthlyStats } from '@/components/cash/CashMonthlyStats';
 
 type CashBox = { id: string; salon_id: string; name: string; payment_method: string; is_active: boolean };
 type CashTransaction = {
@@ -42,10 +43,8 @@ const DEFAULT_BOXES = [
   { name: 'Kredi Kartı', payment_method: 'credit_card' },
 ];
 
-const TAB_ICONS: Record<string, typeof Banknote> = {
-  cash: Banknote,
-  eft: Building2,
-  credit_card: CreditCard,
+const METHOD_LABELS: Record<string, string> = {
+  cash: 'Nakit', eft: 'EFT / Havale', credit_card: 'Kredi Kartı',
 };
 
 export default function CashPage() {
@@ -60,15 +59,14 @@ export default function CashPage() {
   const [productSaleOpen, setProductSaleOpen] = useState(false);
   useFormGuard(dialogOpen || transferDialogOpen || productSaleOpen);
   const [editingTx, setEditingTx] = useState<CashTransaction | null>(null);
-  const [activeTab, setActiveTab] = useState('cash');
 
   // Transaction form
   const [txType, setTxType] = useState<'income' | 'expense'>('income');
   const [txAmount, setTxAmount] = useState('');
   const [txDescription, setTxDescription] = useState('');
   const [txDate, setTxDate] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
-  const [txSourceBox, setTxSourceBox] = useState<string>(''); // for expenses: which box to deduct from
-  const [txIncomeMethod, setTxIncomeMethod] = useState<string>('cash'); // for income: payment method selection
+  const [txSourceBox, setTxSourceBox] = useState<string>('');
+  const [txIncomeMethod, setTxIncomeMethod] = useState<string>('cash');
 
   // Transfer form
   const [transferFromBox, setTransferFromBox] = useState('');
@@ -76,6 +74,7 @@ export default function CashPage() {
   const [transferDescription, setTransferDescription] = useState('');
 
   const salonId = currentSalonId;
+  const today = new Date();
 
   // Fetch cash boxes
   const { data: cashBoxes = [], isLoading: loadingBoxes } = useQuery({
@@ -110,17 +109,22 @@ export default function CashPage() {
     enabled: !!salonId && !!user,
   });
 
-  // Get box for current tab
-  const currentBox = useMemo(() => cashBoxes.find(b => b.payment_method === activeTab), [cashBoxes, activeTab]);
-
-  // Filter transactions for current tab & month
-  const tabTransactions = useMemo(() => {
-    if (!currentBox) return [];
-    return transactions.filter(t => {
-      if (t.cash_box_id !== currentBox.id) return false;
-      try { return isSameMonth(parseISO(t.transaction_date), parseISO(month + '-01')); } catch { return false; }
+  // Today's transactions
+  const todayTransactions = useMemo(() => {
+    return transactions.filter(tx => {
+      try { return isSameDay(parseISO(tx.transaction_date), today); } catch { return false; }
     });
-  }, [transactions, currentBox, month]);
+  }, [transactions, today]);
+
+  const todayIncome = useMemo(() => todayTransactions.filter(t => t.type === 'income'), [todayTransactions]);
+  const todayExpense = useMemo(() => todayTransactions.filter(t => t.type === 'expense'), [todayTransactions]);
+
+  // Monthly transactions for stats
+  const monthTransactions = useMemo(() => {
+    return transactions.filter(tx => {
+      try { return isSameMonth(parseISO(tx.transaction_date), parseISO(month + '-01')); } catch { return false; }
+    });
+  }, [transactions, month]);
 
   // Calculate balances per box (all-time)
   const boxBalances = useMemo(() => {
@@ -132,9 +136,33 @@ export default function CashPage() {
     });
   }, [cashBoxes, transactions]);
 
-  // Monthly stats for current tab
-  const monthlyIncome = useMemo(() => tabTransactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0), [tabTransactions]);
-  const monthlyExpense = useMemo(() => tabTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0), [tabTransactions]);
+  // Today's totals per payment method
+  const todayMethodTotals = useMemo(() => {
+    const methods: Record<string, { income: number; expense: number }> = {};
+    DEFAULT_BOXES.forEach(b => { methods[b.payment_method] = { income: 0, expense: 0 }; });
+    todayTransactions.forEach(tx => {
+      const key = tx.payment_method || 'cash';
+      if (!methods[key]) methods[key] = { income: 0, expense: 0 };
+      if (tx.type === 'income') methods[key].income += Number(tx.amount);
+      else methods[key].expense += Number(tx.amount);
+    });
+    return methods;
+  }, [todayTransactions]);
+
+  // Today totals
+  const todayIncomeTotal = todayIncome.reduce((s, t) => s + Number(t.amount), 0);
+  const todayExpenseTotal = todayExpense.reduce((s, t) => s + Number(t.amount), 0);
+
+  // Yesterday's carryover (all income - all expense before today)
+  const yesterdayCarryover = useMemo(() => {
+    const todayStart = startOfDay(today);
+    const beforeToday = transactions.filter(tx => {
+      try { return parseISO(tx.transaction_date) < todayStart; } catch { return false; }
+    });
+    const inc = beforeToday.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+    const exp = beforeToday.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+    return inc - exp;
+  }, [transactions, today]);
 
   const resetForm = useCallback(() => {
     setTxType('income'); setTxAmount(''); setTxDescription('');
@@ -149,20 +177,18 @@ export default function CashPage() {
       const amount = parseFloat(txAmount);
       if (isNaN(amount) || amount <= 0) throw new Error('Geçerli bir tutar girin');
 
-      // For income: route to the box matching selected payment method
-      // For expense: use selected source box
       let targetBoxId: string | null = null;
-      let paymentMethod = activeTab;
+      let paymentMethod = 'cash';
 
       if (txType === 'income') {
         const targetBox = cashBoxes.find(b => b.payment_method === txIncomeMethod);
-        targetBoxId = targetBox?.id || currentBox?.id || null;
+        targetBoxId = targetBox?.id || null;
         paymentMethod = txIncomeMethod;
       } else {
         if (!txSourceBox) throw new Error('Lütfen harcama yapılacak kasayı seçin');
         targetBoxId = txSourceBox;
         const sourceBox = cashBoxes.find(b => b.id === txSourceBox);
-        paymentMethod = sourceBox?.payment_method || activeTab;
+        paymentMethod = sourceBox?.payment_method || 'cash';
       }
 
       const payload: any = {
@@ -201,7 +227,7 @@ export default function CashPage() {
     },
   });
 
-  // Bulk transfer (para çıkışı)
+  // Bulk transfer
   const transferMutation = useMutation({
     mutationFn: async () => {
       if (!salonId || !user) throw new Error('Oturum bulunamadı');
@@ -210,10 +236,7 @@ export default function CashPage() {
       if (!transferFromBox) throw new Error('Kaynak kasayı seçin');
 
       const { error } = await supabase.from('cash_transactions').insert({
-        salon_id: salonId,
-        created_by: user.id,
-        type: 'expense',
-        amount,
+        salon_id: salonId, created_by: user.id, type: 'expense', amount,
         description: transferDescription || 'Toplu para çıkışı (Banka/Yönetici)',
         transaction_date: new Date().toISOString(),
         payment_method: cashBoxes.find(b => b.id === transferFromBox)?.payment_method || 'cash',
@@ -241,401 +264,388 @@ export default function CashPage() {
     setDialogOpen(true);
   };
 
-  const openAddIncome = () => {
-    resetForm();
-    setTxType('income');
-    setDialogOpen(true);
-  };
-
-  const openAddExpense = () => {
-    resetForm();
-    setTxType('expense');
-    setDialogOpen(true);
-  };
+  const openAddIncome = () => { resetForm(); setTxType('income'); setDialogOpen(true); };
+  const openAddExpense = () => { resetForm(); setTxType('expense'); setDialogOpen(true); };
 
   useEffect(() => {
     const action = searchParams.get('islem');
     if (!action) return;
-
     if (action === 'odeme-al' || action === 'gelir-gir') {
-      openAddIncome();
-      setSearchParams({}, { replace: true });
-      return;
+      openAddIncome(); setSearchParams({}, { replace: true }); return;
     }
-
     if (action === 'odeme-yap' || action === 'gider-gir') {
-      openAddExpense();
-      setSearchParams({}, { replace: true });
+      openAddExpense(); setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
   if (!hasPermission('can_manage_payments')) return <NoPermission feature="Kasa Yönetimi" />;
   if (salonLoading || isLoading || loadingBoxes) return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
+    <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
   );
 
-  const getTabLabel = (method: string) => {
-    switch (method) {
-      case 'cash': return 'Nakit';
-      case 'eft': return 'EFT / Havale';
-      case 'credit_card': return 'Kredi Kartı';
-      default: return method;
-    }
-  };
+  const fmtCurrency = (v: number) => `₺${v.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`;
 
   return (
     <StaffPageGuard permissionKey="page_payments" featureLabel="Kasa Yönetimi">
-    <div className="page-container animate-in">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Kasa Yönetimi</h1>
-          <p className="page-subtitle">Nakit, EFT/Havale ve Kredi Kartı kasalarınız</p>
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => {
-            const headers = ['Tarih', 'Tür', 'Açıklama', 'Tutar (₺)'];
-            const boxName = currentBox?.name || 'Kasa';
-            const rows = tabTransactions.map(tx => ({
-              Tarih: format(parseISO(tx.transaction_date), 'd MMM yyyy HH:mm', { locale: tr }),
-              Tür: tx.type === 'income' ? 'Gelir' : 'Gider',
-              Açıklama: tx.description || '-',
-              'Tutar (₺)': Number(tx.amount),
-            }));
-            exportToExcel(rows, headers, `kasa-${boxName}-${month}`);
-          }} className="gap-1.5">
-            <FileSpreadsheet className="h-4 w-4" /> Excel
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => {
-            const headers = ['Tarih', 'Tür', 'Açıklama', 'Tutar (₺)'];
-            const boxName = currentBox?.name || 'Kasa';
-            const rows = tabTransactions.map(tx => [
-              format(parseISO(tx.transaction_date), 'd MMM yyyy HH:mm', { locale: tr }),
-              tx.type === 'income' ? 'Gelir' : 'Gider',
-              tx.description || '-',
-              Number(tx.amount).toLocaleString('tr-TR'),
-            ]);
-            const summary = [
-              `Kasa: ${boxName}  |  Dönem: ${month}`,
-              `Gelir: ₺${monthlyIncome.toLocaleString('tr-TR')}  |  Gider: ₺${monthlyExpense.toLocaleString('tr-TR')}  |  Net: ₺${(monthlyIncome - monthlyExpense).toLocaleString('tr-TR')}`,
-            ];
-            exportToPDF(rows, headers, `${boxName} — Kasa Raporu`, `kasa-${boxName}-${month}`, summary);
-          }} className="gap-1.5">
-            <FileText className="h-4 w-4" /> PDF
-          </Button>
-          <Button variant="outline" onClick={() => setTransferDialogOpen(true)} className="gap-1.5 flex-1 sm:flex-initial">
-            <Send className="h-4 w-4" /> Ödeme Yap
-          </Button>
-          <Button className="btn-gradient gap-2 flex-1 sm:flex-initial" onClick={openAddIncome}>
-            <Plus className="h-4 w-4" /> Ödeme Al
-          </Button>
-          <Button variant="outline" className="gap-2 flex-1 sm:flex-initial" onClick={openAddIncome}>
-            <ArrowUpCircle className="h-4 w-4" /> Gelir Gir
-          </Button>
-          <Button variant="destructive" className="gap-2 flex-1 sm:flex-initial" onClick={openAddExpense}>
-            <TrendingDown className="h-4 w-4" /> Gider Gir
-          </Button>
-          <Button variant="secondary" className="gap-2 flex-1 sm:flex-initial" onClick={() => setProductSaleOpen(true)}>
-            <Receipt className="h-4 w-4" /> Ürün Satışı
-          </Button>
-        </div>
-      </div>
-
-      {/* Summary cards - all 3 boxes */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        {boxBalances.map(box => {
-          const Icon = TAB_ICONS[box.payment_method] || Wallet;
-          return (
-            <div key={box.id} className={`stat-card p-5 cursor-pointer transition-all ${activeTab === box.payment_method ? 'ring-2 ring-primary shadow-lg' : ''}`} onClick={() => setActiveTab(box.payment_method)}>
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{box.name}</p>
-                  <p className={`text-2xl font-bold tracking-tight tabular-nums ${box.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-                    ₺{box.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                  </p>
-                  <div className="flex gap-3 text-xs">
-                    <span className="text-success">+₺{box.income.toLocaleString('tr-TR')}</span>
-                    <span className="text-destructive">-₺{box.expense.toLocaleString('tr-TR')}</span>
-                  </div>
+      <div className="page-container animate-in space-y-5">
+        {/* ═══ HEADER ═══ */}
+        <Card className="shadow-soft border-border/60">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h1 className="text-xl font-bold">Kasa Defteri</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={openAddIncome}>
+                  <ArrowUpCircle className="h-4 w-4" /> Para Girişi
+                </Button>
+                <Button size="sm" variant="destructive" className="gap-1.5" onClick={openAddExpense}>
+                  <ArrowDownCircle className="h-4 w-4" /> Para Çıkışı
+                </Button>
+                <div className="flex items-center gap-2 rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1.5">
+                  <Clock className="h-4 w-4 text-amber-600" />
+                  <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                    {format(today, 'd MMMM yyyy, EEEE', { locale: tr })}
+                  </span>
                 </div>
-                <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${activeTab === box.payment_method ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTransferDialogOpen(true)}>
+                  <Send className="h-4 w-4" /> Ödeme Yap
+                </Button>
+                <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => setProductSaleOpen(true)}>
+                  <Receipt className="h-4 w-4" /> Ürün Satışı
+                </Button>
               </div>
             </div>
-          );
-        })}
-      </div>
+          </CardContent>
+        </Card>
 
-      {/* Tab Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="h-10 w-max">
-              {DEFAULT_BOXES.map(b => {
-                const Icon = TAB_ICONS[b.payment_method];
-                return (
-                  <TabsTrigger key={b.payment_method} value={b.payment_method} className="gap-1.5 text-xs sm:text-sm">
-                    <Icon className="h-4 w-4" /> <span className="hidden sm:inline">{b.name}</span>
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-          </div>
-          <Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-full sm:w-44 h-10" />
-        </div>
-
-        {DEFAULT_BOXES.map(b => (
-          <TabsContent key={b.payment_method} value={b.payment_method} className="space-y-4">
-            {/* Monthly KPIs for this box */}
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-              <div className="stat-card p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Aylık Gelir</p>
-                    <p className="text-xl font-bold tabular-nums text-success mt-1">+₺{monthlyIncome.toLocaleString('tr-TR')}</p>
-                  </div>
-                  <div className="h-9 w-9 rounded-lg bg-success/10 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-success" /></div>
-                </div>
-              </div>
-              <div className="stat-card p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Aylık Gider</p>
-                    <p className="text-xl font-bold tabular-nums text-destructive mt-1">-₺{monthlyExpense.toLocaleString('tr-TR')}</p>
-                  </div>
-                  <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center"><TrendingDown className="h-4 w-4 text-destructive" /></div>
-                </div>
-              </div>
-              <div className="stat-card p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Aylık Net</p>
-                    <p className={`text-xl font-bold tabular-nums mt-1 ${(monthlyIncome - monthlyExpense) >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                      ₺{(monthlyIncome - monthlyExpense).toLocaleString('tr-TR')}
-                    </p>
-                  </div>
-                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center"><Wallet className="h-4 w-4 text-primary" /></div>
-                </div>
-              </div>
+        {/* ═══ SPLIT VIEW: INCOME (LEFT) | EXPENSE (RIGHT) ═══ */}
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+          {/* ── GELEN ÖDEMELER ── */}
+          <div className="space-y-0">
+            <div className="rounded-t-xl bg-emerald-600 text-white px-4 py-2.5 font-bold text-center text-sm tracking-wide">
+              Gelen Ödemeler
             </div>
-
-            {/* Mobile Cards */}
-            <div className="block md:hidden space-y-3">
-              {tabTransactions.length === 0 ? (
-                <Card className="shadow-soft border-border/60"><CardContent className="empty-state py-8"><Receipt className="empty-state-icon !h-8 !w-8" /><p className="empty-state-title">Bu ay işlem yok</p></CardContent></Card>
-              ) : tabTransactions.map(tx => (
-                <div key={tx.id} className="card-interactive p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {tx.type === 'income' ? <ArrowUpCircle className="h-5 w-5 text-success shrink-0" /> : <ArrowDownCircle className="h-5 w-5 text-destructive shrink-0" />}
-                      <div className="space-y-0.5">
-                        <p className="font-semibold text-sm">{tx.description || (tx.type === 'income' ? 'Gelir' : 'Gider')}</p>
-                        <p className="text-xs text-muted-foreground">{format(parseISO(tx.transaction_date), 'd MMM yyyy HH:mm', { locale: tr })}</p>
-                      </div>
-                    </div>
-                    <div className="text-right space-y-1">
-                      <p className={`font-bold tabular-nums ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
-                        {tx.type === 'income' ? '+' : '-'}₺{Number(tx.amount).toLocaleString('tr-TR')}
-                      </p>
-                      <div className="flex gap-1 justify-end">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(tx)}><Pencil className="h-3 w-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(tx.id)}><Trash2 className="h-3 w-3" /></Button>
-                      </div>
-                    </div>
+            <Card className="rounded-t-none shadow-soft border-border/60 overflow-hidden">
+              <CardContent className="p-0">
+                {todayIncome.length === 0 ? (
+                  <div className="py-10 text-center text-muted-foreground text-sm">
+                    <Receipt className="h-7 w-7 mx-auto mb-2 text-muted-foreground/30" />
+                    Bugün gelen ödeme bulunmamaktadır
                   </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-emerald-50 dark:bg-emerald-950/20 hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
+                          <TableHead className="font-semibold text-emerald-800 dark:text-emerald-300 w-8">#</TableHead>
+                          <TableHead className="font-semibold text-emerald-800 dark:text-emerald-300">Saat</TableHead>
+                          <TableHead className="font-semibold text-emerald-800 dark:text-emerald-300">Açıklama</TableHead>
+                          <TableHead className="font-semibold text-emerald-800 dark:text-emerald-300 text-right">Tutar</TableHead>
+                          <TableHead className="font-semibold text-emerald-800 dark:text-emerald-300">Ödeme Şekli</TableHead>
+                          <TableHead className="font-semibold text-emerald-800 dark:text-emerald-300 w-20 text-center">İşlem</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {todayIncome.map((tx, idx) => (
+                          <TableRow key={tx.id} className="group">
+                            <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
+                            <TableCell className="text-sm">{format(parseISO(tx.transaction_date), 'HH:mm')}</TableCell>
+                            <TableCell className="font-medium text-sm">{tx.description || '-'}</TableCell>
+                            <TableCell className="text-right font-bold tabular-nums text-emerald-600">{fmtCurrency(Number(tx.amount))}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-[10px]">
+                                {METHOD_LABELS[tx.payment_method] || tx.payment_method}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex gap-0.5 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(tx)}><Pencil className="h-3 w-3" /></Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(tx.id)}><Trash2 className="h-3 w-3" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Payment method summary bar - income */}
+            <div className="grid grid-cols-3 text-center text-[11px] font-bold border border-t-0 border-border/60 rounded-b-xl overflow-hidden">
+              {DEFAULT_BOXES.map(b => (
+                <div key={b.payment_method} className="py-2 bg-emerald-600/10 border-r last:border-r-0 border-emerald-600/20">
+                  <div className="text-emerald-700 dark:text-emerald-400">{b.name}</div>
+                  <div className="text-foreground tabular-nums">{fmtCurrency(todayMethodTotals[b.payment_method]?.income || 0)}</div>
                 </div>
               ))}
             </div>
 
-            {/* Desktop Table */}
-            <Card className="hidden md:block shadow-soft border-border/60 overflow-hidden">
+            {/* Summary rows */}
+            <div className="mt-2 space-y-1">
+              {[
+                { label: 'Gelen Nakit Toplamı', value: todayIncomeTotal, color: 'bg-emerald-600 text-white' },
+                { label: 'Dünden Nakit Devir', value: yesterdayCarryover, color: 'bg-zinc-700 text-white' },
+                { label: 'Genel Nakit Toplamı', value: todayIncomeTotal + yesterdayCarryover, color: 'bg-zinc-800 text-white' },
+              ].map(row => (
+                <div key={row.label} className={`flex items-center justify-between px-4 py-2 rounded-lg ${row.color} text-sm font-semibold`}>
+                  <span>{row.label}</span>
+                  <span className="tabular-nums">{fmtCurrency(row.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── GİDEN ÖDEMELER ── */}
+          <div className="space-y-0">
+            <div className="rounded-t-xl bg-red-600 text-white px-4 py-2.5 font-bold text-center text-sm tracking-wide">
+              Giden Ödemeler
+            </div>
+            <Card className="rounded-t-none shadow-soft border-border/60 overflow-hidden">
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="font-semibold">Tarih</TableHead>
-                      <TableHead className="font-semibold">Tür</TableHead>
-                      <TableHead className="font-semibold">Açıklama</TableHead>
-                      <TableHead className="text-right font-semibold">Tutar</TableHead>
-                      <TableHead className="text-right font-semibold w-24">İşlem</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tabTransactions.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground text-sm">Bu ay işlem bulunmamaktadır.</TableCell></TableRow>
-                    ) : tabTransactions.map(tx => (
-                      <TableRow key={tx.id} className="group">
-                        <TableCell className="text-muted-foreground">{format(parseISO(tx.transaction_date), 'd MMM yyyy HH:mm', { locale: tr })}</TableCell>
-                        <TableCell>
-                          <Badge variant={tx.type === 'income' ? 'default' : 'destructive'} className="text-[10px] font-semibold">
-                            {tx.type === 'income' ? 'Gelir' : 'Gider'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-medium">{tx.description || '-'}</TableCell>
-                        <TableCell className={`text-right font-bold tabular-nums ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
-                          {tx.type === 'income' ? '+' : '-'}₺{Number(tx.amount).toLocaleString('tr-TR')}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(tx)}><Pencil className="h-3.5 w-3.5" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteMutation.mutate(tx.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                {todayExpense.length === 0 ? (
+                  <div className="py-10 text-center text-muted-foreground text-sm">
+                    <Receipt className="h-7 w-7 mx-auto mb-2 text-muted-foreground/30" />
+                    Bugün giden ödeme bulunmamaktadır
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-red-50 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-950/20">
+                          <TableHead className="font-semibold text-red-800 dark:text-red-300 w-8">#</TableHead>
+                          <TableHead className="font-semibold text-red-800 dark:text-red-300">Saat</TableHead>
+                          <TableHead className="font-semibold text-red-800 dark:text-red-300">Açıklama</TableHead>
+                          <TableHead className="font-semibold text-red-800 dark:text-red-300 text-right">Tutar</TableHead>
+                          <TableHead className="font-semibold text-red-800 dark:text-red-300">Ödeme Şekli</TableHead>
+                          <TableHead className="font-semibold text-red-800 dark:text-red-300 w-20 text-center">İşlem</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {todayExpense.map((tx, idx) => (
+                          <TableRow key={tx.id} className="group">
+                            <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
+                            <TableCell className="text-sm">{format(parseISO(tx.transaction_date), 'HH:mm')}</TableCell>
+                            <TableCell className="font-medium text-sm">{tx.description || '-'}</TableCell>
+                            <TableCell className="text-right font-bold tabular-nums text-red-600">{fmtCurrency(Number(tx.amount))}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-[10px]">
+                                {METHOD_LABELS[tx.payment_method] || tx.payment_method}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex gap-0.5 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(tx)}><Pencil className="h-3 w-3" /></Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(tx.id)}><Trash2 className="h-3 w-3" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
 
-      {/* Add/Edit Transaction Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingTx ? 'İşlem Düzenle' : txType === 'income' ? 'Gelir Ekle' : 'Gider Ekle'}</DialogTitle>
-            <DialogDescription>
-              {txType === 'income'
-                ? `${getTabLabel(activeTab)} kasasına gelir kaydı ekleyin`
-                : 'Harcama yapılacak kasayı seçin'
-              }
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            {!editingTx && (
+            {/* Payment method summary bar - expense */}
+            <div className="grid grid-cols-3 text-center text-[11px] font-bold border border-t-0 border-border/60 rounded-b-xl overflow-hidden">
+              {DEFAULT_BOXES.map(b => (
+                <div key={b.payment_method} className="py-2 bg-red-600/10 border-r last:border-r-0 border-red-600/20">
+                  <div className="text-red-700 dark:text-red-400">{b.name}</div>
+                  <div className="text-foreground tabular-nums">{fmtCurrency(todayMethodTotals[b.payment_method]?.expense || 0)}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Summary rows */}
+            <div className="mt-2 space-y-1">
+              {[
+                { label: 'Gider Nakit Toplamı', value: todayExpenseTotal, color: 'bg-red-600 text-white' },
+                { label: 'Bugünün Nakit Toplamı', value: todayIncomeTotal - todayExpenseTotal, color: 'bg-zinc-700 text-white' },
+                { label: 'Genel Nakit Kasası', value: todayIncomeTotal + yesterdayCarryover - todayExpenseTotal, color: 'bg-zinc-800 text-white' },
+              ].map(row => (
+                <div key={row.label} className={`flex items-center justify-between px-4 py-2 rounded-lg ${row.color} text-sm font-semibold`}>
+                  <span>{row.label}</span>
+                  <span className="tabular-nums">{fmtCurrency(row.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ MONTHLY STATISTICS ═══ */}
+        <div className="pt-4 border-t border-border/60">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
+                const headers = ['Tarih', 'Tür', 'Açıklama', 'Ödeme Şekli', 'Tutar (₺)'];
+                const rows = monthTransactions.map(tx => ({
+                  Tarih: format(parseISO(tx.transaction_date), 'd MMM yyyy HH:mm', { locale: tr }),
+                  Tür: tx.type === 'income' ? 'Gelir' : 'Gider',
+                  Açıklama: tx.description || '-',
+                  'Ödeme Şekli': METHOD_LABELS[tx.payment_method] || tx.payment_method,
+                  'Tutar (₺)': Number(tx.amount),
+                }));
+                exportToExcel(rows, headers, `kasa-${month}`);
+              }}>
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
+                const headers = ['Tarih', 'Tür', 'Açıklama', 'Ödeme Şekli', 'Tutar (₺)'];
+                const rows = monthTransactions.map(tx => [
+                  format(parseISO(tx.transaction_date), 'd MMM yyyy HH:mm', { locale: tr }),
+                  tx.type === 'income' ? 'Gelir' : 'Gider',
+                  tx.description || '-',
+                  METHOD_LABELS[tx.payment_method] || tx.payment_method,
+                  Number(tx.amount).toLocaleString('tr-TR'),
+                ]);
+                exportToPDF(rows, headers, 'Kasa Raporu', `kasa-${month}`, [`Dönem: ${month}`]);
+              }}>
+                <FileText className="h-3.5 w-3.5" /> PDF
+              </Button>
+            </div>
+            <Input type="month" value={month} onChange={e => setMonth(e.target.value)} className="w-44 h-9" />
+          </div>
+          <CashMonthlyStats transactions={monthTransactions} cashBoxes={cashBoxes} month={month} />
+        </div>
+
+        {/* ═══ DIALOGS ═══ */}
+        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingTx ? 'İşlem Düzenle' : txType === 'income' ? 'Gelir Ekle' : 'Gider Ekle'}</DialogTitle>
+              <DialogDescription>
+                {txType === 'income' ? 'Kasaya gelir kaydı ekleyin' : 'Harcama yapılacak kasayı seçin'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-2">
+              {!editingTx && (
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">İşlem Türü</Label>
+                  <Select value={txType} onValueChange={(v) => setTxType(v as 'income' | 'expense')}>
+                    <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="income">Gelir</SelectItem>
+                      <SelectItem value="expense">Gider</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {txType === 'expense' && (
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Harcama Yapılacak Kasa</Label>
+                  <Select value={txSourceBox} onValueChange={setTxSourceBox}>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Kasa seçin" /></SelectTrigger>
+                    <SelectContent>
+                      {cashBoxes.filter(b => b.is_active).map(b => {
+                        const bal = boxBalances.find(bb => bb.id === b.id);
+                        return (
+                          <SelectItem key={b.id} value={b.id}>
+                            {b.name} — ₺{(bal?.balance || 0).toLocaleString('tr-TR')}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {txType === 'income' && (
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Ödeme Şekli</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: 'cash', label: 'Nakit', icon: Banknote },
+                      { value: 'eft', label: 'EFT/Havale', icon: Building2 },
+                      { value: 'credit_card', label: 'Kredi Kartı', icon: CreditCard },
+                    ].map(m => (
+                      <button
+                        key={m.value}
+                        type="button"
+                        onClick={() => setTxIncomeMethod(m.value)}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                          txIncomeMethod === m.value
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border hover:border-primary/40 text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <m.icon className="h-5 w-5" />
+                        <span className="text-[10px] font-semibold">{m.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">İşlem Türü</Label>
-                <Select value={txType} onValueChange={(v) => setTxType(v as 'income' | 'expense')}>
-                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="income">Gelir</SelectItem>
-                    <SelectItem value="expense">Gider</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs font-semibold">Tutar (₺)</Label>
+                <Input type="number" min="0" step="0.01" value={txAmount} onChange={e => setTxAmount(e.target.value)} placeholder="0.00" className="h-10" />
               </div>
-            )}
-
-            {txType === 'expense' && (
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Harcama Yapılacak Kasa</Label>
-                <Select value={txSourceBox} onValueChange={setTxSourceBox}>
+                <Label className="text-xs font-semibold">Açıklama</Label>
+                <Textarea value={txDescription} onChange={e => setTxDescription(e.target.value)} placeholder="İşlem açıklaması..." rows={2} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Tarih</Label>
+                <Input type="datetime-local" value={txDate} onChange={e => setTxDate(e.target.value)} className="h-10" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
+              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="btn-gradient">
+                {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {editingTx ? 'Güncelle' : 'Kaydet'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Toplu Para Çıkışı</DialogTitle>
+              <DialogDescription>Bankaya veya yöneticiye toplu para transferi yapın.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-2">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Kaynak Kasa</Label>
+                <Select value={transferFromBox} onValueChange={setTransferFromBox}>
                   <SelectTrigger className="h-10"><SelectValue placeholder="Kasa seçin" /></SelectTrigger>
                   <SelectContent>
                     {cashBoxes.filter(b => b.is_active).map(b => {
                       const bal = boxBalances.find(bb => bb.id === b.id);
                       return (
                         <SelectItem key={b.id} value={b.id}>
-                          {b.name} — ₺{(bal?.balance || 0).toLocaleString('tr-TR')}
+                          {b.name} — Bakiye: ₺{(bal?.balance || 0).toLocaleString('tr-TR')}
                         </SelectItem>
                       );
                     })}
                   </SelectContent>
                 </Select>
               </div>
-            )}
-
-            {txType === 'income' && (
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Ödeme Şekli</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { value: 'cash', label: 'Nakit', icon: Banknote },
-                    { value: 'eft', label: 'EFT/Havale', icon: Building2 },
-                    { value: 'credit_card', label: 'Kredi Kartı', icon: CreditCard },
-                  ].map(m => (
-                    <button
-                      key={m.value}
-                      type="button"
-                      onClick={() => setTxIncomeMethod(m.value)}
-                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
-                        txIncomeMethod === m.value
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/40 text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      <m.icon className="h-5 w-5" />
-                      <span className="text-[10px] font-semibold">{m.label}</span>
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Gelir <strong>{getTabLabel(txIncomeMethod)}</strong> kasasına eklenecek
-                </p>
+                <Label className="text-xs font-semibold">Çıkış Tutarı (₺)</Label>
+                <Input type="number" min="0" step="0.01" value={transferAmount} onChange={e => setTransferAmount(e.target.value)} placeholder="0.00" className="h-10" />
               </div>
-            )}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Açıklama</Label>
+                <Textarea value={transferDescription} onChange={e => setTransferDescription(e.target.value)} placeholder="Ör: Bankaya transfer..." rows={2} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setTransferDialogOpen(false)}>İptal</Button>
+              <Button variant="destructive" onClick={() => transferMutation.mutate()} disabled={transferMutation.isPending} className="gap-1.5">
+                {transferMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                <Send className="h-4 w-4" /> Çıkışı Kaydet
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Tutar (₺)</Label>
-              <Input type="number" min="0" step="0.01" value={txAmount} onChange={e => setTxAmount(e.target.value)} placeholder="0.00" className="h-10" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Açıklama</Label>
-              <Textarea value={txDescription} onChange={e => setTxDescription(e.target.value)} placeholder="İşlem açıklaması..." rows={2} />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Tarih</Label>
-              <Input type="datetime-local" value={txDate} onChange={e => setTxDate(e.target.value)} className="h-10" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="btn-gradient">
-              {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {editingTx ? 'Güncelle' : 'Kaydet'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Transfer Dialog */}
-      <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Toplu Para Çıkışı</DialogTitle>
-            <DialogDescription>Bankaya veya yöneticiye toplu para transferi yapın. Seçilen kasadan tutar düşülecek.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Kaynak Kasa</Label>
-              <Select value={transferFromBox} onValueChange={setTransferFromBox}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Kasa seçin" /></SelectTrigger>
-                <SelectContent>
-                  {cashBoxes.filter(b => b.is_active).map(b => {
-                    const bal = boxBalances.find(bb => bb.id === b.id);
-                    return (
-                      <SelectItem key={b.id} value={b.id}>
-                        {b.name} — Bakiye: ₺{(bal?.balance || 0).toLocaleString('tr-TR')}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Çıkış Tutarı (₺)</Label>
-              <Input type="number" min="0" step="0.01" value={transferAmount} onChange={e => setTransferAmount(e.target.value)} placeholder="0.00" className="h-10" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Açıklama</Label>
-              <Textarea value={transferDescription} onChange={e => setTransferDescription(e.target.value)} placeholder="Ör: Bankaya transfer, Yöneticiye teslim..." rows={2} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTransferDialogOpen(false)}>İptal</Button>
-            <Button variant="destructive" onClick={() => transferMutation.mutate()} disabled={transferMutation.isPending} className="gap-1.5">
-              {transferMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              <Send className="h-4 w-4" /> Çıkışı Kaydet
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <ProductSaleDialog open={productSaleOpen} onOpenChange={setProductSaleOpen} />
-    </div>
+        <ProductSaleDialog open={productSaleOpen} onOpenChange={setProductSaleOpen} />
+      </div>
     </StaffPageGuard>
   );
 }
