@@ -1,12 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface BranchContextType {
-  selectedBranchId: string | null; // null = "Tüm Şubeler"
+  selectedBranchId: string | null;
   setSelectedBranchId: (id: string | null) => void;
   isAllBranches: boolean;
   isStaffLocked: boolean;
-  isBranchRequired: boolean; // true when admin must select a branch
+  requireBranchForAction: () => boolean;
 }
 
 const BranchContext = createContext<BranchContextType>({
@@ -14,7 +15,7 @@ const BranchContext = createContext<BranchContextType>({
   setSelectedBranchId: () => {},
   isAllBranches: true,
   isStaffLocked: false,
-  isBranchRequired: false,
+  requireBranchForAction: () => true,
 });
 
 export const useBranch = () => useContext(BranchContext);
@@ -23,14 +24,9 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { isStaff, isSuperAdmin, isSalonAdmin, currentBranchId } = useAuth();
   const [selectedBranchId, setSelectedBranchIdInternal] = useState<string | null>(null);
 
-  // Staff users are locked to their assigned branch
   const isStaffOnly = isStaff && !isSuperAdmin && !isSalonAdmin;
   const isStaffLocked = isStaffOnly && !!currentBranchId;
 
-  // Salon admins must select a branch before operating
-  const isBranchRequired = (isSalonAdmin && !isSuperAdmin) && selectedBranchId === null;
-
-  // When staff logs in, lock them to their branch
   useEffect(() => {
     if (isStaffOnly && currentBranchId) {
       setSelectedBranchIdInternal(currentBranchId);
@@ -38,17 +34,24 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [isStaffOnly, currentBranchId]);
 
   const setSelectedBranchId = (id: string | null) => {
-    // Staff cannot change branch
     if (isStaffLocked) return;
-    // Salon admins cannot select "all branches"
-    if ((isSalonAdmin && !isSuperAdmin) && id === null) return;
     setSelectedBranchIdInternal(id);
   };
 
   const isAllBranches = selectedBranchId === null;
 
+  const requireBranchForAction = useCallback(() => {
+    if (isAllBranches && !isSuperAdmin) {
+      toast.warning('Lütfen önce bir şube seçin', {
+        description: 'İşlem yapabilmek için belirli bir şube seçmelisiniz.',
+      });
+      return false;
+    }
+    return true;
+  }, [isAllBranches, isSuperAdmin]);
+
   return (
-    <BranchContext.Provider value={{ selectedBranchId, setSelectedBranchId, isAllBranches, isStaffLocked, isBranchRequired }}>
+    <BranchContext.Provider value={{ selectedBranchId, setSelectedBranchId, isAllBranches, isStaffLocked, requireBranchForAction }}>
       {children}
     </BranchContext.Provider>
   );

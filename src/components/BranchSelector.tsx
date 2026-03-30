@@ -16,14 +16,11 @@ export function BranchSelector() {
 
   const activeBranches = branches.filter(b => b.is_active);
 
-  // Don't show if only one branch (auto-select it for admins)
   if (activeBranches.length <= 1) return null;
 
   const selectedBranch = activeBranches.find(b => b.id === selectedBranchId);
-  const canSelectAll = isSuperAdmin; // Only super admins can see all branches
-  const label = selectedBranch ? selectedBranch.name : (canSelectAll ? 'Tüm Şubeler' : 'Şube Seçin');
+  const label = selectedBranch ? selectedBranch.name : 'Tüm Şubeler';
 
-  // Staff locked to branch - show read-only indicator
   if (isStaffLocked) {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/60 bg-muted/50 text-sm font-medium">
@@ -37,26 +34,20 @@ export function BranchSelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
-          !selectedBranch && !canSelectAll
-            ? 'border-destructive/60 bg-destructive/5 text-destructive animate-pulse'
-            : 'border-border/60 bg-background hover:bg-muted'
-        }`}>
+        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/60 bg-background hover:bg-muted text-sm font-medium transition-colors">
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <span className="max-w-[120px] truncate">{label}</span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" sideOffset={8} className="min-w-48 rounded-[10px] border border-border/60 bg-background p-1.5 shadow-md">
-        {canSelectAll && (
-          <DropdownMenuItem
-            onClick={() => setSelectedBranchId(null)}
-            className="rounded-lg px-2.5 py-2.5 text-sm flex items-center justify-between"
-          >
-            <span className="font-medium">Tüm Şubeler</span>
-            {selectedBranchId === null && <Check className="h-4 w-4 text-primary" />}
-          </DropdownMenuItem>
-        )}
+        <DropdownMenuItem
+          onClick={() => setSelectedBranchId(null)}
+          className="rounded-lg px-2.5 py-2.5 text-sm flex items-center justify-between"
+        >
+          <span className="font-medium">Tüm Şubeler</span>
+          {selectedBranchId === null && <Check className="h-4 w-4 text-primary" />}
+        </DropdownMenuItem>
         {activeBranches.map(branch => (
           <DropdownMenuItem
             key={branch.id}
