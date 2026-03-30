@@ -960,67 +960,116 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
 
       {/* New Appointment Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Yeni Randevu</DialogTitle><DialogDescription>Randevu bilgilerini girin</DialogDescription></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Müşteri</Label>
-              <Select value={form.customerId} onValueChange={v => setForm(f => ({ ...f, customerId: v, serviceIds: f.customerId === v ? f.serviceIds : [] }))}>
-                <SelectTrigger><SelectValue placeholder="Müşteri seçin" /></SelectTrigger>
-                <SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            {form.customerId && (
-              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
-                <div className="flex items-center justify-between gap-3">
+
+          {/* Existing appointment warning */}
+          {existingCustomerAppointments.length > 0 && (
+            <Alert variant="destructive" className="border-orange-300 bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-800">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <span className="font-semibold">Bu müşterinin aktif randevusu var:</span>
+                <ul className="mt-1 space-y-0.5 text-xs">
+                  {existingCustomerAppointments.slice(0, 3).map(a => (
+                    <li key={a.id}>
+                      • {format(new Date(a.start_time), 'd MMM yyyy HH:mm', { locale: tr })} — {getServiceName(a.service_id)} ({getStaffName(a.staff_id)})
+                    </li>
+                  ))}
+                  {existingCustomerAppointments.length > 3 && <li className="text-xs opacity-70">+{existingCustomerAppointments.length - 3} daha</li>}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Left column */}
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Müşteri</Label>
+                <Select value={form.customerId} onValueChange={v => setForm(f => ({ ...f, customerId: v, serviceIds: f.customerId === v ? f.serviceIds : [] }))}>
+                  <SelectTrigger><SelectValue placeholder="Müşteri seçin" /></SelectTrigger>
+                  <SelectContent>{customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+
+              {form.customerId && customerPurchasedServices.length > 0 && (
+                <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
                   <Label className="text-xs font-semibold">Satıştan Gelen Hizmetler</Label>
-                  {customerPurchasedServices.length > 0 && (
-                    <span className="text-xs text-muted-foreground">{customerPurchasedServices.length} hizmet</span>
-                  )}
-                </div>
-                {customerPurchasedServices.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Bu müşteriye ait satılmış hizmet bulunamadı.</p>
-                ) : (
                   <div className="flex flex-wrap gap-2">
                     {customerPurchasedServices.map(item => {
                       const isSelected = form.serviceIds.includes(item.serviceId);
                       return (
-                        <Button
-                          key={item.serviceId}
-                          type="button"
-                          size="sm"
-                          variant={isSelected ? 'default' : 'outline'}
-                          className="h-auto flex-col items-start gap-1 px-3 py-2 text-left"
-                          onClick={() => toggleService(item.serviceId)}
-                        >
+                        <Button key={item.serviceId} type="button" size="sm" variant={isSelected ? 'default' : 'outline'}
+                          className="h-auto flex-col items-start gap-1 px-3 py-2 text-left" onClick={() => toggleService(item.serviceId)}>
                           <span>{item.name}</span>
                           <span className="text-[11px] font-normal opacity-80">
-                            Satış: {item.totalSold} • Kullanılan: {item.usedCount}
-                            {item.remainingCount > 0 ? ` • Kalan: ${item.remainingCount}` : ''}
+                            Satış: {item.totalSold} • Kullanılan: {item.usedCount}{item.remainingCount > 0 ? ` • Kalan: ${item.remainingCount}` : ''}
                           </span>
                         </Button>
                       );
                     })}
                   </div>
-                )}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label>Personel</Label>
+                <Select value={form.staffId} onValueChange={v => setForm(f => ({ ...f, staffId: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Personel seçin" /></SelectTrigger>
+                  <SelectContent>
+                    {activeStaff.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.name} ({getBranchName(s.branch_id || '')})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-            <div className="space-y-1.5">
-              <Label>Personel</Label>
-              <Select value={form.staffId} onValueChange={v => setForm(f => ({ ...f, staffId: v }))}>
-                <SelectTrigger><SelectValue placeholder="Personel seçin" /></SelectTrigger>
-                <SelectContent>
-                  {activeStaff.map(s => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} ({getBranchName(s.branch_id || '')})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+              <div className="space-y-1.5">
+                <Label>Oda</Label>
+                <Select value={form.roomId} onValueChange={v => setForm(f => ({ ...f, roomId: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Oda seçin" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Oda seçilmedi —</SelectItem>
+                    {activeRooms.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Tarih</Label>
+                  <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Saat</Label>
+                  <Input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Süre (dk)</Label>
+                  <Select value={form.duration} onValueChange={v => setForm(f => ({ ...f, duration: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {DURATION_OPTIONS.map(d => <SelectItem key={d} value={String(d)}>{d} dk</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Duration mismatch warning */}
+              {durationMismatch && (
+                <Alert className="border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    Seçilen hizmetlerin toplam süresi <strong>{totalDuration} dk</strong>, randevu süresi <strong>{form.duration} dk</strong> olarak ayarlı. Süreleri kontrol edin.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
+
+            {/* Right column — services */}
             <div className="space-y-1.5">
               <Label>Hizmet {form.serviceIds.length > 0 && <span className="text-xs text-muted-foreground ml-1">({form.serviceIds.length} seçili)</span>}</Label>
-              <div className="max-h-56 overflow-y-auto rounded-lg border border-border p-1">
+              <div className="max-h-[340px] overflow-y-auto rounded-lg border border-border p-1">
                 {categorizedServices.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-4">Hizmet bulunamadı</p>
                 ) : (
@@ -1042,19 +1091,13 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
                             {group.services.map(s => {
                               const isSelected = form.serviceIds.includes(s.id);
                               return (
-                                <label
-                                  key={s.id}
+                                <label key={s.id}
                                   className="flex items-start gap-1.5 p-2 rounded-md cursor-pointer transition-colors border"
                                   style={{
                                     backgroundColor: isSelected ? '#EEEDFE' : 'transparent',
                                     borderColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                                  }}
-                                >
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={() => toggleService(s.id)}
-                                    className="mt-0.5"
-                                  />
+                                  }}>
+                                  <Checkbox checked={isSelected} onCheckedChange={() => toggleService(s.id)} className="mt-0.5" />
                                   <div className="flex-1 min-w-0">
                                     <p className="truncate" style={{ fontSize: '12px', lineHeight: '1.3' }}>{s.name}</p>
                                     <p className="text-muted-foreground" style={{ fontSize: '11px' }}>{s.duration} dk • ₺{s.price}</p>
@@ -1076,36 +1119,8 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
                 </div>
               )}
             </div>
-            <div className="space-y-1.5">
-              <Label>Oda</Label>
-              <Select value={form.roomId} onValueChange={v => setForm(f => ({ ...f, roomId: v }))}>
-                <SelectTrigger><SelectValue placeholder="Oda seçin" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— Oda seçilmedi —</SelectItem>
-                  {activeRooms.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="space-y-1.5">
-                <Label>Tarih</Label>
-                <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Saat</Label>
-                <Input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                <Label>Süre (dk)</Label>
-                <Select value={form.duration} onValueChange={v => setForm(f => ({ ...f, duration: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {DURATION_OPTIONS.map(d => <SelectItem key={d} value={String(d)}>{d} dk</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
             <Button onClick={handleSave}>Kaydet</Button>
