@@ -184,13 +184,14 @@ export default function InstallmentsPage() {
       const inst = installments.find(i => i.id === selectedPayment.installment_id);
       const custName = inst ? getCustomerName(inst.customer_id) : '';
 
-      // Auto cash transaction
+      // Auto cash transaction with proper cash_box_id
       const { error: cashErr } = await supabase.from('cash_transactions').insert({
         salon_id: salonId,
         type: 'income',
         amount: selectedPayment.amount,
         description: `Taksit tahsilatı - ${custName} (Taksit ${selectedPayment.installment_number})`,
         payment_method: payMethod,
+        cash_box_id: findCashBoxId(payMethod),
         created_by: user.id,
       });
       if (cashErr) throw cashErr;
