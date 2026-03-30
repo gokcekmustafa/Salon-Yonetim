@@ -448,6 +448,17 @@ export default function InstallmentsPage() {
               <Label className="text-xs font-semibold">Peşinat (₺)</Label>
               <Input type="number" min="0" value={formDownPayment} onChange={e => setFormDownPayment(e.target.value)} placeholder="0" className="h-10" />
             </div>
+            {parseFloat(formDownPayment) > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Peşinat Ödeme Yöntemi</Label>
+                <Select value={downPaymentMethod} onValueChange={setDownPaymentMethod}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Taksit Sayısı *</Label>
               <Select value={formCount} onValueChange={setFormCount}>
