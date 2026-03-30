@@ -38,6 +38,8 @@ const PAYMENT_METHODS = [
   { value: 'eft', label: 'EFT / Havale' },
 ];
 
+type CashBox = { id: string; salon_id: string; name: string; payment_method: string; is_active: boolean };
+
 export default function InstallmentsPage() {
   const { hasPermission } = usePermissions();
   const { user, currentSalonId } = useAuth();
@@ -49,6 +51,7 @@ export default function InstallmentsPage() {
   useFormGuard(dialogOpen || payDialogOpen);
   const [selectedPayment, setSelectedPayment] = useState<InstallmentPayment | null>(null);
   const [payMethod, setPayMethod] = useState('cash');
+  const [downPaymentMethod, setDownPaymentMethod] = useState('cash');
 
   // Form
   const [formCustomerId, setFormCustomerId] = useState('');
@@ -61,6 +64,19 @@ export default function InstallmentsPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'overdue' | 'upcoming'>('all');
 
   const salonId = currentSalonId;
+
+  // Fetch cash boxes to link transactions properly
+  const { data: cashBoxes = [] } = useQuery({
+    queryKey: ['cash_boxes', salonId],
+    queryFn: async () => {
+      if (!salonId) return [];
+      const { data } = await supabase.from('cash_boxes').select('*').eq('salon_id', salonId).order('name');
+      return (data || []) as CashBox[];
+    },
+    enabled: !!salonId,
+  });
+
+  const findCashBoxId = (method: string) => cashBoxes.find(b => b.payment_method === method)?.id || null;
 
   const { data: installments = [], isLoading: loadingInst } = useQuery({
     queryKey: ['installments', salonId],
@@ -94,7 +110,7 @@ export default function InstallmentsPage() {
       const remaining = Math.max(0, total - dp);
       if (remaining <= 0) throw new Error('Taksitlendirilecek tutar 0 olamaz');
 
-      // Down payment cash entry
+      // Down payment cash entry with proper payment method and cash_box_id
       if (dp > 0) {
         const custName = customers.find(c => c.id === formCustomerId)?.name || '';
         const { error: cashErr } = await supabase.from('cash_transactions').insert({
@@ -102,7 +118,8 @@ export default function InstallmentsPage() {
           type: 'income',
           amount: dp,
           description: `Peşinat - ${custName}`,
-          payment_method: 'cash',
+          payment_method: downPaymentMethod,
+          cash_box_id: findCashBoxId(downPaymentMethod),
           created_by: user.id,
         });
         if (cashErr) throw cashErr;
@@ -167,13 +184,14 @@ export default function InstallmentsPage() {
       const inst = installments.find(i => i.id === selectedPayment.installment_id);
       const custName = inst ? getCustomerName(inst.customer_id) : '';
 
-      // Auto cash transaction
+      // Auto cash transaction with proper cash_box_id
       const { error: cashErr } = await supabase.from('cash_transactions').insert({
         salon_id: salonId,
         type: 'income',
         amount: selectedPayment.amount,
         description: `Taksit tahsilatı - ${custName} (Taksit ${selectedPayment.installment_number})`,
         payment_method: payMethod,
+        cash_box_id: findCashBoxId(payMethod),
         created_by: user.id,
       });
       if (cashErr) throw cashErr;
@@ -430,6 +448,17 @@ export default function InstallmentsPage() {
               <Label className="text-xs font-semibold">Peşinat (₺)</Label>
               <Input type="number" min="0" value={formDownPayment} onChange={e => setFormDownPayment(e.target.value)} placeholder="0" className="h-10" />
             </div>
+            {parseFloat(formDownPayment) > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Peşinat Ödeme Yöntemi</Label>
+                <Select value={downPaymentMethod} onValueChange={setDownPaymentMethod}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Taksit Sayısı *</Label>
               <Select value={formCount} onValueChange={setFormCount}>

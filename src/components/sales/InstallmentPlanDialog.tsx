@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CreditCard, CalendarDays } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { format, addDays, addMonths, addWeeks } from 'date-fns';
@@ -38,10 +38,24 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
   const salonId = currentSalonId;
 
   const [downPayment, setDownPayment] = useState('0');
+  const [downPaymentMethod, setDownPaymentMethod] = useState('cash');
   const [installmentCount, setInstallmentCount] = useState('3');
   const [interval, setInterval] = useState<IntervalType>('monthly');
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [saving, setSaving] = useState(false);
+
+  // Fetch cash boxes to link transactions properly
+  const { data: cashBoxes = [] } = useQuery({
+    queryKey: ['cash_boxes', salonId],
+    queryFn: async () => {
+      if (!salonId) return [];
+      const { data } = await supabase.from('cash_boxes').select('*').eq('salon_id', salonId).order('name');
+      return (data || []) as { id: string; payment_method: string }[];
+    },
+    enabled: !!salonId,
+  });
+
+  const findCashBoxId = (method: string) => cashBoxes.find(b => b.payment_method === method)?.id || null;
 
   useFormGuard(open);
 
@@ -82,14 +96,15 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
 
     setSaving(true);
     try {
-      // If there's a down payment, create cash transaction for it
+      // If there's a down payment, create cash transaction with proper method and cash_box_id
       if (downPaymentNum > 0) {
         const { error: cashErr } = await supabase.from('cash_transactions').insert({
           salon_id: salonId,
           type: 'income',
           amount: downPaymentNum,
           description: `Peşinat - ${customerName}${saleDescription ? `: ${saleDescription}` : ''}`,
-          payment_method: 'cash',
+          payment_method: downPaymentMethod,
+          cash_box_id: findCashBoxId(downPaymentMethod),
           created_by: user.id,
         });
         if (cashErr) throw cashErr;
@@ -158,6 +173,21 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
               className="h-10"
             />
           </div>
+
+          {/* Down Payment Method */}
+          {downPaymentNum > 0 && (
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Peşinat Ödeme Yöntemi</Label>
+              <Select value={downPaymentMethod} onValueChange={setDownPaymentMethod}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Nakit</SelectItem>
+                  <SelectItem value="credit_card">Kredi Kartı</SelectItem>
+                  <SelectItem value="eft">EFT / Havale</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Installment Count */}
           <div className="space-y-2">
