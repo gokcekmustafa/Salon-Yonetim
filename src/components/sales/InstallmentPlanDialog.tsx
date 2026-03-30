@@ -96,14 +96,15 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
 
     setSaving(true);
     try {
-      // If there's a down payment, create cash transaction for it
+      // If there's a down payment, create cash transaction with proper method and cash_box_id
       if (downPaymentNum > 0) {
         const { error: cashErr } = await supabase.from('cash_transactions').insert({
           salon_id: salonId,
           type: 'income',
           amount: downPaymentNum,
           description: `Peşinat - ${customerName}${saleDescription ? `: ${saleDescription}` : ''}`,
-          payment_method: 'cash',
+          payment_method: downPaymentMethod,
+          cash_box_id: findCashBoxId(downPaymentMethod),
           created_by: user.id,
         });
         if (cashErr) throw cashErr;
