@@ -16,7 +16,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2, Banknote, CreditCard, FileSpreadsheet, FileText, List, LayoutGrid } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, CalendarRange, Users, Building2, DoorOpen, Pencil, Trash2, Loader2, Banknote, CreditCard, FileSpreadsheet, FileText, List, LayoutGrid, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { format, addMinutes, addDays, subDays, addWeeks, subWeeks, differenceInMinutes } from 'date-fns';
 import { tr } from 'date-fns/locale';
