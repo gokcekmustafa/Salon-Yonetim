@@ -174,6 +174,21 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
             />
           </div>
 
+          {/* Down Payment Method */}
+          {downPaymentNum > 0 && (
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Peşinat Ödeme Yöntemi</Label>
+              <Select value={downPaymentMethod} onValueChange={setDownPaymentMethod}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Nakit</SelectItem>
+                  <SelectItem value="credit_card">Kredi Kartı</SelectItem>
+                  <SelectItem value="eft">EFT / Havale</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Installment Count */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold">Taksit Sayısı</Label>
