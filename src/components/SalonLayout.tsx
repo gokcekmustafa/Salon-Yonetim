@@ -6,9 +6,10 @@ import { PopupDisplay } from '@/components/popup/PopupDisplay';
 import { useOnlineHeartbeat } from '@/hooks/useOnlineStatus';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useSalonNavigation } from '@/hooks/useSalonNavigation';
-import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings, ArrowLeft, ChevronDown } from 'lucide-react';
+import { LogOut, Building2, Menu, X, LifeBuoy, Activity, Settings, ArrowLeft, ChevronDown, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { BranchSelector } from '@/components/BranchSelector';
+import { useBranch } from '@/contexts/BranchContext';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
