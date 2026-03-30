@@ -606,8 +606,8 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
     <StaffPageGuard permissionKey="page_appointments" featureLabel="Randevular">
     <div className="page-container animate-in">
       {/* Header */}
-      <div className="flex flex-col gap-3">
-        <div className="page-header">
+      <div className="flex flex-col gap-3" style={{ minHeight: 'auto', contain: 'layout' }}>
+        <div className="page-header" style={{ minHeight: '48px' }}>
           <div>
             <h1 className="page-title">Randevular</h1>
             <p className="page-subtitle">{format(currentDate, 'd MMMM yyyy', { locale: tr })}</p>
