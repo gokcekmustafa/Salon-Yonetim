@@ -559,10 +559,10 @@ export default function CustomersPage() {
 
             {/* Durum */}
             <TableCell className="whitespace-nowrap">
-              {hasDebt ? (
-                <Badge className="bg-red-500/90 text-white text-[10px] hover:bg-red-600">Borçsuz</Badge>
-              ) : instInfo && instInfo.overdueCount > 0 ? (
+              {hasDebt || (instInfo && instInfo.overdueCount > 0) ? (
                 <Badge className="bg-red-500/90 text-white text-[10px] hover:bg-red-600">Borçlu</Badge>
+              ) : instInfo && instInfo.totalBalance === 0 && instInfo.totalServiceCost > 0 ? (
+                <Badge className="bg-emerald-500/90 text-white text-[10px] hover:bg-emerald-600">Borçsuz</Badge>
               ) : (
                 <Badge className="bg-emerald-500/90 text-white text-[10px] hover:bg-emerald-600">Düzenli</Badge>
               )}
