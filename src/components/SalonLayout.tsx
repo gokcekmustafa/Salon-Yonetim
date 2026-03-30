@@ -244,10 +244,58 @@ export default function SalonLayout({ children }: SalonLayoutProps) {
       </header>
 
       <main className="flex-1 p-5 overflow-auto">
+        <BranchRequiredOverlay />
         {children}
       </main>
 
       <PopupDisplay />
+    </div>
+  );
+}
+
+function BranchRequiredOverlay() {
+  const { isBranchRequired } = useBranch();
+  const { branches } = useSalonData();
+  const { setSelectedBranchId } = useBranch();
+
+  const activeBranches = branches.filter(b => b.is_active);
+
+  if (!isBranchRequired || activeBranches.length <= 1) {
+    // Auto-select single branch
+    if (isBranchRequired && activeBranches.length === 1) {
+      setSelectedBranchId(activeBranches[0].id);
+    }
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+      <div className="bg-card border border-border rounded-2xl shadow-xl p-8 max-w-md w-full mx-4 space-y-6">
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="h-14 w-14 rounded-full bg-warning/10 flex items-center justify-center">
+            <AlertTriangle className="h-7 w-7 text-warning" />
+          </div>
+          <h2 className="text-lg font-bold">Şube Seçimi Gerekli</h2>
+          <p className="text-sm text-muted-foreground">
+            İşlem yapabilmek için lütfen çalışmak istediğiniz şubeyi seçin. Tüm işlemleriniz yalnızca seçtiğiniz şube için geçerli olacaktır.
+          </p>
+        </div>
+        <div className="space-y-2">
+          {activeBranches.map(branch => (
+            <button
+              key={branch.id}
+              onClick={() => setSelectedBranchId(branch.id)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-left"
+            >
+              <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+              <div>
+                <p className="font-medium text-sm">{branch.name}</p>
+                {branch.address && <p className="text-xs text-muted-foreground">{branch.address}</p>}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
