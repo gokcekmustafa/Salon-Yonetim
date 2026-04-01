@@ -232,9 +232,54 @@ export default function InstallmentsPage() {
     mutationFn: async () => {
       if (!editPayment) throw new Error('No payment');
       const updates: any = {};
-      if (editAmount) updates.amount = parseFloat(editAmount);
-      if (editDueDate) updates.due_date = editDueDate;
+      const currentAmount = Number(editPayment.amount);
+      const nextAmount = editAmount === '' ? currentAmount : parseFloat(editAmount);
+      const amountChanged = Math.abs(nextAmount - currentAmount) > 0.009;
+      const dateChanged = !!editDueDate && editDueDate !== editPayment.due_date;
+
+      if (Number.isNaN(nextAmount) || nextAmount < 0) {
+        throw new Error('Geçerli tutar girin');
+      }
+
+      if (amountChanged) {
+        const siblingUnpaid = payments.filter(
+          p => p.installment_id === editPayment.installment_id && !p.is_paid
+        );
+        const totalUnpaid = siblingUnpaid.reduce((sum, payment) => sum + Number(payment.amount), 0);
+
+        if (nextAmount > totalUnpaid) {
+          throw new Error('Tutar toplam kalan borçtan büyük olamaz');
+        }
+
+        const otherUnpaid = siblingUnpaid.filter(p => p.id !== editPayment.id);
+        const remainingForOthers = Math.round((totalUnpaid - nextAmount) * 100) / 100;
+
+        if (otherUnpaid.length === 0 && Math.abs(remainingForOthers) > 0.01) {
+          throw new Error('Tek taksit kaldığında tutar değiştirilemez');
+        }
+
+        updates.amount = nextAmount;
+        if (otherUnpaid.length > 0) {
+          const perOther = Math.round((remainingForOthers / otherUnpaid.length) * 100) / 100;
+
+          for (let i = 0; i < otherUnpaid.length; i += 1) {
+            const redistributedAmount = i === otherUnpaid.length - 1
+              ? Math.round((remainingForOthers - perOther * (otherUnpaid.length - 1)) * 100) / 100
+              : perOther;
+
+            const { error: siblingError } = await supabase
+              .from('installment_payments')
+              .update({ amount: redistributedAmount } as any)
+              .eq('id', otherUnpaid[i].id);
+
+            if (siblingError) throw siblingError;
+          }
+        }
+      }
+
+      if (dateChanged) updates.due_date = editDueDate;
       if (!Object.keys(updates).length) throw new Error('Değişiklik yok');
+
       const { error } = await supabase.from('installment_payments').update(updates).eq('id', editPayment.id);
       if (error) throw error;
     },
@@ -485,88 +530,106 @@ export default function InstallmentsPage() {
 
       {/* Create Installment Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="w-[min(96vw,68rem)] max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Yeni Taksit Planı</DialogTitle>
             <DialogDescription>Müşteri borcunu taksitlendirin</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Müşteri *</Label>
-              <Select value={formCustomerId} onValueChange={setFormCustomerId}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Müşteri seçin" /></SelectTrigger>
-                <SelectContent>
-                  {customers.filter(c => (c as any).customer_type !== 'single_session').map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Toplam Tutar (₺) *</Label>
-              <Input type="number" min="0" step="0.01" value={formTotal} onChange={e => setFormTotal(e.target.value)} placeholder="0.00" className="h-10" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Peşinat (₺)</Label>
-              <Input type="number" min="0" value={formDownPayment} onChange={e => setFormDownPayment(e.target.value)} placeholder="0" className="h-10" />
-            </div>
-            {parseFloat(formDownPayment) > 0 && (
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold">Peşinat Ödeme Yöntemi</Label>
-                <Select value={downPaymentMethod} onValueChange={setDownPaymentMethod}>
-                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PAYMENT_METHODS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Taksit Sayısı *</Label>
-              <Select value={formCount} onValueChange={setFormCount}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {[2, 3, 4, 5, 6, 8, 10, 12].map(n => (
-                    <SelectItem key={n} value={String(n)}>{n} Taksit</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Taksit Aralığı</Label>
-              <Select value={formInterval} onValueChange={(v) => setFormInterval(v as any)}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Haftalık</SelectItem>
-                  <SelectItem value="biweekly">15 Günlük</SelectItem>
-                  <SelectItem value="monthly">Aylık</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">İlk Taksit Tarihi</Label>
-              <Input type="date" value={formStartDate} onChange={e => setFormStartDate(e.target.value)} className="h-10" />
-            </div>
-            {formTotal && formCount && (
-              <div className="p-3 rounded-lg bg-muted/50 border space-y-1">
+          <div className="flex-1 overflow-y-auto min-h-0 py-2">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.9fr)]">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label className="text-xs font-semibold">Müşteri *</Label>
+                  <Select value={formCustomerId} onValueChange={setFormCustomerId}>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Müşteri seçin" /></SelectTrigger>
+                    <SelectContent>
+                      {customers.filter(c => (c as any).customer_type !== 'single_session').map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Toplam Tutar (₺) *</Label>
+                  <Input type="number" min="0" step="0.01" value={formTotal} onChange={e => setFormTotal(e.target.value)} placeholder="0.00" className="h-10" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Peşinat (₺)</Label>
+                  <Input type="number" min="0" value={formDownPayment} onChange={e => setFormDownPayment(e.target.value)} placeholder="0" className="h-10" />
+                </div>
+
                 {parseFloat(formDownPayment) > 0 && (
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Peşinat:</span>
-                    <span className="font-medium">₺{parseFloat(formDownPayment).toLocaleString('tr-TR')}</span>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label className="text-xs font-semibold">Peşinat Ödeme Yöntemi</Label>
+                    <Select value={downPaymentMethod} onValueChange={setDownPaymentMethod}>
+                      <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_METHODS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Taksitlendirilecek:</span>
-                  <span className="font-medium">₺{Math.max(0, parseFloat(formTotal || '0') - (parseFloat(formDownPayment) || 0)).toLocaleString('tr-TR')}</span>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Taksit Sayısı *</Label>
+                  <Select value={formCount} onValueChange={setFormCount}>
+                    <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[2, 3, 4, 5, 6, 8, 10, 12].map(n => (
+                        <SelectItem key={n} value={String(n)}>{n} Taksit</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <p className="text-xs text-muted-foreground pt-1 border-t">Taksit tutarı:</p>
-                <p className="font-bold text-lg">₺{(Math.max(0, parseFloat(formTotal || '0') - (parseFloat(formDownPayment) || 0)) / parseInt(formCount || '1')).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Taksit Aralığı</Label>
+                  <Select value={formInterval} onValueChange={(v) => setFormInterval(v as any)}>
+                    <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Haftalık</SelectItem>
+                      <SelectItem value="biweekly">15 Günlük</SelectItem>
+                      <SelectItem value="monthly">Aylık</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                  <Label className="text-xs font-semibold">İlk Taksit Tarihi</Label>
+                  <Input type="date" value={formStartDate} onChange={e => setFormStartDate(e.target.value)} className="h-10" />
+                </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                  <Label className="text-xs font-semibold">Not <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label>
+                  <Input value={formNotes} onChange={e => setFormNotes(e.target.value)} placeholder="Taksit notu..." className="h-10" />
+                </div>
               </div>
-            )}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Not <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label>
-              <Input value={formNotes} onChange={e => setFormNotes(e.target.value)} placeholder="Taksit notu..." className="h-10" />
+
+              <div className="space-y-3">
+                <div className="p-4 rounded-lg bg-muted/50 border space-y-2">
+                  <p className="text-xs font-semibold">Özet</p>
+                  {parseFloat(formDownPayment) > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Peşinat:</span>
+                      <span className="font-medium">₺{parseFloat(formDownPayment).toLocaleString('tr-TR')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Taksitlendirilecek:</span>
+                    <span className="font-medium">₺{Math.max(0, parseFloat(formTotal || '0') - (parseFloat(formDownPayment) || 0)).toLocaleString('tr-TR')}</span>
+                  </div>
+                  <div className="pt-2 border-t space-y-1">
+                    <p className="text-xs text-muted-foreground">Ortalama taksit tutarı</p>
+                    <p className="font-bold text-xl">₺{(Math.max(0, parseFloat(formTotal || '0') - (parseFloat(formDownPayment) || 0)) / parseInt(formCount || '1')).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg border bg-muted/20 text-xs text-muted-foreground leading-relaxed">
+                  Pencere ekran içine sığacak şekilde daraltıldı; uzun içerik yalnızca pencere içinde kaydırılır.
+                </div>
+              </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>İptal</Button>
             <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending} className="btn-gradient">
               {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Oluştur
