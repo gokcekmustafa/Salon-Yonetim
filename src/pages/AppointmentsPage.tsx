@@ -400,6 +400,8 @@ export default function AppointmentsPage() {
     }
 
     if (!hasError) {
+      const customerName = customers.find(c => c.id === form.customerId)?.name || '';
+      logAction({ action: 'create', target_type: 'appointment', target_label: customerName, details: { services: form.serviceIds.length, date: form.date } });
       toast.success(`${form.serviceIds.length} randevu oluşturuldu.`);
       setDialogOpen(false);
       refetch();
