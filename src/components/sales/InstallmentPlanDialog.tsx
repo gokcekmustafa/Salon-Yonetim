@@ -47,6 +47,7 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
   const [manualDates, setManualDates] = useState<Record<number, string>>({});
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingDateIndex, setEditingDateIndex] = useState<number | null>(null);
+  const [lockedIndexes, setLockedIndexes] = useState<Set<number>>(new Set());
 
   const { data: cashBoxes = [] } = useQuery({
     queryKey: ['cash_boxes', salonId],
