@@ -49,6 +49,7 @@ export default function InstallmentsPage() {
   const { hasPermission } = usePermissions();
   const { user, currentSalonId } = useAuth();
   const { customers, loading: salonLoading } = useSalonData();
+  const { logAction } = useAuditLog();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
