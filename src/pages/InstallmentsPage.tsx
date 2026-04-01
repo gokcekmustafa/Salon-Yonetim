@@ -54,7 +54,14 @@ export default function InstallmentsPage() {
   useFormGuard(dialogOpen || payDialogOpen);
   const [selectedPayment, setSelectedPayment] = useState<InstallmentPayment | null>(null);
   const [payMethod, setPayMethod] = useState('cash');
+  const [payDate, setPayDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [downPaymentMethod, setDownPaymentMethod] = useState('cash');
+
+  // Edit existing installment payment
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editPayment, setEditPayment] = useState<InstallmentPayment | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
 
   // Form
   const [formCustomerId, setFormCustomerId] = useState('');
