@@ -275,6 +275,7 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
       qc.invalidateQueries({ queryKey: ['cash_transactions'] });
       qc.invalidateQueries({ queryKey: ['product_sales'] });
       qc.invalidateQueries({ queryKey: ['service_sales'] });
+      logAction({ action: 'create', target_type: 'sale', target_label: customerName || '', details: { services: serviceItems.length, products: productItems.length, total: grandTotal, method } });
       toast.success('Satış tamamlandı');
       setServiceItems([]);
       setProductItems([]);
