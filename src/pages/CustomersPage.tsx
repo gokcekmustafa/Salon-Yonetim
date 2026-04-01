@@ -324,11 +324,13 @@ export default function CustomersPage() {
     };
     if (editing) {
       await updateCustomer(editing.id, { name: form.name, phone: form.phone, ...optionals });
+      logAction({ action: 'update', target_type: 'customer', target_id: editing.id, target_label: form.name, details: { phone: form.phone } });
       toast.success('Müşteri güncellendi.');
       setSaving(false);
       setDialogOpen(false);
     } else {
       const result = await addCustomer({ name: form.name, phone: form.phone, ...optionals });
+      logAction({ action: 'create', target_type: 'customer', target_label: form.name, details: { phone: form.phone, type: form.customer_type } });
       toast.success('Müşteri eklendi.');
       setSaving(false);
       setDialogOpen(false);
