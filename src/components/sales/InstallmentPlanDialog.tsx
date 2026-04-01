@@ -320,8 +320,15 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
               </Label>
                <div className="space-y-1 max-h-[42vh] overflow-y-auto pr-1">
                 {installmentPlan.map((p, idx) => (
-                  <div key={p.number} className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/30 border gap-2">
+                  <div key={p.number} className={`flex items-center justify-between text-xs p-2 rounded-lg border gap-2 ${lockedIndexes.has(idx) ? 'bg-primary/5 border-primary/30' : 'bg-muted/30'}`}>
                     <div className="flex items-center gap-1.5 min-w-0">
+                      <button
+                        onClick={() => toggleLock(idx)}
+                        className={`shrink-0 p-0.5 rounded transition-colors ${lockedIndexes.has(idx) ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                        title={lockedIndexes.has(idx) ? 'Sabitlemeyi kaldır' : 'Sabitle'}
+                      >
+                        {lockedIndexes.has(idx) ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                      </button>
                       <Badge variant="outline" className="text-[10px] w-5 h-5 justify-center shrink-0 p-0">{p.number}</Badge>
                       {editingDateIndex === idx ? (
                         <Input
