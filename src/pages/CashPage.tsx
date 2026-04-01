@@ -421,10 +421,10 @@ export default function CashPage() {
             </div>
             <Card className="rounded-t-none shadow-soft border-border/60 overflow-hidden">
               <CardContent className="p-0">
-                {todayExpense.length === 0 ? (
+                {dayExpense.length === 0 ? (
                   <div className="py-10 text-center text-muted-foreground text-sm">
                     <Receipt className="h-7 w-7 mx-auto mb-2 text-muted-foreground/30" />
-                    Bugün giden ödeme bulunmamaktadır
+                    Bu güne ait giden ödeme bulunmamaktadır
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
