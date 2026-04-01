@@ -184,6 +184,8 @@ export default function InstallmentsPage() {
       queryClient.invalidateQueries({ queryKey: ['installments', salonId] });
       queryClient.invalidateQueries({ queryKey: ['installment_payments', salonId] });
       queryClient.invalidateQueries({ queryKey: ['cash_transactions'] });
+      const custName = customers.find(c => c.id === formCustomerId)?.name || '';
+      logAction({ action: 'create', target_type: 'installment', target_label: custName, details: { total: formTotal, count: formCount } });
       toast.success('Taksit planı oluşturuldu');
       setDialogOpen(false);
       setFormCustomerId(''); setFormTotal(''); setFormCount('3'); setFormNotes(''); setFormDownPayment('0');
