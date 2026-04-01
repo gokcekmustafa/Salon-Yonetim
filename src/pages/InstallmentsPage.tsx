@@ -808,22 +808,73 @@ export default function InstallmentsPage() {
 
       {/* Edit Installment Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Taksit Düzenle</DialogTitle>
-            <DialogDescription>Taksit tutarını ve vade tarihini güncelleyin</DialogDescription>
+            <DialogDescription>Taksit tutarını ve vade tarihini güncelleyin. Diğer taksitleri sabitleyebilirsiniz.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Taksit Tutarı (₺)</Label>
-              <Input type="number" min="0" step="0.01" value={editAmount} onChange={e => setEditAmount(e.target.value)} className="h-10" />
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Taksit Tutarı (₺)</Label>
+                <Input type="number" min="0" step="0.01" value={editAmount} onChange={e => setEditAmount(e.target.value)} className="h-9" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Vade Tarihi</Label>
+                <Input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} className="h-9" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Vade Tarihi</Label>
-              <Input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} className="h-10" />
-            </div>
+
+            {/* Sibling unpaid payments with lock toggles */}
+            {editPayment && (() => {
+              const siblings = payments.filter(
+                p => p.installment_id === editPayment.installment_id && !p.is_paid && p.id !== editPayment.id
+              );
+              if (siblings.length === 0) return null;
+              return (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold flex items-center gap-1">
+                    <Lock className="h-3 w-3" /> Diğer Taksitler — Sabitle
+                  </Label>
+                  <p className="text-[10px] text-muted-foreground">Sabitlenmiş taksitler değişiklikten etkilenmez.</p>
+                  <div className="space-y-1 max-h-[30vh] overflow-y-auto">
+                    {siblings.map(s => {
+                      const isLocked = editLockedIds.has(s.id);
+                      return (
+                        <div
+                          key={s.id}
+                          className={`flex items-center justify-between text-xs p-2 rounded-lg border ${isLocked ? 'border-primary/40 bg-primary/5' : 'border-border/60'}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setEditLockedIds(prev => {
+                                const next = new Set(prev);
+                                if (next.has(s.id)) next.delete(s.id); else next.add(s.id);
+                                return next;
+                              })}
+                              className={`shrink-0 p-1 rounded-md transition-all ${isLocked
+                                ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
+                                : 'text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted'
+                              }`}
+                              title={isLocked ? 'Sabitlemeyi kaldır' : 'Sabitle'}
+                            >
+                              {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                            </button>
+                            <span>Taksit {s.installment_number}</span>
+                            <span className="text-muted-foreground">
+                              {format(parseISO(s.due_date), 'd MMM yyyy', { locale: tr })}
+                            </span>
+                          </div>
+                          <span className="font-medium">{Number(s.amount).toLocaleString('tr-TR')} ₺</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button>
             <Button onClick={() => editPaymentMutation.mutate()} disabled={editPaymentMutation.isPending} className="btn-gradient">
               {editPaymentMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Kaydet
