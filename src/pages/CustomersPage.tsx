@@ -359,6 +359,7 @@ export default function CustomersPage() {
   const confirmDelete = async () => {
     if (!customerToDelete) return;
     await deleteCustomer(customerToDelete.id);
+    logAction({ action: 'delete', target_type: 'customer', target_id: customerToDelete.id, target_label: customerToDelete.name });
     toast.success('Müşteri silindi.');
     setDeleteConfirmOpen(false);
     setCustomerToDelete(null);
