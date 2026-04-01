@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { useSalonData } from '@/hooks/useSalonData';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NoPermission } from '@/components/permissions/NoPermission';
@@ -48,6 +49,7 @@ export default function InstallmentsPage() {
   const { hasPermission } = usePermissions();
   const { user, currentSalonId } = useAuth();
   const { customers, loading: salonLoading } = useSalonData();
+  const { logAction } = useAuditLog();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -182,6 +184,8 @@ export default function InstallmentsPage() {
       queryClient.invalidateQueries({ queryKey: ['installments', salonId] });
       queryClient.invalidateQueries({ queryKey: ['installment_payments', salonId] });
       queryClient.invalidateQueries({ queryKey: ['cash_transactions'] });
+      const custName = customers.find(c => c.id === formCustomerId)?.name || '';
+      logAction({ action: 'create', target_type: 'installment', target_label: custName, details: { total: formTotal, count: formCount } });
       toast.success('Taksit planı oluşturuldu');
       setDialogOpen(false);
       setFormCustomerId(''); setFormTotal(''); setFormCount('3'); setFormNotes(''); setFormDownPayment('0');
@@ -220,6 +224,9 @@ export default function InstallmentsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['installment_payments', salonId] });
       queryClient.invalidateQueries({ queryKey: ['cash_transactions'] });
+      const inst = installments.find(i => i.id === selectedPayment?.installment_id);
+      const custName = inst ? customers.find(c => c.id === inst.customer_id)?.name || '' : '';
+      logAction({ action: 'payment', target_type: 'installment', target_id: selectedPayment?.id, target_label: custName, details: { amount: selectedPayment?.amount, method: payMethod } });
       toast.success('Taksit ödendi olarak işaretlendi');
       setPayDialogOpen(false);
       setSelectedPayment(null);

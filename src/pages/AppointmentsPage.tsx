@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { useAuth } from '@/contexts/AuthContext';
 import { DbAppointment } from '@/hooks/useSalonData';
 import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
@@ -60,6 +61,7 @@ const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 export default function AppointmentsPage() {
   const { hasPermission } = usePermissions();
   const { currentSalonId, user, isSalonAdmin, isSuperAdmin } = useAuth();
+  const { logAction } = useAuditLog();
   const {
     appointments, customers, staff, services, branches,
     addAppointment, updateAppointment, addPayment, hasConflict, refetch,
@@ -398,6 +400,8 @@ export default function AppointmentsPage() {
     }
 
     if (!hasError) {
+      const customerName = customers.find(c => c.id === form.customerId)?.name || '';
+      logAction({ action: 'create', target_type: 'appointment', target_label: customerName, details: { services: form.serviceIds.length, date: form.date } });
       toast.success(`${form.serviceIds.length} randevu oluşturuldu.`);
       setDialogOpen(false);
       refetch();
@@ -453,6 +457,8 @@ const handleComplete = async () => {
         });
       }
     }
+    const customerName = customers.find(c => c.id === detailApt.customer_id)?.name || '';
+    logAction({ action: 'complete', target_type: 'appointment', target_id: detailApt.id, target_label: customerName, details: { payment_method: selectedPaymentMethod, amount: service?.price } });
     toast.success('Randevu tamamlandı, ödeme kasaya kaydedildi.');
     setCompleteDialogOpen(false);
     setDetailOpen(false);
@@ -471,6 +477,8 @@ const handleComplete = async () => {
 
     setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'iptal' } : prev));
     setCancelConfirmOpen(false);
+    const customerName = customers.find(c => c.id === currentDetailApt.customer_id)?.name || '';
+    logAction({ action: 'cancel', target_type: 'appointment', target_id: currentDetailApt.id, target_label: customerName });
     toast.info('Randevu iptal edildi.');
   };
 
@@ -497,6 +505,8 @@ const handleComplete = async () => {
       return;
     }
 
+    const customerName = customers.find(c => c.id === currentDetailApt.customer_id)?.name || '';
+    logAction({ action: 'delete', target_type: 'appointment', target_id: currentDetailApt.id, target_label: customerName });
     setDeleteConfirmOpen(false);
     setDetailOpen(false);
     setDetailApt(null);

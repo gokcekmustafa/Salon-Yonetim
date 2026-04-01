@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { useSalonData, DbService } from '@/hooks/useSalonData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ const DEFAULT_CATEGORIES = [
 export default function ServicesPage() {
   const { hasPermission } = usePermissions();
   const { currentSalonId } = useAuth();
+  const { logAction } = useAuditLog();
   const { services, addService, updateService, deleteService, loading, refetch } = useSalonData();
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
@@ -112,9 +114,11 @@ export default function ServicesPage() {
     setSaving(true);
     if (editingCat) {
       await supabase.from('service_categories').update({ name: catName.trim() }).eq('id', editingCat.id);
+      logAction({ action: 'update', target_type: 'service', target_id: editingCat.id, target_label: `Kategori: ${catName.trim()}` });
       toast.success('Kategori güncellendi');
     } else {
       await supabase.from('service_categories').insert({ name: catName.trim(), salon_id: currentSalonId, sort_order: categories.length });
+      logAction({ action: 'create', target_type: 'service', target_label: `Kategori: ${catName.trim()}` });
       toast.success('Kategori eklendi');
     }
     setSaving(false);
@@ -151,10 +155,12 @@ export default function ServicesPage() {
     const data = { name: svcForm.name, duration: Number(svcForm.duration) || 60, price: Number(svcForm.price) || 0 };
     if (editingSvc) {
       await updateService(editingSvc.id, { ...data, category_id: svcCatId } as any);
+      logAction({ action: 'update', target_type: 'service', target_id: editingSvc.id, target_label: svcForm.name });
       toast.success('Hizmet güncellendi.');
     } else {
       if (!currentSalonId) return;
       await supabase.from('services').insert({ ...data, salon_id: currentSalonId, category_id: svcCatId });
+      logAction({ action: 'create', target_type: 'service', target_label: svcForm.name, details: { duration: data.duration, price: data.price } });
       toast.success('Hizmet eklendi.');
       refetch();
     }
@@ -163,7 +169,9 @@ export default function ServicesPage() {
   };
 
   const handleDeleteService = async (id: string) => {
+    const svc = services.find(s => s.id === id);
     await deleteService(id);
+    logAction({ action: 'delete', target_type: 'service', target_id: id, target_label: svc?.name });
     toast.success('Hizmet silindi.');
   };
 

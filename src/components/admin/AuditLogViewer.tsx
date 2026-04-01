@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileText, Search, RefreshCw, Filter, Download } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { FileText, Search, RefreshCw, Filter, Download, Building2, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
@@ -16,6 +17,7 @@ interface AuditLog {
   user_name: string;
   user_role: string;
   salon_name: string | null;
+  salon_id: string | null;
   action: string;
   target_type: string;
   target_label: string | null;
@@ -30,6 +32,9 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   login: { label: 'Giriş', color: 'bg-primary/10 text-primary border-primary/20' },
   logout: { label: 'Çıkış', color: 'bg-muted text-muted-foreground border-border' },
   status_change: { label: 'Durum Değişikliği', color: 'bg-accent/10 text-accent-foreground border-accent/20' },
+  payment: { label: 'Ödeme/Tahsilat', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
+  complete: { label: 'Tamamlama', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
+  cancel: { label: 'İptal', color: 'bg-orange-500/10 text-orange-600 border-orange-500/20' },
 };
 
 const TARGET_LABELS: Record<string, string> = {
@@ -47,6 +52,14 @@ const TARGET_LABELS: Record<string, string> = {
   branding: 'Marka',
   permission: 'İzin',
   password: 'Şifre',
+  sale: 'Satış',
+  product_sale: 'Ürün Satışı',
+  service_sale: 'Hizmet Satışı',
+  installment: 'Taksit',
+  cash_transaction: 'Kasa İşlemi',
+  product: 'Ürün',
+  room: 'Oda',
+  contract: 'Sözleşme',
 };
 
 interface AuditLogViewerProps {
@@ -61,6 +74,16 @@ export function AuditLogViewer({ salonId, mode = 'super_admin' }: AuditLogViewer
   const [actionFilter, setActionFilter] = useState<string>('all');
   const [targetFilter, setTargetFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
+  const [selectedSalonId, setSelectedSalonId] = useState<string>('all');
+  const [salons, setSalons] = useState<{ id: string; name: string }[]>([]);
+
+  // Fetch salons for superadmin filter
+  useEffect(() => {
+    if (mode !== 'super_admin') return;
+    supabase.from('salons').select('id, name').order('name').then(({ data }) => {
+      setSalons(data || []);
+    });
+  }, [mode]);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -68,10 +91,14 @@ export function AuditLogViewer({ salonId, mode = 'super_admin' }: AuditLogViewer
       .from('audit_logs' as any)
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(200);
+      .limit(500);
 
     if (mode === 'salon_admin' && salonId) {
       query = query.eq('salon_id', salonId);
+    }
+
+    if (mode === 'super_admin' && selectedSalonId !== 'all') {
+      query = query.eq('salon_id', selectedSalonId);
     }
 
     if (actionFilter !== 'all') {
@@ -98,7 +125,7 @@ export function AuditLogViewer({ salonId, mode = 'super_admin' }: AuditLogViewer
     const { data } = await query;
     setLogs((data as any[]) || []);
     setLoading(false);
-  }, [salonId, mode, actionFilter, targetFilter, dateFilter]);
+  }, [salonId, mode, actionFilter, targetFilter, dateFilter, selectedSalonId]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
@@ -113,7 +140,7 @@ export function AuditLogViewer({ salonId, mode = 'super_admin' }: AuditLogViewer
   });
 
   const exportCSV = () => {
-    const headers = ['Tarih', 'Kullanıcı', 'Rol', 'Salon', 'İşlem', 'Hedef', 'Açıklama'];
+    const headers = ['Tarih', 'Kullanıcı', 'Rol', 'Salon', 'İşlem', 'Hedef', 'Açıklama', 'Detay'];
     const rows = filtered.map(l => [
       format(new Date(l.created_at), 'dd.MM.yyyy HH:mm'),
       l.user_name,
@@ -122,8 +149,9 @@ export function AuditLogViewer({ salonId, mode = 'super_admin' }: AuditLogViewer
       ACTION_LABELS[l.action]?.label || l.action,
       TARGET_LABELS[l.target_type] || l.target_type,
       l.target_label || '-',
+      l.details ? JSON.stringify(l.details) : '-',
     ]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -131,6 +159,25 @@ export function AuditLogViewer({ salonId, mode = 'super_admin' }: AuditLogViewer
     a.download = `audit-log-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const renderDetails = (details: any) => {
+    if (!details || Object.keys(details).length === 0) return null;
+    const text = Object.entries(details)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(', ');
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3.5 w-3.5 text-muted-foreground inline-block ml-1 cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent side="left" className="max-w-xs text-xs">
+            {text}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   };
 
   return (
@@ -166,22 +213,34 @@ export function AuditLogViewer({ salonId, mode = 'super_admin' }: AuditLogViewer
               className="pl-9 h-9"
             />
           </div>
+          {mode === 'super_admin' && (
+            <Select value={selectedSalonId} onValueChange={setSelectedSalonId}>
+              <SelectTrigger className="w-[180px] h-9">
+                <Building2 className="h-3.5 w-3.5 mr-1.5" />
+                <SelectValue placeholder="Salon" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Salonlar</SelectItem>
+                {salons.map(s => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select value={actionFilter} onValueChange={setActionFilter}>
-            <SelectTrigger className="w-[140px] h-9">
+            <SelectTrigger className="w-[150px] h-9">
               <Filter className="h-3.5 w-3.5 mr-1.5" />
               <SelectValue placeholder="İşlem" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tüm İşlemler</SelectItem>
-              <SelectItem value="create">Oluşturma</SelectItem>
-              <SelectItem value="update">Güncelleme</SelectItem>
-              <SelectItem value="delete">Silme</SelectItem>
-              <SelectItem value="login">Giriş</SelectItem>
-              <SelectItem value="status_change">Durum Değişikliği</SelectItem>
+              {Object.entries(ACTION_LABELS).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={targetFilter} onValueChange={setTargetFilter}>
-            <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Hedef" /></SelectTrigger>
+            <SelectTrigger className="w-[150px] h-9"><SelectValue placeholder="Hedef" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tüm Hedefler</SelectItem>
               {Object.entries(TARGET_LABELS).map(([k, v]) => (
@@ -245,8 +304,11 @@ export function AuditLogViewer({ salonId, mode = 'super_admin' }: AuditLogViewer
                       <TableCell className="text-xs">
                         {TARGET_LABELS[log.target_type] || log.target_type}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                        {log.target_label || '-'}
+                      <TableCell className="text-xs text-muted-foreground max-w-[250px]">
+                        <span className="truncate inline-block max-w-[200px] align-middle">
+                          {log.target_label || '-'}
+                        </span>
+                        {renderDetails(log.details)}
                       </TableCell>
                     </TableRow>
                   );

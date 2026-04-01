@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,7 @@ type ProductItem = {
 export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
   const qc = useQueryClient();
+  const { logAction } = useAuditLog();
   const salonId = currentSalonId;
 
   const [activeTab, setActiveTab] = useState('services');
@@ -273,6 +275,7 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
       qc.invalidateQueries({ queryKey: ['cash_transactions'] });
       qc.invalidateQueries({ queryKey: ['product_sales'] });
       qc.invalidateQueries({ queryKey: ['service_sales'] });
+      logAction({ action: 'create', target_type: 'sale', target_label: customerName || '', details: { services: serviceItems.length, products: productItems.length, total: grandTotal, method } });
       toast.success('Satış tamamlandı');
       setServiceItems([]);
       setProductItems([]);

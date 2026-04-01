@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData } from '@/hooks/useSalonData';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -51,6 +52,7 @@ export default function CashPage() {
   const { hasPermission } = usePermissions();
   const { user, currentSalonId } = useAuth();
   const { loading: salonLoading } = useSalonData();
+  const { logAction } = useAuditLog();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -211,6 +213,7 @@ export default function CashPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cash_transactions', salonId] });
+      logAction({ action: editingTx ? 'update' : 'create', target_type: 'cash_transaction', target_id: editingTx?.id, target_label: txDescription || (txType === 'income' ? 'Gelir' : 'Gider'), details: { type: txType, amount: txAmount, method: txIncomeMethod } });
       toast.success(editingTx ? 'İşlem güncellendi' : 'İşlem eklendi');
       setDialogOpen(false); resetForm();
     },
@@ -223,8 +226,9 @@ export default function CashPage() {
       const { error } = await supabase.from('cash_transactions').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_: any, id: string) => {
       queryClient.invalidateQueries({ queryKey: ['cash_transactions', salonId] });
+      logAction({ action: 'delete', target_type: 'cash_transaction', target_id: id });
       toast.success('İşlem silindi');
     },
   });

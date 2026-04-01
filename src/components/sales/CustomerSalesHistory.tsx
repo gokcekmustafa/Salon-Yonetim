@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ interface Props {
 
 export function CustomerSalesHistory({ open, onOpenChange, customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
+  const { logAction } = useAuditLog();
   const qc = useQueryClient();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editingSale, setEditingSale] = useState<any>(null);
@@ -126,6 +128,7 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
       const { error } = await supabase.from('service_sales').delete().eq('id', sale.id);
       if (error) throw error;
       invalidateAllSaleQueries();
+      logAction({ action: 'delete', target_type: 'service_sale', target_id: sale.id, target_label: `${customerName} - ${serviceName}` });
       toast.success('Satış silindi');
     } catch (e: any) {
       toast.error(e.message || 'Satış silinemedi');
@@ -155,6 +158,7 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
       const { error } = await supabase.from('product_sales').delete().eq('id', sale.id);
       if (error) throw error;
       invalidateAllSaleQueries();
+      logAction({ action: 'delete', target_type: 'product_sale', target_id: sale.id, target_label: `${customerName} - ${productName}` });
       toast.success('Satış silindi');
     } catch (e: any) {
       toast.error(e.message || 'Satış silinemedi');

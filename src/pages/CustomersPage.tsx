@@ -4,6 +4,7 @@ import { DbCustomer } from '@/hooks/useSalonData';
 import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,6 +81,7 @@ export default function CustomersPage() {
   const { hasPermission } = usePermissions();
   const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, payments, loading } = useBranchFilteredData();
   const { currentSalonId } = useAuth();
+  const { logAction } = useAuditLog();
   const [searchParams, setSearchParams] = useSearchParams();
   const [nameSearch, setNameSearch] = useState('');
   const [phoneSearch, setPhoneSearch] = useState('');
@@ -322,11 +324,13 @@ export default function CustomersPage() {
     };
     if (editing) {
       await updateCustomer(editing.id, { name: form.name, phone: form.phone, ...optionals });
+      logAction({ action: 'update', target_type: 'customer', target_id: editing.id, target_label: form.name, details: { phone: form.phone } });
       toast.success('Müşteri güncellendi.');
       setSaving(false);
       setDialogOpen(false);
     } else {
       const result = await addCustomer({ name: form.name, phone: form.phone, ...optionals });
+      logAction({ action: 'create', target_type: 'customer', target_label: form.name, details: { phone: form.phone, type: form.customer_type } });
       toast.success('Müşteri eklendi.');
       setSaving(false);
       setDialogOpen(false);
@@ -355,6 +359,7 @@ export default function CustomersPage() {
   const confirmDelete = async () => {
     if (!customerToDelete) return;
     await deleteCustomer(customerToDelete.id);
+    logAction({ action: 'delete', target_type: 'customer', target_id: customerToDelete.id, target_label: customerToDelete.name });
     toast.success('Müşteri silindi.');
     setDeleteConfirmOpen(false);
     setCustomerToDelete(null);
