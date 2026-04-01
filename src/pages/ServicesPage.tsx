@@ -169,7 +169,9 @@ export default function ServicesPage() {
   };
 
   const handleDeleteService = async (id: string) => {
+    const svc = services.find(s => s.id === id);
     await deleteService(id);
+    logAction({ action: 'delete', target_type: 'service', target_id: id, target_label: svc?.name });
     toast.success('Hizmet silindi.');
   };
 
