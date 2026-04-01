@@ -927,6 +927,7 @@ export default function CustomersPage() {
 
       {saleCustomer && <CustomerSaleDialog open={saleDialogOpen} onOpenChange={setSaleDialogOpen} onSaleCompleted={handleSaleCompleted} customerId={saleCustomer.id} customerName={saleCustomer.name} />}
       {saleCustomer && <CustomerSalesHistory open={salesHistoryOpen} onOpenChange={setSalesHistoryOpen} customerId={saleCustomer.id} customerName={saleCustomer.name} />}
+      {installmentsCustomer && <CustomerInstallmentsPopup open={installmentsPopupOpen} onOpenChange={setInstallmentsPopupOpen} customerId={installmentsCustomer.id} customerName={installmentsCustomer.name} />}
 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
