@@ -145,11 +145,16 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
           await supabase.from('products').update({ current_stock: prod.current_stock + sale.quantity }).eq('id', sale.product_id);
         }
       }
+
+      // Delete related cash transaction
+      const productName = sale.products?.name || '';
+      if (productName) {
+        await deleteCashTransaction(productName);
+      }
+
       const { error } = await supabase.from('product_sales').delete().eq('id', sale.id);
       if (error) throw error;
-      qc.invalidateQueries({ queryKey: ['product_sales'] });
-      qc.invalidateQueries({ queryKey: ['products'] });
-      qc.invalidateQueries({ queryKey: ['cash_transactions'] });
+      invalidateAllSaleQueries();
       toast.success('Satış silindi');
     } catch (e: any) {
       toast.error(e.message || 'Satış silinemedi');
