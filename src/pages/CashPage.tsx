@@ -110,12 +110,11 @@ export default function CashPage() {
     enabled: !!salonId && !!user,
   });
 
-  // Today's transactions
-  const todayTransactions = useMemo(() => {
+  const dayTransactions = useMemo(() => {
     return transactions.filter(tx => {
-      try { return isSameDay(parseISO(tx.transaction_date), today); } catch { return false; }
+      try { return isSameDay(parseISO(tx.transaction_date), selectedDate); } catch { return false; }
     });
-  }, [transactions, today]);
+  }, [transactions, selectedDate]);
 
   const todayIncome = useMemo(() => todayTransactions.filter(t => t.type === 'income'), [todayTransactions]);
   const todayExpense = useMemo(() => todayTransactions.filter(t => t.type === 'expense'), [todayTransactions]);
