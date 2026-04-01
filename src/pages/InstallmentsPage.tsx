@@ -64,6 +64,7 @@ export default function InstallmentsPage() {
   const [editPayment, setEditPayment] = useState<InstallmentPayment | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
+  const [editLockedIds, setEditLockedIds] = useState<Set<string>>(new Set());
 
   // Form
   const [formCustomerId, setFormCustomerId] = useState('');
