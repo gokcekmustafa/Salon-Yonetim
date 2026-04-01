@@ -158,6 +158,7 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
       const { error } = await supabase.from('product_sales').delete().eq('id', sale.id);
       if (error) throw error;
       invalidateAllSaleQueries();
+      logAction({ action: 'delete', target_type: 'product_sale', target_id: sale.id, target_label: `${customerName} - ${productName}` });
       toast.success('Satış silindi');
     } catch (e: any) {
       toast.error(e.message || 'Satış silinemedi');
