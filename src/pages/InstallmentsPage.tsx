@@ -250,26 +250,34 @@ export default function InstallmentsPage() {
           throw new Error('Tutar toplam kalan borçtan büyük olamaz');
         }
 
-        const otherUnpaid = siblingUnpaid.filter(p => p.id !== editPayment.id);
-        const remainingForOthers = Math.round((totalUnpaid - nextAmount) * 100) / 100;
+        // Exclude locked siblings from redistribution
+        const otherUnlocked = siblingUnpaid.filter(p => p.id !== editPayment.id && !editLockedIds.has(p.id));
+        const lockedTotal = siblingUnpaid
+          .filter(p => p.id !== editPayment.id && editLockedIds.has(p.id))
+          .reduce((sum, p) => sum + Number(p.amount), 0);
+        const remainingForOthers = roundCurrency(totalUnpaid - nextAmount - lockedTotal);
 
-        if (otherUnpaid.length === 0 && Math.abs(remainingForOthers) > 0.01) {
-          throw new Error('Tek taksit kaldığında tutar değiştirilemez');
+        if (remainingForOthers < -0.01) {
+          throw new Error('Sabitlenmiş taksitlerle birlikte toplam borcu aşıyor');
+        }
+
+        if (otherUnlocked.length === 0 && Math.abs(remainingForOthers) > 0.01) {
+          throw new Error('Dağıtılacak sabitlenmemiş taksit yok');
         }
 
         updates.amount = nextAmount;
-        if (otherUnpaid.length > 0) {
-          const perOther = Math.round((remainingForOthers / otherUnpaid.length) * 100) / 100;
+        if (otherUnlocked.length > 0) {
+          const perOther = roundCurrency(remainingForOthers / otherUnlocked.length);
 
-          for (let i = 0; i < otherUnpaid.length; i += 1) {
-            const redistributedAmount = i === otherUnpaid.length - 1
-              ? Math.round((remainingForOthers - perOther * (otherUnpaid.length - 1)) * 100) / 100
+          for (let i = 0; i < otherUnlocked.length; i += 1) {
+            const redistributedAmount = i === otherUnlocked.length - 1
+              ? roundCurrency(remainingForOthers - perOther * (otherUnlocked.length - 1))
               : perOther;
 
             const { error: siblingError } = await supabase
               .from('installment_payments')
               .update({ amount: redistributedAmount } as any)
-              .eq('id', otherUnpaid[i].id);
+              .eq('id', otherUnlocked[i].id);
 
             if (siblingError) throw siblingError;
           }
