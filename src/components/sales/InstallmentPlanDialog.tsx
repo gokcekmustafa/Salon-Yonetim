@@ -125,9 +125,31 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
     setInstallmentCount(val);
     setManualAmounts({});
     setManualDates({});
+    setLockedIndexes(new Set());
     setEditingIndex(null);
     setEditingDateIndex(null);
   }, []);
+
+  const toggleLock = useCallback((idx: number) => {
+    setLockedIndexes(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) {
+        next.delete(idx);
+        // Also remove manual amount so it redistributes
+        setManualAmounts(ma => {
+          const copy = { ...ma };
+          delete copy[idx];
+          return copy;
+        });
+      } else {
+        // Lock with current plan amount
+        const currentAmount = installmentPlan[idx]?.amount ?? 0;
+        setManualAmounts(ma => ({ ...ma, [idx]: currentAmount }));
+        next.add(idx);
+      }
+      return next;
+    });
+  }, [installmentPlan]);
 
   const handleManualAmountChange = (index: number, value: string) => {
     const num = parseFloat(value);
