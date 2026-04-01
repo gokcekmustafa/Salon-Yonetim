@@ -116,8 +116,8 @@ export default function CashPage() {
     });
   }, [transactions, selectedDate]);
 
-  const todayIncome = useMemo(() => todayTransactions.filter(t => t.type === 'income'), [todayTransactions]);
-  const todayExpense = useMemo(() => todayTransactions.filter(t => t.type === 'expense'), [todayTransactions]);
+  const dayIncome = useMemo(() => dayTransactions.filter(t => t.type === 'income'), [dayTransactions]);
+  const dayExpense = useMemo(() => dayTransactions.filter(t => t.type === 'expense'), [dayTransactions]);
 
   // Monthly transactions for stats
   const monthTransactions = useMemo(() => {
