@@ -224,6 +224,9 @@ export default function InstallmentsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['installment_payments', salonId] });
       queryClient.invalidateQueries({ queryKey: ['cash_transactions'] });
+      const inst = installments.find(i => i.id === selectedPayment?.installment_id);
+      const custName = inst ? customers.find(c => c.id === inst.customer_id)?.name || '' : '';
+      logAction({ action: 'payment', target_type: 'installment', target_id: selectedPayment?.id, target_label: custName, details: { amount: selectedPayment?.amount, method: payMethod } });
       toast.success('Taksit ödendi olarak işaretlendi');
       setPayDialogOpen(false);
       setSelectedPayment(null);
