@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Loader2, Plus, CreditCard, AlertTriangle, CheckCircle2, Clock, Banknote, ChevronDown, Phone, User, Pencil } from 'lucide-react';
+import { Loader2, Plus, CreditCard, AlertTriangle, CheckCircle2, Clock, Banknote, ChevronDown, Phone, User, Pencil, Lock, Unlock } from 'lucide-react';
 import { format, parseISO, isBefore, startOfDay, addMonths, addDays, addWeeks } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { tr } from 'date-fns/locale';
@@ -64,6 +64,7 @@ export default function InstallmentsPage() {
   const [editPayment, setEditPayment] = useState<InstallmentPayment | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
+  const [editLockedIds, setEditLockedIds] = useState<Set<string>>(new Set());
 
   // Form
   const [formCustomerId, setFormCustomerId] = useState('');
@@ -249,26 +250,34 @@ export default function InstallmentsPage() {
           throw new Error('Tutar toplam kalan borçtan büyük olamaz');
         }
 
-        const otherUnpaid = siblingUnpaid.filter(p => p.id !== editPayment.id);
-        const remainingForOthers = Math.round((totalUnpaid - nextAmount) * 100) / 100;
+        // Exclude locked siblings from redistribution
+        const otherUnlocked = siblingUnpaid.filter(p => p.id !== editPayment.id && !editLockedIds.has(p.id));
+        const lockedTotal = siblingUnpaid
+          .filter(p => p.id !== editPayment.id && editLockedIds.has(p.id))
+          .reduce((sum, p) => sum + Number(p.amount), 0);
+        const remainingForOthers = roundCurrency(totalUnpaid - nextAmount - lockedTotal);
 
-        if (otherUnpaid.length === 0 && Math.abs(remainingForOthers) > 0.01) {
-          throw new Error('Tek taksit kaldığında tutar değiştirilemez');
+        if (remainingForOthers < -0.01) {
+          throw new Error('Sabitlenmiş taksitlerle birlikte toplam borcu aşıyor');
+        }
+
+        if (otherUnlocked.length === 0 && Math.abs(remainingForOthers) > 0.01) {
+          throw new Error('Dağıtılacak sabitlenmemiş taksit yok');
         }
 
         updates.amount = nextAmount;
-        if (otherUnpaid.length > 0) {
-          const perOther = Math.round((remainingForOthers / otherUnpaid.length) * 100) / 100;
+        if (otherUnlocked.length > 0) {
+          const perOther = roundCurrency(remainingForOthers / otherUnlocked.length);
 
-          for (let i = 0; i < otherUnpaid.length; i += 1) {
-            const redistributedAmount = i === otherUnpaid.length - 1
-              ? Math.round((remainingForOthers - perOther * (otherUnpaid.length - 1)) * 100) / 100
+          for (let i = 0; i < otherUnlocked.length; i += 1) {
+            const redistributedAmount = i === otherUnlocked.length - 1
+              ? roundCurrency(remainingForOthers - perOther * (otherUnlocked.length - 1))
               : perOther;
 
             const { error: siblingError } = await supabase
               .from('installment_payments')
               .update({ amount: redistributedAmount } as any)
-              .eq('id', otherUnpaid[i].id);
+              .eq('id', otherUnlocked[i].id);
 
             if (siblingError) throw siblingError;
           }
@@ -403,7 +412,7 @@ export default function InstallmentsPage() {
   };
 
   const openPay = (p: InstallmentPayment) => { setSelectedPayment(p); setPayMethod('cash'); setPayDate(format(new Date(), 'yyyy-MM-dd')); setPayDialogOpen(true); };
-  const openEdit = (p: InstallmentPayment) => { setEditPayment(p); setEditAmount(String(p.amount)); setEditDueDate(p.due_date); setEditDialogOpen(true); };
+  const openEdit = (p: InstallmentPayment) => { setEditPayment(p); setEditAmount(String(p.amount)); setEditDueDate(p.due_date); setEditLockedIds(new Set()); setEditDialogOpen(true); };
 
   // Group installment payments by installment
   const getInstPayments = (instId: string) => payments.filter(p => p.installment_id === instId);
@@ -799,22 +808,73 @@ export default function InstallmentsPage() {
 
       {/* Edit Installment Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Taksit Düzenle</DialogTitle>
-            <DialogDescription>Taksit tutarını ve vade tarihini güncelleyin</DialogDescription>
+            <DialogDescription>Taksit tutarını ve vade tarihini güncelleyin. Diğer taksitleri sabitleyebilirsiniz.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Taksit Tutarı (₺)</Label>
-              <Input type="number" min="0" step="0.01" value={editAmount} onChange={e => setEditAmount(e.target.value)} className="h-10" />
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Taksit Tutarı (₺)</Label>
+                <Input type="number" min="0" step="0.01" value={editAmount} onChange={e => setEditAmount(e.target.value)} className="h-9" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Vade Tarihi</Label>
+                <Input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} className="h-9" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Vade Tarihi</Label>
-              <Input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} className="h-10" />
-            </div>
+
+            {/* Sibling unpaid payments with lock toggles */}
+            {editPayment && (() => {
+              const siblings = payments.filter(
+                p => p.installment_id === editPayment.installment_id && !p.is_paid && p.id !== editPayment.id
+              );
+              if (siblings.length === 0) return null;
+              return (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold flex items-center gap-1">
+                    <Lock className="h-3 w-3" /> Diğer Taksitler — Sabitle
+                  </Label>
+                  <p className="text-[10px] text-muted-foreground">Sabitlenmiş taksitler değişiklikten etkilenmez.</p>
+                  <div className="space-y-1 max-h-[30vh] overflow-y-auto">
+                    {siblings.map(s => {
+                      const isLocked = editLockedIds.has(s.id);
+                      return (
+                        <div
+                          key={s.id}
+                          className={`flex items-center justify-between text-xs p-2 rounded-lg border ${isLocked ? 'border-primary/40 bg-primary/5' : 'border-border/60'}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setEditLockedIds(prev => {
+                                const next = new Set(prev);
+                                if (next.has(s.id)) next.delete(s.id); else next.add(s.id);
+                                return next;
+                              })}
+                              className={`shrink-0 p-1 rounded-md transition-all ${isLocked
+                                ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
+                                : 'text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted'
+                              }`}
+                              title={isLocked ? 'Sabitlemeyi kaldır' : 'Sabitle'}
+                            >
+                              {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                            </button>
+                            <span>Taksit {s.installment_number}</span>
+                            <span className="text-muted-foreground">
+                              {format(parseISO(s.due_date), 'd MMM yyyy', { locale: tr })}
+                            </span>
+                          </div>
+                          <span className="font-medium">{Number(s.amount).toLocaleString('tr-TR')} ₺</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button>
             <Button onClick={() => editPaymentMutation.mutate()} disabled={editPaymentMutation.isPending} className="btn-gradient">
               {editPaymentMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Kaydet
