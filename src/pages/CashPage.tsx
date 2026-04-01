@@ -402,9 +402,9 @@ export default function CashPage() {
             {/* Summary rows */}
             <div className="mt-2 space-y-1">
               {[
-                { label: 'Gelen Nakit Toplamı', value: todayIncomeTotal, color: 'bg-emerald-600 text-white' },
-                { label: 'Dünden Nakit Devir', value: yesterdayCarryover, color: 'bg-zinc-700 text-white' },
-                { label: 'Genel Nakit Toplamı', value: todayIncomeTotal + yesterdayCarryover, color: 'bg-zinc-800 text-white' },
+                { label: 'Gelen Nakit Toplamı', value: dayIncomeTotal, color: 'bg-emerald-600 text-white' },
+                { label: 'Önceki Gün Devir', value: carryover, color: 'bg-zinc-700 text-white' },
+                { label: 'Genel Nakit Toplamı', value: dayIncomeTotal + carryover, color: 'bg-zinc-800 text-white' },
               ].map(row => (
                 <div key={row.label} className={`flex items-center justify-between px-4 py-2 rounded-lg ${row.color} text-sm font-semibold`}>
                   <span>{row.label}</span>
