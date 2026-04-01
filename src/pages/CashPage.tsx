@@ -213,6 +213,7 @@ export default function CashPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cash_transactions', salonId] });
+      logAction({ action: editingTx ? 'update' : 'create', target_type: 'cash_transaction', target_id: editingTx?.id, target_label: txDescription || (txType === 'income' ? 'Gelir' : 'Gider'), details: { type: txType, amount: txAmount, method: txIncomeMethod } });
       toast.success(editingTx ? 'İşlem güncellendi' : 'İşlem eklendi');
       setDialogOpen(false); resetForm();
     },
