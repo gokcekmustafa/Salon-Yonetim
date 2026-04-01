@@ -40,6 +40,7 @@ const DEFAULT_CATEGORIES = [
 export default function ServicesPage() {
   const { hasPermission } = usePermissions();
   const { currentSalonId } = useAuth();
+  const { logAction } = useAuditLog();
   const { services, addService, updateService, deleteService, loading, refetch } = useSalonData();
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
