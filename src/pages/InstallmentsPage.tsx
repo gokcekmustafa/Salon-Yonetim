@@ -463,7 +463,12 @@ export default function InstallmentsPage() {
                                   {PAYMENT_METHODS.find(m => m.value === p.payment_method)?.label || 'Ödendi'}
                                 </Badge>
                               ) : (
-                                <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={(e) => { e.stopPropagation(); openPay(p); }}>Öde</Button>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={(e) => { e.stopPropagation(); openEdit(p); }}>
+                                    <Pencil className="h-3 w-3" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={(e) => { e.stopPropagation(); openPay(p); }}>Öde</Button>
+                                </div>
                               )}
                             </div>
                           </div>
