@@ -302,11 +302,27 @@ export default function CashPage() {
                 <Button size="sm" variant="destructive" className="gap-1.5" onClick={openAddExpense}>
                   <ArrowDownCircle className="h-4 w-4" /> Para Çıkışı
                 </Button>
-                <div className="flex items-center gap-2 rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1.5">
-                  <Clock className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                    {format(today, 'd MMMM yyyy, EEEE', { locale: tr })}
-                  </span>
+                <div className="flex items-center gap-1 rounded-lg bg-amber-500/15 border border-amber-500/30 px-2 py-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedDate(d => subDays(d, 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-1.5 px-1">
+                    <CalendarDays className="h-4 w-4 text-amber-600" />
+                    <input
+                      type="date"
+                      value={format(selectedDate, 'yyyy-MM-dd')}
+                      onChange={e => { if (e.target.value) setSelectedDate(new Date(e.target.value + 'T00:00:00')); }}
+                      className="bg-transparent border-none text-sm font-semibold text-amber-700 dark:text-amber-400 w-32 cursor-pointer focus:outline-none"
+                    />
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedDate(d => addDays(d, 1))} disabled={isSelectedToday}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  {!isSelectedToday && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={() => setSelectedDate(new Date())}>
+                      Bugün
+                    </Button>
+                  )}
                 </div>
                 <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTransferDialogOpen(true)}>
                   <Send className="h-4 w-4" /> Ödeme Yap
