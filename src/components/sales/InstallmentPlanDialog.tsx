@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, Pencil } from 'lucide-react';
+import { Loader2, CreditCard, Pencil, Lock, Unlock } from 'lucide-react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useFormGuard } from '@/hooks/useFormGuard';
@@ -47,6 +47,7 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
   const [manualDates, setManualDates] = useState<Record<number, string>>({});
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingDateIndex, setEditingDateIndex] = useState<number | null>(null);
+  const [lockedIndexes, setLockedIndexes] = useState<Set<number>>(new Set());
 
   const { data: cashBoxes = [] } = useQuery({
     queryKey: ['cash_boxes', salonId],
@@ -70,12 +71,22 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
     const plan: { number: number; date: string; amount: number }[] = [];
     const start = new Date(startDate);
 
-    const manualTotal = Object.entries(manualAmounts)
+    // Fixed (locked or manually set) amounts
+    const fixedTotal = Object.entries(manualAmounts)
       .filter(([idx]) => parseInt(idx) < count)
       .reduce((s, [, v]) => s + v, 0);
-    const manualCount = Object.keys(manualAmounts).filter(idx => parseInt(idx) < count).length;
-    const autoCount = count - manualCount;
-    const autoPerInstallment = autoCount > 0 ? Math.round(((remaining - manualTotal) / autoCount) * 100) / 100 : 0;
+
+    // Auto indexes: not in manualAmounts AND not locked
+    const autoIndexes: number[] = [];
+    for (let i = 0; i < count; i++) {
+      if (manualAmounts[i] === undefined && !lockedIndexes.has(i)) {
+        autoIndexes.push(i);
+      }
+    }
+
+    const autoRemaining = Math.max(0, remaining - fixedTotal);
+    const autoCount = autoIndexes.length;
+    const autoPerInstallment = autoCount > 0 ? Math.round((autoRemaining / autoCount) * 100) / 100 : 0;
 
     for (let i = 0; i < count; i++) {
       let dueDate: Date;
@@ -92,17 +103,21 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
       let amount: number;
       if (manualAmounts[i] !== undefined) {
         amount = manualAmounts[i];
-      } else if (i === count - 1 && autoCount > 0) {
+      } else if (autoIndexes.length > 0 && i === autoIndexes[autoIndexes.length - 1]) {
+        // Last auto gets remainder to avoid rounding drift
         const otherAutoTotal = autoPerInstallment * (autoCount - 1);
-        amount = Math.round((remaining - manualTotal - otherAutoTotal) * 100) / 100;
-      } else {
+        amount = Math.round((autoRemaining - otherAutoTotal) * 100) / 100;
+      } else if (autoIndexes.includes(i)) {
         amount = autoPerInstallment;
+      } else {
+        // Locked but no manual amount — keep previous equal share (0 if nothing set)
+        amount = 0;
       }
 
       plan.push({ number: i + 1, date: format(dueDate, 'yyyy-MM-dd'), amount: Math.max(0, amount) });
     }
     return plan;
-  }, [count, interval, startDate, remaining, manualAmounts, manualDates]);
+  }, [count, interval, startDate, remaining, manualAmounts, manualDates, lockedIndexes]);
 
   const perInstallment = count > 0 ? Math.round((remaining / count) * 100) / 100 : 0;
 
@@ -110,9 +125,31 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
     setInstallmentCount(val);
     setManualAmounts({});
     setManualDates({});
+    setLockedIndexes(new Set());
     setEditingIndex(null);
     setEditingDateIndex(null);
   }, []);
+
+  const toggleLock = useCallback((idx: number) => {
+    setLockedIndexes(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) {
+        next.delete(idx);
+        // Also remove manual amount so it redistributes
+        setManualAmounts(ma => {
+          const copy = { ...ma };
+          delete copy[idx];
+          return copy;
+        });
+      } else {
+        // Lock with current plan amount
+        const currentAmount = installmentPlan[idx]?.amount ?? 0;
+        setManualAmounts(ma => ({ ...ma, [idx]: currentAmount }));
+        next.add(idx);
+      }
+      return next;
+    });
+  }, [installmentPlan]);
 
   const handleManualAmountChange = (index: number, value: string) => {
     const num = parseFloat(value);
@@ -283,8 +320,15 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
               </Label>
                <div className="space-y-1 max-h-[42vh] overflow-y-auto pr-1">
                 {installmentPlan.map((p, idx) => (
-                  <div key={p.number} className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/30 border gap-2">
+                  <div key={p.number} className={`flex items-center justify-between text-xs p-2 rounded-lg border gap-2 ${lockedIndexes.has(idx) ? 'bg-primary/5 border-primary/30' : 'bg-muted/30'}`}>
                     <div className="flex items-center gap-1.5 min-w-0">
+                      <button
+                        onClick={() => toggleLock(idx)}
+                        className={`shrink-0 p-0.5 rounded transition-colors ${lockedIndexes.has(idx) ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                        title={lockedIndexes.has(idx) ? 'Sabitlemeyi kaldır' : 'Sabitle'}
+                      >
+                        {lockedIndexes.has(idx) ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                      </button>
                       <Badge variant="outline" className="text-[10px] w-5 h-5 justify-center shrink-0 p-0">{p.number}</Badge>
                       {editingDateIndex === idx ? (
                         <Input
