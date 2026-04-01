@@ -99,6 +99,8 @@ export default function CustomersPage() {
   const [customerToDelete, setCustomerToDelete] = useState<DbCustomer | null>(null);
   const [deleteBlocked, setDeleteBlocked] = useState(false);
   const [detailCustomer, setDetailCustomer] = useState<DbCustomer | null>(null);
+  const [installmentsCustomer, setInstallmentsCustomer] = useState<DbCustomer | null>(null);
+  const [installmentsPopupOpen, setInstallmentsPopupOpen] = useState(false);
   useFormGuard(dialogOpen);
 
   // Fetch installment data for all customers
