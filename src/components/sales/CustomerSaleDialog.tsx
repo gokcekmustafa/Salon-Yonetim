@@ -42,6 +42,7 @@ type ProductItem = {
 export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
   const qc = useQueryClient();
+  const { logAction } = useAuditLog();
   const salonId = currentSalonId;
 
   const [activeTab, setActiveTab] = useState('services');
