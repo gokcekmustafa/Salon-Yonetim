@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { useSalonData, DbService } from '@/hooks/useSalonData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
