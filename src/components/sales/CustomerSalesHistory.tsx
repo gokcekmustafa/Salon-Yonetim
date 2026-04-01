@@ -197,9 +197,7 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
         }
       }
 
-      qc.invalidateQueries({ queryKey: ['service_sales'] });
-      qc.invalidateQueries({ queryKey: ['product_sales'] });
-      qc.invalidateQueries({ queryKey: ['products'] });
+      invalidateAllSaleQueries();
       toast.success('Satış güncellendi');
       setEditingSale(null);
     } catch (e: any) {
