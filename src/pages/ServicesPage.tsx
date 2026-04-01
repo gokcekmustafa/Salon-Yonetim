@@ -155,10 +155,12 @@ export default function ServicesPage() {
     const data = { name: svcForm.name, duration: Number(svcForm.duration) || 60, price: Number(svcForm.price) || 0 };
     if (editingSvc) {
       await updateService(editingSvc.id, { ...data, category_id: svcCatId } as any);
+      logAction({ action: 'update', target_type: 'service', target_id: editingSvc.id, target_label: svcForm.name });
       toast.success('Hizmet güncellendi.');
     } else {
       if (!currentSalonId) return;
       await supabase.from('services').insert({ ...data, salon_id: currentSalonId, category_id: svcCatId });
+      logAction({ action: 'create', target_type: 'service', target_label: svcForm.name, details: { duration: data.duration, price: data.price } });
       toast.success('Hizmet eklendi.');
       refetch();
     }
