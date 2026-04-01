@@ -4,6 +4,7 @@ import { DbCustomer } from '@/hooks/useSalonData';
 import { useBranchFilteredData } from '@/hooks/useBranchFilteredData';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
