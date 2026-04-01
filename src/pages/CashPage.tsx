@@ -155,16 +155,16 @@ export default function CashPage() {
   const dayIncomeTotal = dayIncome.reduce((s, t) => s + Number(t.amount), 0);
   const dayExpenseTotal = dayExpense.reduce((s, t) => s + Number(t.amount), 0);
 
-  // Yesterday's carryover (all income - all expense before today)
-  const yesterdayCarryover = useMemo(() => {
-    const todayStart = startOfDay(today);
-    const beforeToday = transactions.filter(tx => {
-      try { return parseISO(tx.transaction_date) < todayStart; } catch { return false; }
+  // Carryover: all transactions before selectedDate
+  const carryover = useMemo(() => {
+    const dayStart = startOfDay(selectedDate);
+    const beforeDay = transactions.filter(tx => {
+      try { return parseISO(tx.transaction_date) < dayStart; } catch { return false; }
     });
-    const inc = beforeToday.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-    const exp = beforeToday.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+    const inc = beforeDay.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+    const exp = beforeDay.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
     return inc - exp;
-  }, [transactions, today]);
+  }, [transactions, selectedDate]);
 
   const resetForm = useCallback(() => {
     setTxType('income'); setTxAmount(''); setTxDescription('');
