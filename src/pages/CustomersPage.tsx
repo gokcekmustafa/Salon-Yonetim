@@ -28,6 +28,7 @@ import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
 import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 import { CustomerSaleDialog } from '@/components/sales/CustomerSaleDialog';
 import { CustomerSalesHistory } from '@/components/sales/CustomerSalesHistory';
+import { CustomerInstallmentsPopup } from '@/components/sales/CustomerInstallmentsPopup';
 import { useQuery } from '@tanstack/react-query';
 
 const CUSTOMER_COLUMNS: ColumnMapping[] = [
