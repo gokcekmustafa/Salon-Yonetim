@@ -457,6 +457,8 @@ const handleComplete = async () => {
         });
       }
     }
+    const customerName = customers.find(c => c.id === detailApt.customer_id)?.name || '';
+    logAction({ action: 'complete', target_type: 'appointment', target_id: detailApt.id, target_label: customerName, details: { payment_method: selectedPaymentMethod, amount: service?.price } });
     toast.success('Randevu tamamlandı, ödeme kasaya kaydedildi.');
     setCompleteDialogOpen(false);
     setDetailOpen(false);
