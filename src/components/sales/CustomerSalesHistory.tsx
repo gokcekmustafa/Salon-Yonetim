@@ -73,13 +73,37 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
     return m;
   };
 
+  const invalidateAllSaleQueries = () => {
+    qc.invalidateQueries({ queryKey: ['service_sales'] });
+    qc.invalidateQueries({ queryKey: ['product_sales'] });
+    qc.invalidateQueries({ queryKey: ['products'] });
+    qc.invalidateQueries({ queryKey: ['cash_transactions'] });
+    qc.invalidateQueries({ queryKey: ['installments'] });
+    qc.invalidateQueries({ queryKey: ['installment_payments'] });
+    qc.invalidateQueries({ queryKey: ['customers'] });
+  };
+
+  const deleteCashTransaction = async (description: string) => {
+    if (!currentSalonId) return;
+    // Find and delete matching cash transaction by description
+    const { data: cashRows } = await supabase
+      .from('cash_transactions')
+      .select('id')
+      .eq('salon_id', currentSalonId)
+      .ilike('description', `%${description}%`);
+    if (cashRows && cashRows.length > 0) {
+      for (const row of cashRows) {
+        await supabase.from('cash_transactions').delete().eq('id', row.id);
+      }
+    }
+  };
+
   const handleDeleteServiceSale = async (sale: any) => {
     if (!confirm('Bu satışı silmek istediğinize emin misiniz?')) return;
     setDeleting(sale.id);
     try {
       // Delete related installments if payment_method is installment
       if (sale.payment_method === 'installment') {
-        // Find installments for this customer and delete related ones
         const { data: instData } = await supabase
           .from('installments')
           .select('id')
@@ -92,12 +116,16 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
           await supabase.from('installments').delete().eq('salon_id', currentSalonId!).eq('customer_id', customerId);
         }
       }
+
+      // Delete related cash transaction
+      const serviceName = sale.services?.name || '';
+      if (serviceName) {
+        await deleteCashTransaction(serviceName);
+      }
+
       const { error } = await supabase.from('service_sales').delete().eq('id', sale.id);
       if (error) throw error;
-      qc.invalidateQueries({ queryKey: ['service_sales'] });
-      qc.invalidateQueries({ queryKey: ['cash_transactions'] });
-      qc.invalidateQueries({ queryKey: ['installments'] });
-      qc.invalidateQueries({ queryKey: ['installment_payments'] });
+      invalidateAllSaleQueries();
       toast.success('Satış silindi');
     } catch (e: any) {
       toast.error(e.message || 'Satış silinemedi');
@@ -117,11 +145,16 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
           await supabase.from('products').update({ current_stock: prod.current_stock + sale.quantity }).eq('id', sale.product_id);
         }
       }
+
+      // Delete related cash transaction
+      const productName = sale.products?.name || '';
+      if (productName) {
+        await deleteCashTransaction(productName);
+      }
+
       const { error } = await supabase.from('product_sales').delete().eq('id', sale.id);
       if (error) throw error;
-      qc.invalidateQueries({ queryKey: ['product_sales'] });
-      qc.invalidateQueries({ queryKey: ['products'] });
-      qc.invalidateQueries({ queryKey: ['cash_transactions'] });
+      invalidateAllSaleQueries();
       toast.success('Satış silindi');
     } catch (e: any) {
       toast.error(e.message || 'Satış silinemedi');
@@ -164,9 +197,7 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
         }
       }
 
-      qc.invalidateQueries({ queryKey: ['service_sales'] });
-      qc.invalidateQueries({ queryKey: ['product_sales'] });
-      qc.invalidateQueries({ queryKey: ['products'] });
+      invalidateAllSaleQueries();
       toast.success('Satış güncellendi');
       setEditingSale(null);
     } catch (e: any) {
