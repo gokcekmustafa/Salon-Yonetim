@@ -363,7 +363,7 @@ export default function CashPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {todayIncome.map((tx, idx) => (
+                        {dayIncome.map((tx, idx) => (
                           <TableRow key={tx.id} className="group">
                             <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
                             <TableCell className="text-sm">{format(parseISO(tx.transaction_date), 'HH:mm')}</TableCell>
