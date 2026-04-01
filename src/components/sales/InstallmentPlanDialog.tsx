@@ -193,7 +193,7 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[75vh] overflow-hidden flex flex-col">
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" /> Taksitlendirme

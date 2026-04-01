@@ -36,7 +36,6 @@ export function CustomerInstallmentsPopup({ open, onOpenChange, customerId, cust
   const [payDate, setPayDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [paying, setPaying] = useState(false);
 
-  // Edit mode
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [editDate, setEditDate] = useState('');
@@ -88,7 +87,6 @@ export function CustomerInstallmentsPopup({ open, onOpenChange, customerId, cust
       } as any).eq('id', paymentId);
       if (error) throw error;
 
-      // Cash transaction with selected date
       const { error: cashErr } = await supabase.from('cash_transactions').insert({
         salon_id: currentSalonId,
         type: 'income',
@@ -117,19 +115,61 @@ export function CustomerInstallmentsPopup({ open, onOpenChange, customerId, cust
 
   const handleEditSave = async () => {
     if (!editingId) return;
+    const newAmount = parseFloat(editAmount);
+    if (isNaN(newAmount) || newAmount < 0) {
+      toast.error('Geçersiz tutar');
+      return;
+    }
+
+    // Find the installment_id for this payment
+    const editedPayment = allPayments.find((p: any) => p.id === editingId);
+    if (!editedPayment) return;
+
+    // Get all unpaid payments in the same installment plan
+    const siblingUnpaid = allPayments.filter(
+      (p: any) => p.installment_id === editedPayment.installment_id && !p.is_paid
+    );
+
+    // Calculate total unpaid for this plan
+    const totalUnpaid = siblingUnpaid.reduce((s: number, p: any) => s + Number(p.amount), 0);
+    
+    if (newAmount > totalUnpaid) {
+      toast.error('Tutar toplam kalan borçtan büyük olamaz');
+      return;
+    }
+
+    const othersCount = siblingUnpaid.filter((p: any) => p.id !== editingId).length;
+    const remainingForOthers = totalUnpaid - newAmount;
+
+    if (othersCount === 0 && Math.abs(remainingForOthers) > 0.01) {
+      toast.error('Tek taksit kaldığında tutar değiştirilemez');
+      return;
+    }
+
     setEditSaving(true);
     try {
-      const updates: any = {};
-      if (editAmount) updates.amount = parseFloat(editAmount);
+      const updates: any = { amount: newAmount };
       if (editDate) updates.due_date = editDate;
-      if (!Object.keys(updates).length) { setEditingId(null); return; }
 
       const { error } = await supabase.from('installment_payments').update(updates).eq('id', editingId);
       if (error) throw error;
 
+      // Redistribute remaining to other unpaid installments
+      if (othersCount > 0) {
+        const perOther = Math.round((remainingForOthers / othersCount) * 100) / 100;
+        const otherIds = siblingUnpaid.filter((p: any) => p.id !== editingId).map((p: any) => p.id);
+        
+        for (let i = 0; i < otherIds.length; i++) {
+          const amt = i === otherIds.length - 1
+            ? Math.round((remainingForOthers - perOther * (otherIds.length - 1)) * 100) / 100
+            : perOther;
+          await supabase.from('installment_payments').update({ amount: amt } as any).eq('id', otherIds[i]);
+        }
+      }
+
       qc.invalidateQueries({ queryKey: ['customer_inst_payments'] });
       qc.invalidateQueries({ queryKey: ['installment_payments'] });
-      toast.success('Taksit güncellendi');
+      toast.success('Taksit güncellendi, kalan diğer taksitlere dağıtıldı');
       setEditingId(null);
     } catch (e: any) {
       toast.error(e.message || 'Güncelleme hatası');
@@ -204,7 +244,6 @@ export function CustomerInstallmentsPopup({ open, onOpenChange, customerId, cust
                   </div>
                 </div>
 
-                {/* Inline pay form */}
                 {isPaying && (
                   <div className="mt-2 pt-2 border-t space-y-2">
                     <div className="grid grid-cols-2 gap-2">
@@ -231,7 +270,6 @@ export function CustomerInstallmentsPopup({ open, onOpenChange, customerId, cust
                   </div>
                 )}
 
-                {/* Inline edit form */}
                 {isEditing && (
                   <div className="mt-2 pt-2 border-t space-y-2">
                     <div className="grid grid-cols-2 gap-2">
@@ -244,6 +282,7 @@ export function CustomerInstallmentsPopup({ open, onOpenChange, customerId, cust
                         <Input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="h-8 text-xs" />
                       </div>
                     </div>
+                    <p className="text-[10px] text-muted-foreground">Değişiklik kaydedilince kalan tutar diğer ödenmemiş taksitlere eşit dağıtılır.</p>
                     <div className="flex gap-2 justify-end">
                       <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingId(null)}>İptal</Button>
                       <Button size="sm" className="h-7 text-xs btn-gradient" disabled={editSaving} onClick={handleEditSave}>
