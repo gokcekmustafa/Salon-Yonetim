@@ -1,12 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, History, ShoppingCart, Scissors, Package } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, History, ShoppingCart, Scissors, Package, Trash2, Pencil, AlertTriangle } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface Props {
   open: boolean;
@@ -16,7 +20,14 @@ interface Props {
 }
 
 export function CustomerSalesHistory({ open, onOpenChange, customerId, customerName }: Props) {
-  const { currentSalonId } = useAuth();
+  const { user, currentSalonId } = useAuth();
+  const qc = useQueryClient();
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [editingSale, setEditingSale] = useState<any>(null);
+  const [editType, setEditType] = useState<'service' | 'product'>('service');
+  const [editQuantity, setEditQuantity] = useState('1');
+  const [editUnitPrice, setEditUnitPrice] = useState('0');
+  const [editSaving, setEditSaving] = useState(false);
 
   const { data: serviceSales = [], isLoading: loadingServices } = useQuery({
     queryKey: ['service_sales', currentSalonId, customerId],
@@ -58,80 +69,233 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
     if (m === 'cash') return 'Nakit';
     if (m === 'credit_card') return 'K.Kartı';
     if (m === 'eft') return 'EFT';
+    if (m === 'installment') return 'Taksit';
     return m;
   };
 
+  const handleDeleteServiceSale = async (sale: any) => {
+    if (!confirm('Bu satışı silmek istediğinize emin misiniz?')) return;
+    setDeleting(sale.id);
+    try {
+      // Delete related installments if payment_method is installment
+      if (sale.payment_method === 'installment') {
+        // Find installments for this customer and delete related ones
+        const { data: instData } = await supabase
+          .from('installments')
+          .select('id')
+          .eq('salon_id', currentSalonId!)
+          .eq('customer_id', customerId);
+        if (instData) {
+          for (const inst of instData) {
+            await supabase.from('installment_payments').delete().eq('installment_id', inst.id);
+          }
+          await supabase.from('installments').delete().eq('salon_id', currentSalonId!).eq('customer_id', customerId);
+        }
+      }
+      const { error } = await supabase.from('service_sales').delete().eq('id', sale.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ['service_sales'] });
+      qc.invalidateQueries({ queryKey: ['cash_transactions'] });
+      qc.invalidateQueries({ queryKey: ['installments'] });
+      qc.invalidateQueries({ queryKey: ['installment_payments'] });
+      toast.success('Satış silindi');
+    } catch (e: any) {
+      toast.error(e.message || 'Satış silinemedi');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const handleDeleteProductSale = async (sale: any) => {
+    if (!confirm('Bu satışı silmek istediğinize emin misiniz?')) return;
+    setDeleting(sale.id);
+    try {
+      // Restore stock
+      if (sale.product_id) {
+        const { data: prod } = await supabase.from('products').select('current_stock').eq('id', sale.product_id).single();
+        if (prod) {
+          await supabase.from('products').update({ current_stock: prod.current_stock + sale.quantity }).eq('id', sale.product_id);
+        }
+      }
+      const { error } = await supabase.from('product_sales').delete().eq('id', sale.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ['product_sales'] });
+      qc.invalidateQueries({ queryKey: ['products'] });
+      qc.invalidateQueries({ queryKey: ['cash_transactions'] });
+      toast.success('Satış silindi');
+    } catch (e: any) {
+      toast.error(e.message || 'Satış silinemedi');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const openEdit = (sale: any, type: 'service' | 'product') => {
+    setEditingSale(sale);
+    setEditType(type);
+    setEditQuantity(String(sale.quantity));
+    setEditUnitPrice(String(sale.unit_price));
+  };
+
+  const handleEditSave = async () => {
+    if (!editingSale) return;
+    setEditSaving(true);
+    try {
+      const qty = parseInt(editQuantity) || 1;
+      const price = parseFloat(editUnitPrice) || 0;
+      const total = qty * price;
+      const table = editType === 'service' ? 'service_sales' : 'product_sales';
+
+      const { error } = await supabase.from(table).update({
+        quantity: qty,
+        unit_price: price,
+        total_price: total,
+      } as any).eq('id', editingSale.id);
+      if (error) throw error;
+
+      // Update stock difference for product sales
+      if (editType === 'product' && editingSale.product_id) {
+        const qtyDiff = editingSale.quantity - qty;
+        if (qtyDiff !== 0) {
+          const { data: prod } = await supabase.from('products').select('current_stock').eq('id', editingSale.product_id).single();
+          if (prod) {
+            await supabase.from('products').update({ current_stock: prod.current_stock + qtyDiff }).eq('id', editingSale.product_id);
+          }
+        }
+      }
+
+      qc.invalidateQueries({ queryKey: ['service_sales'] });
+      qc.invalidateQueries({ queryKey: ['product_sales'] });
+      qc.invalidateQueries({ queryKey: ['products'] });
+      toast.success('Satış güncellendi');
+      setEditingSale(null);
+    } catch (e: any) {
+      toast.error(e.message || 'Güncellenemedi');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" /> {customerName} — Satış Geçmişi
-          </DialogTitle>
-          <DialogDescription>
-            Toplam Harcama: <span className="font-bold text-foreground">{totalSpent.toLocaleString('tr-TR')} ₺</span>
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" /> {customerName} — Satış Geçmişi
+            </DialogTitle>
+            <DialogDescription>
+              Toplam Harcama: <span className="font-bold text-foreground">{totalSpent.toLocaleString('tr-TR')} ₺</span>
+            </DialogDescription>
+          </DialogHeader>
 
-        {loading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-        ) : serviceSales.length === 0 && productSales.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>Henüz satış kaydı yok</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {serviceSales.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold flex items-center gap-1 mb-2">
-                  <Scissors className="h-3.5 w-3.5" /> Hizmet Satışları
-                </h3>
-                <div className="space-y-1.5">
-                  {serviceSales.map((s: any) => (
-                    <div key={s.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 border">
-                      <div>
-                        <p className="text-sm font-medium">{(s as any).services?.name || 'Hizmet'} x{s.quantity}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(s.created_at), 'd MMM yyyy HH:mm', { locale: tr })}
-                        </p>
+          {loading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+          ) : serviceSales.length === 0 && productSales.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Henüz satış kaydı yok</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {serviceSales.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold flex items-center gap-1 mb-2">
+                    <Scissors className="h-3.5 w-3.5" /> Hizmet Satışları
+                  </h3>
+                  <div className="space-y-1.5">
+                    {serviceSales.map((s: any) => (
+                      <div key={s.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 border">
+                        <div>
+                          <p className="text-sm font-medium">{s.services?.name || 'Hizmet'} x{s.quantity}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(s.created_at), 'd MMM yyyy HH:mm', { locale: tr })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <p className="text-sm font-semibold">{Number(s.total_price).toLocaleString('tr-TR')} ₺</p>
+                            <Badge variant="outline" className="text-[10px]">{paymentLabel(s.payment_method)}</Badge>
+                          </div>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(s, 'service')}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={deleting === s.id} onClick={() => handleDeleteServiceSale(s)}>
+                            {deleting === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                          </Button>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold">{Number(s.total_price).toLocaleString('tr-TR')} ₺</p>
-                        <Badge variant="outline" className="text-[10px]">{paymentLabel(s.payment_method)}</Badge>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {productSales.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold flex items-center gap-1 mb-2">
-                  <Package className="h-3.5 w-3.5" /> Ürün Satışları
-                </h3>
-                <div className="space-y-1.5">
-                  {productSales.map((s: any) => (
-                    <div key={s.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 border">
-                      <div>
-                        <p className="text-sm font-medium">{(s as any).products?.name || 'Ürün'} x{s.quantity}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(s.created_at), 'd MMM yyyy HH:mm', { locale: tr })}
-                        </p>
+              {productSales.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold flex items-center gap-1 mb-2">
+                    <Package className="h-3.5 w-3.5" /> Ürün Satışları
+                  </h3>
+                  <div className="space-y-1.5">
+                    {productSales.map((s: any) => (
+                      <div key={s.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 border">
+                        <div>
+                          <p className="text-sm font-medium">{s.products?.name || 'Ürün'} x{s.quantity}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(s.created_at), 'd MMM yyyy HH:mm', { locale: tr })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <p className="text-sm font-semibold">{Number(s.total_price).toLocaleString('tr-TR')} ₺</p>
+                            <Badge variant="outline" className="text-[10px]">{paymentLabel(s.payment_method)}</Badge>
+                          </div>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(s, 'product')}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={deleting === s.id} onClick={() => handleDeleteProductSale(s)}>
+                            {deleting === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                          </Button>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold">{Number(s.total_price).toLocaleString('tr-TR')} ₺</p>
-                        <Badge variant="outline" className="text-[10px]">{paymentLabel(s.payment_method)}</Badge>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Sale Dialog */}
+      <Dialog open={!!editingSale} onOpenChange={(o) => !o && setEditingSale(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Satışı Düzenle</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Adet</Label>
+              <Input type="number" min="1" value={editQuantity} onChange={e => setEditQuantity(e.target.value)} className="h-10" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Birim Fiyat (₺)</Label>
+              <Input type="number" min="0" step="0.01" value={editUnitPrice} onChange={e => setEditUnitPrice(e.target.value)} className="h-10" />
+            </div>
+            <div className="p-3 rounded-lg bg-muted/50 border">
+              <div className="flex justify-between text-sm font-bold">
+                <span>Toplam:</span>
+                <span>{((parseInt(editQuantity) || 0) * (parseFloat(editUnitPrice) || 0)).toLocaleString('tr-TR')} ₺</span>
               </div>
-            )}
+            </div>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingSale(null)}>İptal</Button>
+            <Button onClick={handleEditSave} disabled={editSaving} className="btn-gradient">
+              {editSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Kaydet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
