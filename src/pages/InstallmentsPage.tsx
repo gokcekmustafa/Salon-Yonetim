@@ -594,11 +594,42 @@ export default function InstallmentsPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">İşlem Tarihi</Label>
+              <Input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="h-10" />
+              <p className="text-[10px] text-muted-foreground">Geçmiş tarihli tahsilat için tarihi değiştirin</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayDialogOpen(false)}>İptal</Button>
             <Button onClick={() => markPaidMutation.mutate()} disabled={markPaidMutation.isPending} className="btn-gradient">
               {markPaidMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Ödendi İşaretle
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Installment Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Taksit Düzenle</DialogTitle>
+            <DialogDescription>Taksit tutarını ve vade tarihini güncelleyin</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Taksit Tutarı (₺)</Label>
+              <Input type="number" min="0" step="0.01" value={editAmount} onChange={e => setEditAmount(e.target.value)} className="h-10" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Vade Tarihi</Label>
+              <Input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} className="h-10" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button>
+            <Button onClick={() => editPaymentMutation.mutate()} disabled={editPaymentMutation.isPending} className="btn-gradient">
+              {editPaymentMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Kaydet
             </Button>
           </DialogFooter>
         </DialogContent>
