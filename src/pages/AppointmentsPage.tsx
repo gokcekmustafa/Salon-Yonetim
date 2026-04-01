@@ -505,6 +505,8 @@ const handleComplete = async () => {
       return;
     }
 
+    const customerName = customers.find(c => c.id === currentDetailApt.customer_id)?.name || '';
+    logAction({ action: 'delete', target_type: 'appointment', target_id: currentDetailApt.id, target_label: customerName });
     setDeleteConfirmOpen(false);
     setDetailOpen(false);
     setDetailApt(null);
