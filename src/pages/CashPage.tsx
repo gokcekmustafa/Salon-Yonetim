@@ -394,7 +394,7 @@ export default function CashPage() {
               {DEFAULT_BOXES.map(b => (
                 <div key={b.payment_method} className="py-2 bg-emerald-600/10 border-r last:border-r-0 border-emerald-600/20">
                   <div className="text-emerald-700 dark:text-emerald-400">{b.name}</div>
-                  <div className="text-foreground tabular-nums">{fmtCurrency(todayMethodTotals[b.payment_method]?.income || 0)}</div>
+                  <div className="text-foreground tabular-nums">{fmtCurrency(dayMethodTotals[b.payment_method]?.income || 0)}</div>
                 </div>
               ))}
             </div>
