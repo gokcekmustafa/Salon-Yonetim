@@ -61,6 +61,7 @@ const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 export default function AppointmentsPage() {
   const { hasPermission } = usePermissions();
   const { currentSalonId, user, isSalonAdmin, isSuperAdmin } = useAuth();
+  const { logAction } = useAuditLog();
   const {
     appointments, customers, staff, services, branches,
     addAppointment, updateAppointment, addPayment, hasConflict, refetch,
