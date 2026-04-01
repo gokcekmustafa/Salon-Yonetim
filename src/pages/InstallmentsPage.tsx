@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Loader2, Plus, CreditCard, AlertTriangle, CheckCircle2, Clock, Banknote, ChevronDown, Phone, User } from 'lucide-react';
+import { Loader2, Plus, CreditCard, AlertTriangle, CheckCircle2, Clock, Banknote, ChevronDown, Phone, User, Pencil } from 'lucide-react';
 import { format, parseISO, isBefore, startOfDay, addMonths, addDays, addWeeks } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { tr } from 'date-fns/locale';
@@ -54,7 +54,14 @@ export default function InstallmentsPage() {
   useFormGuard(dialogOpen || payDialogOpen);
   const [selectedPayment, setSelectedPayment] = useState<InstallmentPayment | null>(null);
   const [payMethod, setPayMethod] = useState('cash');
+  const [payDate, setPayDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [downPaymentMethod, setDownPaymentMethod] = useState('cash');
+
+  // Edit existing installment payment
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editPayment, setEditPayment] = useState<InstallmentPayment | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
 
   // Form
   const [formCustomerId, setFormCustomerId] = useState('');
@@ -187,19 +194,18 @@ export default function InstallmentsPage() {
   const markPaidMutation = useMutation({
     mutationFn: async () => {
       if (!selectedPayment || !salonId || !user) throw new Error('No payment');
+      const selectedDateISO = new Date(payDate).toISOString();
       const { error } = await supabase.from('installment_payments').update({
         is_paid: true,
         paid_amount: selectedPayment.amount,
-        paid_at: new Date().toISOString(),
+        paid_at: selectedDateISO,
         payment_method: payMethod,
       } as any).eq('id', selectedPayment.id);
       if (error) throw error;
 
-      // Find installment to get customer name
       const inst = installments.find(i => i.id === selectedPayment.installment_id);
       const custName = inst ? getCustomerName(inst.customer_id) : '';
 
-      // Auto cash transaction with proper cash_box_id
       const { error: cashErr } = await supabase.from('cash_transactions').insert({
         salon_id: salonId,
         type: 'income',
@@ -208,6 +214,7 @@ export default function InstallmentsPage() {
         payment_method: payMethod,
         cash_box_id: findCashBoxId(payMethod),
         created_by: user.id,
+        transaction_date: selectedDateISO,
       });
       if (cashErr) throw cashErr;
     },
@@ -217,6 +224,25 @@ export default function InstallmentsPage() {
       toast.success('Taksit ödendi olarak işaretlendi');
       setPayDialogOpen(false);
       setSelectedPayment(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const editPaymentMutation = useMutation({
+    mutationFn: async () => {
+      if (!editPayment) throw new Error('No payment');
+      const updates: any = {};
+      if (editAmount) updates.amount = parseFloat(editAmount);
+      if (editDueDate) updates.due_date = editDueDate;
+      if (!Object.keys(updates).length) throw new Error('Değişiklik yok');
+      const { error } = await supabase.from('installment_payments').update(updates).eq('id', editPayment.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['installment_payments', salonId] });
+      toast.success('Taksit güncellendi');
+      setEditDialogOpen(false);
+      setEditPayment(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -239,7 +265,8 @@ export default function InstallmentsPage() {
   const totalOwed = unpaidPayments.reduce((s, p) => s + Number(p.amount), 0);
   const totalPaid = payments.filter(p => p.is_paid).reduce((s, p) => s + Number(p.paid_amount), 0);
 
-  const openPay = (p: InstallmentPayment) => { setSelectedPayment(p); setPayMethod('cash'); setPayDialogOpen(true); };
+  const openPay = (p: InstallmentPayment) => { setSelectedPayment(p); setPayMethod('cash'); setPayDate(format(new Date(), 'yyyy-MM-dd')); setPayDialogOpen(true); };
+  const openEdit = (p: InstallmentPayment) => { setEditPayment(p); setEditAmount(String(p.amount)); setEditDueDate(p.due_date); setEditDialogOpen(true); };
 
   // Group installment payments by installment
   const getInstPayments = (instId: string) => payments.filter(p => p.installment_id === instId);
@@ -436,7 +463,12 @@ export default function InstallmentsPage() {
                                   {PAYMENT_METHODS.find(m => m.value === p.payment_method)?.label || 'Ödendi'}
                                 </Badge>
                               ) : (
-                                <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={(e) => { e.stopPropagation(); openPay(p); }}>Öde</Button>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={(e) => { e.stopPropagation(); openEdit(p); }}>
+                                    <Pencil className="h-3 w-3" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={(e) => { e.stopPropagation(); openPay(p); }}>Öde</Button>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -562,11 +594,42 @@ export default function InstallmentsPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">İşlem Tarihi</Label>
+              <Input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="h-10" />
+              <p className="text-[10px] text-muted-foreground">Geçmiş tarihli tahsilat için tarihi değiştirin</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayDialogOpen(false)}>İptal</Button>
             <Button onClick={() => markPaidMutation.mutate()} disabled={markPaidMutation.isPending} className="btn-gradient">
               {markPaidMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Ödendi İşaretle
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Installment Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Taksit Düzenle</DialogTitle>
+            <DialogDescription>Taksit tutarını ve vade tarihini güncelleyin</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Taksit Tutarı (₺)</Label>
+              <Input type="number" min="0" step="0.01" value={editAmount} onChange={e => setEditAmount(e.target.value)} className="h-10" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Vade Tarihi</Label>
+              <Input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} className="h-10" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button>
+            <Button onClick={() => editPaymentMutation.mutate()} disabled={editPaymentMutation.isPending} className="btn-gradient">
+              {editPaymentMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Kaydet
             </Button>
           </DialogFooter>
         </DialogContent>

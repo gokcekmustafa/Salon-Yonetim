@@ -28,6 +28,7 @@ import DataExportImport, { ColumnMapping } from '@/components/DataExportImport';
 import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 import { CustomerSaleDialog } from '@/components/sales/CustomerSaleDialog';
 import { CustomerSalesHistory } from '@/components/sales/CustomerSalesHistory';
+import { CustomerInstallmentsPopup } from '@/components/sales/CustomerInstallmentsPopup';
 import { useQuery } from '@tanstack/react-query';
 
 const CUSTOMER_COLUMNS: ColumnMapping[] = [
@@ -98,6 +99,8 @@ export default function CustomersPage() {
   const [customerToDelete, setCustomerToDelete] = useState<DbCustomer | null>(null);
   const [deleteBlocked, setDeleteBlocked] = useState(false);
   const [detailCustomer, setDetailCustomer] = useState<DbCustomer | null>(null);
+  const [installmentsCustomer, setInstallmentsCustomer] = useState<DbCustomer | null>(null);
+  const [installmentsPopupOpen, setInstallmentsPopupOpen] = useState(false);
   useFormGuard(dialogOpen);
 
   // Fetch installment data for all customers
@@ -625,7 +628,7 @@ export default function CustomersPage() {
               <CreditCard className="h-4 w-4" /> Ödeme İşlemleri
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-48">
-              <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => navigate(`/taksitler?customer=${c.id}&yeni=1`)}>
+              <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => { setInstallmentsCustomer(c); setInstallmentsPopupOpen(true); }}>
                 <CreditCard className="h-4 w-4" /> Taksit Planı
               </ContextMenuItem>
               <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => navigate(`/kasa?customer=${c.id}`)}>
@@ -924,6 +927,7 @@ export default function CustomersPage() {
 
       {saleCustomer && <CustomerSaleDialog open={saleDialogOpen} onOpenChange={setSaleDialogOpen} onSaleCompleted={handleSaleCompleted} customerId={saleCustomer.id} customerName={saleCustomer.name} />}
       {saleCustomer && <CustomerSalesHistory open={salesHistoryOpen} onOpenChange={setSalesHistoryOpen} customerId={saleCustomer.id} customerName={saleCustomer.name} />}
+      {installmentsCustomer && <CustomerInstallmentsPopup open={installmentsPopupOpen} onOpenChange={setInstallmentsPopupOpen} customerId={installmentsCustomer.id} customerName={installmentsCustomer.name} />}
 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
