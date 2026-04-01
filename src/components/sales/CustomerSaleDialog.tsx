@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Trash2, ShoppingCart, Scissors, Package, AlertTriangle, CreditCard } from 'lucide-react';
+import { Loader2, Plus, Trash2, ShoppingCart, Scissors, Package, AlertTriangle, CreditCard, Percent } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useFormGuard } from '@/hooks/useFormGuard';
@@ -46,6 +46,7 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
   const [activeTab, setActiveTab] = useState('services');
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
   const [productItems, setProductItems] = useState<ProductItem[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -54,7 +55,21 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
   const [pendingSaleTotal, setPendingSaleTotal] = useState(0);
   const [saleDate, setSaleDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
+  // Discount state
+  const [discountType, setDiscountType] = useState<'none' | 'amount' | 'percent'>('none');
+  const [discountValue, setDiscountValue] = useState('');
+
   useFormGuard(open);
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['service_categories', salonId],
+    queryFn: async () => {
+      if (!salonId) return [];
+      const { data } = await supabase.from('service_categories').select('*').eq('salon_id', salonId).order('sort_order');
+      return data || [];
+    },
+    enabled: !!salonId && open,
+  });
 
   const { data: services = [] } = useQuery({
     queryKey: ['services', salonId],
@@ -75,6 +90,18 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
     },
     enabled: !!salonId && open,
   });
+
+  // Filter services by selected category
+  const filteredServices = useMemo(() => {
+    if (!selectedCategoryId) return services;
+    return services.filter((s: any) => s.category_id === selectedCategoryId);
+  }, [services, selectedCategoryId]);
+
+  // Reset service selection when category changes
+  const handleCategoryChange = (catId: string) => {
+    setSelectedCategoryId(catId);
+    setSelectedServiceId('');
+  };
 
   const addService = () => {
     const svc = services.find((s: any) => s.id === selectedServiceId);
@@ -115,7 +142,17 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
 
   const serviceTotal = useMemo(() => serviceItems.reduce((s, i) => s + i.quantity * i.unit_price, 0), [serviceItems]);
   const productTotal = useMemo(() => productItems.reduce((s, i) => s + i.quantity * i.unit_price, 0), [productItems]);
-  const grandTotal = serviceTotal + productTotal;
+  const subtotal = serviceTotal + productTotal;
+
+  // Calculate discount
+  const discountAmount = useMemo(() => {
+    const val = parseFloat(discountValue) || 0;
+    if (discountType === 'amount') return Math.min(val, subtotal);
+    if (discountType === 'percent') return Math.min(Math.round(subtotal * val / 100 * 100) / 100, subtotal);
+    return 0;
+  }, [discountType, discountValue, subtotal]);
+
+  const grandTotal = Math.max(0, subtotal - discountAmount);
 
   const handleSave = async () => {
     if (!salonId || !user || (serviceItems.length === 0 && productItems.length === 0)) return;
@@ -140,15 +177,22 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
       const soldServiceIds = [...new Set(serviceItems.map(item => item.service_id))];
       const saleTimestamp = new Date(saleDate + 'T12:00:00').toISOString();
 
+      // Calculate per-item discount ratio
+      const discountRatio = subtotal > 0 ? discountAmount / subtotal : 0;
+
       // Service sales
       for (const item of serviceItems) {
+        const itemTotal = item.quantity * item.unit_price;
+        const itemDiscount = Math.round(itemTotal * discountRatio * 100) / 100;
+        const finalPrice = itemTotal - itemDiscount;
+
         const { error } = await supabase.from('service_sales').insert({
           salon_id: salonId,
           customer_id: customerId || null,
           service_id: item.service_id,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          total_price: item.quantity * item.unit_price,
+          total_price: finalPrice,
           payment_method: method === 'installment' ? 'installment' : method,
           sold_by: user.id,
           created_at: saleTimestamp,
@@ -158,13 +202,17 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
 
       // Product sales
       for (const item of productItems) {
+        const itemTotal = item.quantity * item.unit_price;
+        const itemDiscount = Math.round(itemTotal * discountRatio * 100) / 100;
+        const finalPrice = itemTotal - itemDiscount;
+
         const { error: saleErr } = await supabase.from('product_sales').insert({
           salon_id: salonId,
           product_id: item.product_id,
           customer_id: customerId || null,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          total_price: item.quantity * item.unit_price,
+          total_price: finalPrice,
           payment_method: method === 'installment' ? 'installment' : method,
           sold_by: user.id,
           created_at: saleTimestamp,
@@ -189,12 +237,16 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
 
       // Cash transactions (only for non-installment)
       if (method !== 'installment') {
-        if (serviceTotal > 0) {
+        const svcFinal = serviceTotal > 0 ? Math.round((serviceTotal - serviceTotal * discountRatio) * 100) / 100 : 0;
+        const prdFinal = productTotal > 0 ? Math.round((productTotal - productTotal * discountRatio) * 100) / 100 : 0;
+
+        if (svcFinal > 0) {
+          const discountNote = discountAmount > 0 ? ` (İndirim: ${discountAmount.toLocaleString('tr-TR')} ₺)` : '';
           const { error: cashErr } = await supabase.from('cash_transactions').insert({
             salon_id: salonId,
             type: 'income',
-            amount: serviceTotal,
-            description: `Hizmet satışı${customerName ? ` - ${customerName}` : ''}: ${serviceItems.map(i => `${i.name} x${i.quantity}`).join(', ')}`,
+            amount: svcFinal,
+            description: `Hizmet satışı${customerName ? ` - ${customerName}` : ''}: ${serviceItems.map(i => `${i.name} x${i.quantity}`).join(', ')}${discountNote}`,
             payment_method: method,
             created_by: user.id,
             transaction_date: saleTimestamp,
@@ -202,11 +254,11 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
           if (cashErr) throw cashErr;
         }
 
-        if (productTotal > 0) {
+        if (prdFinal > 0) {
           const { error: cashErr } = await supabase.from('cash_transactions').insert({
             salon_id: salonId,
             type: 'income',
-            amount: productTotal,
+            amount: prdFinal,
             description: `Ürün satışı${customerName ? ` - ${customerName}` : ''}: ${productItems.map(i => `${i.name} x${i.quantity}`).join(', ')}`,
             payment_method: method,
             created_by: user.id,
@@ -225,7 +277,10 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
       setServiceItems([]);
       setProductItems([]);
       setSelectedServiceId('');
+      setSelectedCategoryId('');
       setSelectedProductId('');
+      setDiscountType('none');
+      setDiscountValue('');
       onOpenChange(false);
       if (customerId && soldServiceIds.length > 0) {
         onSaleCompleted?.({ customerId, serviceIds: soldServiceIds });
@@ -304,19 +359,39 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
             </TabsList>
 
             <TabsContent value="services" className="space-y-3 mt-3">
+              {/* Category selection */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Kategori</Label>
+                <Select value={selectedCategoryId} onValueChange={handleCategoryChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Kategori seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Kategoriler</SelectItem>
+                    {categories.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Service selection */}
               <div className="flex gap-2">
                 <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
-                  <SelectTrigger className="flex-1"><SelectValue placeholder="Hizmet seçin" /></SelectTrigger>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={selectedCategoryId ? "Hizmet seçin" : "Önce kategori seçin"} />
+                  </SelectTrigger>
                   <SelectContent>
-                    {services.map((s: any) => (
+                    {(selectedCategoryId === 'all' ? services : filteredServices).map((s: any) => (
                       <SelectItem key={s.id} value={s.id}>
-                        {s.name} - {s.price.toLocaleString('tr-TR')} ₺
+                        {s.name} - {Number(s.price).toLocaleString('tr-TR')} ₺
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <Button size="icon" onClick={addService} disabled={!selectedServiceId}><Plus className="h-4 w-4" /></Button>
               </div>
+
               {serviceItems.length > 0 && (
                 <div className="border rounded-lg divide-y">
                   {serviceItems.map((item, idx) => renderItemRow(item, idx, 'service'))}
@@ -331,7 +406,7 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
                   <SelectContent>
                     {products.map((p: any) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.name} (Stok: {p.current_stock}) - {p.sale_price.toLocaleString('tr-TR')} ₺
+                        {p.name} (Stok: {p.current_stock}) - {Number(p.sale_price).toLocaleString('tr-TR')} ₺
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -346,9 +421,51 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
             </TabsContent>
           </Tabs>
 
+          {/* Discount Section */}
+          {subtotal > 0 && (
+            <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
+              <Label className="text-xs font-semibold flex items-center gap-1">
+                <Percent className="h-3.5 w-3.5" /> İndirim
+              </Label>
+              <div className="flex items-center gap-2">
+                <Select value={discountType} onValueChange={(v) => { setDiscountType(v as any); setDiscountValue(''); }}>
+                  <SelectTrigger className="w-36">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">İndirim Yok</SelectItem>
+                    <SelectItem value="amount">Tutar (₺)</SelectItem>
+                    <SelectItem value="percent">Yüzde (%)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {discountType !== 'none' && (
+                  <div className="flex items-center gap-1 flex-1">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={discountType === 'percent' ? 100 : subtotal}
+                      step={discountType === 'percent' ? 1 : 0.01}
+                      value={discountValue}
+                      onChange={e => setDiscountValue(e.target.value)}
+                      placeholder={discountType === 'percent' ? '% oran' : '₺ tutar'}
+                      className="h-9"
+                    />
+                    <span className="text-sm text-muted-foreground shrink-0">
+                      {discountType === 'percent' ? '%' : '₺'}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {discountAmount > 0 && (
+                <p className="text-xs text-primary font-medium">
+                  İndirim: -{discountAmount.toLocaleString('tr-TR')} ₺
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Sale Date & Payment */}
           <div className="space-y-3 border-t pt-3">
-            {/* Sale Date */}
             <div className="space-y-1">
               <Label className="text-xs">Satış Tarihi</Label>
               <Input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} className="h-9 w-44" />
@@ -377,6 +494,9 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
                 )}
                 {productTotal > 0 && (
                   <p className="text-xs text-muted-foreground">Ürün: {productTotal.toLocaleString('tr-TR')} ₺</p>
+                )}
+                {discountAmount > 0 && (
+                  <p className="text-xs text-destructive">İndirim: -{discountAmount.toLocaleString('tr-TR')} ₺</p>
                 )}
                 <p className="text-lg font-bold">{grandTotal.toLocaleString('tr-TR')} ₺</p>
               </div>
