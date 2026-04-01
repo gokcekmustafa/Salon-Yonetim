@@ -22,6 +22,7 @@ interface Props {
 
 export function CustomerSalesHistory({ open, onOpenChange, customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
+  const { logAction } = useAuditLog();
   const qc = useQueryClient();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editingSale, setEditingSale] = useState<any>(null);
