@@ -226,8 +226,9 @@ export default function CashPage() {
       const { error } = await supabase.from('cash_transactions').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_: any, id: string) => {
       queryClient.invalidateQueries({ queryKey: ['cash_transactions', salonId] });
+      logAction({ action: 'delete', target_type: 'cash_transaction', target_id: id });
       toast.success('İşlem silindi');
     },
   });
