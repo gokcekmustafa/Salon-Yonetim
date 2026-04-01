@@ -628,7 +628,7 @@ export default function CustomersPage() {
               <CreditCard className="h-4 w-4" /> Ödeme İşlemleri
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-48">
-              <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => navigate(`/taksitler?customer=${c.id}&yeni=1`)}>
+              <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => { setInstallmentsCustomer(c); setInstallmentsPopupOpen(true); }}>
                 <CreditCard className="h-4 w-4" /> Taksit Planı
               </ContextMenuItem>
               <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => navigate(`/kasa?customer=${c.id}`)}>
