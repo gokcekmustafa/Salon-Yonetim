@@ -151,9 +151,9 @@ export default function CashPage() {
     return methods;
   }, [dayTransactions]);
 
-  // Today totals
-  const todayIncomeTotal = todayIncome.reduce((s, t) => s + Number(t.amount), 0);
-  const todayExpenseTotal = todayExpense.reduce((s, t) => s + Number(t.amount), 0);
+  // Day totals
+  const dayIncomeTotal = dayIncome.reduce((s, t) => s + Number(t.amount), 0);
+  const dayExpenseTotal = dayExpense.reduce((s, t) => s + Number(t.amount), 0);
 
   // Yesterday's carryover (all income - all expense before today)
   const yesterdayCarryover = useMemo(() => {
