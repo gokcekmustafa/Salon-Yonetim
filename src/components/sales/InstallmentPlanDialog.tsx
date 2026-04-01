@@ -71,12 +71,22 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
     const plan: { number: number; date: string; amount: number }[] = [];
     const start = new Date(startDate);
 
-    const manualTotal = Object.entries(manualAmounts)
+    // Fixed (locked or manually set) amounts
+    const fixedTotal = Object.entries(manualAmounts)
       .filter(([idx]) => parseInt(idx) < count)
       .reduce((s, [, v]) => s + v, 0);
-    const manualCount = Object.keys(manualAmounts).filter(idx => parseInt(idx) < count).length;
-    const autoCount = count - manualCount;
-    const autoPerInstallment = autoCount > 0 ? Math.round(((remaining - manualTotal) / autoCount) * 100) / 100 : 0;
+
+    // Auto indexes: not in manualAmounts AND not locked
+    const autoIndexes: number[] = [];
+    for (let i = 0; i < count; i++) {
+      if (manualAmounts[i] === undefined && !lockedIndexes.has(i)) {
+        autoIndexes.push(i);
+      }
+    }
+
+    const autoRemaining = Math.max(0, remaining - fixedTotal);
+    const autoCount = autoIndexes.length;
+    const autoPerInstallment = autoCount > 0 ? Math.round((autoRemaining / autoCount) * 100) / 100 : 0;
 
     for (let i = 0; i < count; i++) {
       let dueDate: Date;
@@ -93,17 +103,21 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
       let amount: number;
       if (manualAmounts[i] !== undefined) {
         amount = manualAmounts[i];
-      } else if (i === count - 1 && autoCount > 0) {
+      } else if (autoIndexes.length > 0 && i === autoIndexes[autoIndexes.length - 1]) {
+        // Last auto gets remainder to avoid rounding drift
         const otherAutoTotal = autoPerInstallment * (autoCount - 1);
-        amount = Math.round((remaining - manualTotal - otherAutoTotal) * 100) / 100;
-      } else {
+        amount = Math.round((autoRemaining - otherAutoTotal) * 100) / 100;
+      } else if (autoIndexes.includes(i)) {
         amount = autoPerInstallment;
+      } else {
+        // Locked but no manual amount — keep previous equal share (0 if nothing set)
+        amount = 0;
       }
 
       plan.push({ number: i + 1, date: format(dueDate, 'yyyy-MM-dd'), amount: Math.max(0, amount) });
     }
     return plan;
-  }, [count, interval, startDate, remaining, manualAmounts, manualDates]);
+  }, [count, interval, startDate, remaining, manualAmounts, manualDates, lockedIndexes]);
 
   const perInstallment = count > 0 ? Math.round((remaining / count) * 100) / 100 : 0;
 
