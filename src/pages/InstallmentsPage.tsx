@@ -412,7 +412,7 @@ export default function InstallmentsPage() {
   };
 
   const openPay = (p: InstallmentPayment) => { setSelectedPayment(p); setPayMethod('cash'); setPayDate(format(new Date(), 'yyyy-MM-dd')); setPayDialogOpen(true); };
-  const openEdit = (p: InstallmentPayment) => { setEditPayment(p); setEditAmount(String(p.amount)); setEditDueDate(p.due_date); setEditDialogOpen(true); };
+  const openEdit = (p: InstallmentPayment) => { setEditPayment(p); setEditAmount(String(p.amount)); setEditDueDate(p.due_date); setEditLockedIds(new Set()); setEditDialogOpen(true); };
 
   // Group installment payments by installment
   const getInstPayments = (instId: string) => payments.filter(p => p.installment_id === instId);
