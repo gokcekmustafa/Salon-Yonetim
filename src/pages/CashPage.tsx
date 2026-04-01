@@ -74,7 +74,8 @@ export default function CashPage() {
   const [transferDescription, setTransferDescription] = useState('');
 
   const salonId = currentSalonId;
-  const today = new Date();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const isSelectedToday = dateFnsIsToday(selectedDate);
 
   // Fetch cash boxes
   const { data: cashBoxes = [], isLoading: loadingBoxes } = useQuery({
