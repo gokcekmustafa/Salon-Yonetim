@@ -21,6 +21,8 @@ import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 
+const roundCurrency = (value: number) => Math.round(value * 100) / 100;
+
 type Installment = {
   id: string; salon_id: string; customer_id: string;
   total_amount: number; installment_count: number; notes: string | null;
@@ -72,6 +74,8 @@ export default function InstallmentsPage() {
   const [formInterval, setFormInterval] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly');
   const [formDownPayment, setFormDownPayment] = useState('0');
   const [filterStatus, setFilterStatus] = useState<'all' | 'overdue' | 'upcoming'>('all');
+  const [formManualAmounts, setFormManualAmounts] = useState<Record<number, number>>({});
+  const [formLockedIndexes, setFormLockedIndexes] = useState<Set<number>>(new Set());
 
   const salonId = currentSalonId;
 
@@ -125,12 +129,17 @@ export default function InstallmentsPage() {
       if (!salonId || !user) throw new Error('Missing');
       const total = parseFloat(formTotal);
       const count = parseInt(formCount);
-      const dp = parseFloat(formDownPayment) || 0;
+      const dp = roundCurrency(parseFloat(formDownPayment) || 0);
       if (isNaN(total) || total <= 0) throw new Error('Geçerli tutar girin');
       if (!formCustomerId) throw new Error('Müşteri seçin');
 
-      const remaining = Math.max(0, total - dp);
+      const remaining = Math.max(0, roundCurrency(total - dp));
       if (remaining <= 0) throw new Error('Taksitlendirilecek tutar 0 olamaz');
+
+      const planTotal = installmentPreview.reduce((sum, item) => sum + item.amount, 0);
+      if (Math.abs(planTotal - remaining) > 0.02) {
+        throw new Error('Taksit toplamı kalan borca eşit olmalı');
+      }
 
       // Down payment cash entry with proper payment method and cash_box_id
       if (dp > 0) {
@@ -157,25 +166,13 @@ export default function InstallmentsPage() {
       } as any).select('id').single();
       if (error || !inst) throw error || new Error('Failed');
 
-      const perAmount = Math.round((remaining / count) * 100) / 100;
-      const installmentPayments = Array.from({ length: count }, (_, i) => {
-        let dueDate: Date;
-        const start = new Date(formStartDate);
-        if (formInterval === 'weekly') {
-          dueDate = addWeeks(start, i);
-        } else if (formInterval === 'biweekly') {
-          dueDate = addDays(start, i * 15);
-        } else {
-          dueDate = addMonths(start, i);
-        }
-        return {
-          installment_id: inst.id,
-          salon_id: salonId,
-          due_date: format(dueDate, 'yyyy-MM-dd'),
-          amount: i === count - 1 ? Math.round((remaining - perAmount * (count - 1)) * 100) / 100 : perAmount,
-          installment_number: i + 1,
-        };
-      });
+      const installmentPayments = installmentPreview.map((item, i) => ({
+        installment_id: inst.id,
+        salon_id: salonId,
+        due_date: item.date,
+        amount: item.amount,
+        installment_number: i + 1,
+      }));
 
       const { error: payErr } = await supabase.from('installment_payments').insert(installmentPayments as any);
       if (payErr) throw payErr;
@@ -187,6 +184,7 @@ export default function InstallmentsPage() {
       toast.success('Taksit planı oluşturuldu');
       setDialogOpen(false);
       setFormCustomerId(''); setFormTotal(''); setFormCount('3'); setFormNotes(''); setFormDownPayment('0');
+      setFormManualAmounts({}); setFormLockedIndexes(new Set());
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -292,13 +290,6 @@ export default function InstallmentsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!hasPermission('can_manage_payments')) return <NoPermission feature="Taksit Yönetimi" />;
-  if (salonLoading || loadingInst || loadingPay) return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
-
   const today = startOfDay(new Date());
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.name ?? '-';
 
@@ -309,12 +300,120 @@ export default function InstallmentsPage() {
 
   const totalOwed = unpaidPayments.reduce((s, p) => s + Number(p.amount), 0);
   const totalPaid = payments.filter(p => p.is_paid).reduce((s, p) => s + Number(p.paid_amount), 0);
+  const formCountNum = parseInt(formCount) || 1;
+  const formRemaining = Math.max(0, roundCurrency((parseFloat(formTotal) || 0) - (parseFloat(formDownPayment) || 0)));
+
+  const installmentPreview = useMemo(() => {
+    const plan: { number: number; date: string; amount: number }[] = [];
+    const start = new Date(formStartDate);
+    const fixedTotal = Object.entries(formManualAmounts)
+      .filter(([idx]) => parseInt(idx) < formCountNum)
+      .reduce((sum, [, amount]) => sum + amount, 0);
+
+    const autoIndexes: number[] = [];
+    for (let i = 0; i < formCountNum; i += 1) {
+      if (formManualAmounts[i] === undefined && !formLockedIndexes.has(i)) {
+        autoIndexes.push(i);
+      }
+    }
+
+    const autoRemaining = Math.max(0, roundCurrency(formRemaining - fixedTotal));
+    const autoPerInstallment = autoIndexes.length > 0 ? roundCurrency(autoRemaining / autoIndexes.length) : 0;
+
+    for (let i = 0; i < formCountNum; i += 1) {
+      let dueDate: Date;
+      if (formInterval === 'weekly') {
+        dueDate = addWeeks(start, i);
+      } else if (formInterval === 'biweekly') {
+        dueDate = addDays(start, i * 15);
+      } else {
+        dueDate = addMonths(start, i);
+      }
+
+      let amount = 0;
+      if (formManualAmounts[i] !== undefined) {
+        amount = formManualAmounts[i];
+      } else if (autoIndexes.length > 0 && i === autoIndexes[autoIndexes.length - 1]) {
+        amount = roundCurrency(autoRemaining - autoPerInstallment * (autoIndexes.length - 1));
+      } else if (autoIndexes.includes(i)) {
+        amount = autoPerInstallment;
+      }
+
+      plan.push({
+        number: i + 1,
+        date: format(dueDate, 'yyyy-MM-dd'),
+        amount: Math.max(0, roundCurrency(amount)),
+      });
+    }
+
+    return plan;
+  }, [formCountNum, formInterval, formManualAmounts, formLockedIndexes, formRemaining, formStartDate]);
+
+  const handleFormCountChange = (value: string) => {
+    setFormCount(value);
+    setFormManualAmounts({});
+    setFormLockedIndexes(new Set());
+  };
+
+  const toggleFormLock = (index: number) => {
+    setFormLockedIndexes((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+        setFormManualAmounts((current) => {
+          const copy = { ...current };
+          delete copy[index];
+          return copy;
+        });
+      } else {
+        next.add(index);
+        setFormManualAmounts((current) => ({ ...current, [index]: installmentPreview[index]?.amount ?? 0 }));
+      }
+      return next;
+    });
+  };
+
+  const handleFormManualAmountChange = (index: number, value: string) => {
+    const num = parseFloat(value);
+    if (Number.isNaN(num) || num < 0) {
+      toast.error('Geçerli bir taksit tutarı girin');
+      return;
+    }
+
+    const lockedTotalExcludingCurrent = Array.from(formLockedIndexes).reduce((sum, lockedIndex) => {
+      if (lockedIndex === index) return sum;
+      return sum + Number(installmentPreview[lockedIndex]?.amount || 0);
+    }, 0);
+
+    if (roundCurrency(lockedTotalExcludingCurrent + num) > formRemaining + 0.01) {
+      toast.error('Bu tutar, sabitlenen taksitlerle birlikte kalan borcu aşıyor');
+      return;
+    }
+
+    setFormManualAmounts(() => {
+      const next: Record<number, number> = {};
+      formLockedIndexes.forEach((lockedIndex) => {
+        if (lockedIndex !== index) {
+          next[lockedIndex] = installmentPreview[lockedIndex]?.amount ?? 0;
+        }
+      });
+      next[index] = roundCurrency(num);
+      return next;
+    });
+  };
 
   const openPay = (p: InstallmentPayment) => { setSelectedPayment(p); setPayMethod('cash'); setPayDate(format(new Date(), 'yyyy-MM-dd')); setPayDialogOpen(true); };
   const openEdit = (p: InstallmentPayment) => { setEditPayment(p); setEditAmount(String(p.amount)); setEditDueDate(p.due_date); setEditDialogOpen(true); };
 
   // Group installment payments by installment
   const getInstPayments = (instId: string) => payments.filter(p => p.installment_id === instId);
+
+  if (!hasPermission('can_manage_payments')) return <NoPermission feature="Taksit Yönetimi" />;
+  if (salonLoading || loadingInst || loadingPay) return (
+    <div className="flex items-center justify-center py-20">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
 
   return (
     <StaffPageGuard permissionKey="page_installments" featureLabel="Taksitler">
@@ -572,7 +671,7 @@ export default function InstallmentsPage() {
 
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold">Taksit Sayısı *</Label>
-                  <Select value={formCount} onValueChange={setFormCount}>
+                  <Select value={formCount} onValueChange={handleFormCountChange}>
                     <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {[2, 3, 4, 5, 6, 8, 10, 12].map(n => (
@@ -616,15 +715,41 @@ export default function InstallmentsPage() {
                   )}
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">Taksitlendirilecek:</span>
-                    <span className="font-medium">₺{Math.max(0, parseFloat(formTotal || '0') - (parseFloat(formDownPayment) || 0)).toLocaleString('tr-TR')}</span>
+                    <span className="font-medium">₺{formRemaining.toLocaleString('tr-TR')}</span>
                   </div>
                   <div className="pt-2 border-t space-y-1">
                     <p className="text-xs text-muted-foreground">Ortalama taksit tutarı</p>
-                    <p className="font-bold text-xl">₺{(Math.max(0, parseFloat(formTotal || '0') - (parseFloat(formDownPayment) || 0)) / parseInt(formCount || '1')).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="font-bold text-xl">₺{(formCountNum > 0 ? formRemaining / formCountNum : 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                 </div>
-                <div className="p-4 rounded-lg border bg-muted/20 text-xs text-muted-foreground leading-relaxed">
-                  Pencere ekran içine sığacak şekilde daraltıldı; uzun içerik yalnızca pencere içinde kaydırılır.
+                <div className="p-4 rounded-lg border bg-muted/20 space-y-2">
+                  <p className="text-xs font-semibold">Taksit Planı</p>
+                  <div className="space-y-1 max-h-[36vh] overflow-y-auto pr-1">
+                    {installmentPreview.map((item, index) => (
+                      <div key={`${item.number}-${item.date}`} className={`flex items-center justify-between gap-2 rounded-lg border p-2 text-xs ${formLockedIndexes.has(index) ? 'bg-primary/5 border-primary/30' : 'bg-background/70'}`}>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleFormLock(index)}
+                            className={`shrink-0 p-0.5 rounded transition-colors ${formLockedIndexes.has(index) ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                            title={formLockedIndexes.has(index) ? 'Sabitlemeyi kaldır' : 'Sabitle'}
+                          >
+                            {formLockedIndexes.has(index) ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                          </button>
+                          <Badge variant="outline" className="text-[10px] w-5 h-5 justify-center p-0 shrink-0">{item.number}</Badge>
+                          <span className="text-muted-foreground truncate">{format(new Date(item.date), 'd MMM yyyy', { locale: tr })}</span>
+                        </div>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.amount}
+                          onChange={(e) => handleFormManualAmountChange(index, e.target.value)}
+                          className="h-7 w-24 text-right text-xs"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

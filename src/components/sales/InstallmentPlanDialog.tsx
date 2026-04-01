@@ -36,6 +36,7 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
   const { user, currentSalonId } = useAuth();
   const qc = useQueryClient();
   const salonId = currentSalonId;
+  const roundCurrency = (value: number) => Math.round(value * 100) / 100;
 
   const [downPayment, setDownPayment] = useState('0');
   const [downPaymentMethod, setDownPaymentMethod] = useState('cash');
@@ -63,8 +64,8 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
 
   useFormGuard(open);
 
-  const downPaymentNum = parseFloat(downPayment) || 0;
-  const remaining = Math.max(0, totalAmount - downPaymentNum);
+  const downPaymentNum = roundCurrency(parseFloat(downPayment) || 0);
+  const remaining = Math.max(0, roundCurrency(totalAmount - downPaymentNum));
   const count = parseInt(installmentCount) || 1;
 
   const installmentPlan = useMemo(() => {
@@ -86,7 +87,7 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
 
     const autoRemaining = Math.max(0, remaining - fixedTotal);
     const autoCount = autoIndexes.length;
-    const autoPerInstallment = autoCount > 0 ? Math.round((autoRemaining / autoCount) * 100) / 100 : 0;
+    const autoPerInstallment = autoCount > 0 ? roundCurrency(autoRemaining / autoCount) : 0;
 
     for (let i = 0; i < count; i++) {
       let dueDate: Date;
@@ -105,8 +106,8 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
         amount = manualAmounts[i];
       } else if (autoIndexes.length > 0 && i === autoIndexes[autoIndexes.length - 1]) {
         // Last auto gets remainder to avoid rounding drift
-        const otherAutoTotal = autoPerInstallment * (autoCount - 1);
-        amount = Math.round((autoRemaining - otherAutoTotal) * 100) / 100;
+          const otherAutoTotal = autoPerInstallment * (autoCount - 1);
+          amount = roundCurrency(autoRemaining - otherAutoTotal);
       } else if (autoIndexes.includes(i)) {
         amount = autoPerInstallment;
       } else {
@@ -114,12 +115,12 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
         amount = 0;
       }
 
-      plan.push({ number: i + 1, date: format(dueDate, 'yyyy-MM-dd'), amount: Math.max(0, amount) });
+      plan.push({ number: i + 1, date: format(dueDate, 'yyyy-MM-dd'), amount: Math.max(0, roundCurrency(amount)) });
     }
     return plan;
   }, [count, interval, startDate, remaining, manualAmounts, manualDates, lockedIndexes]);
 
-  const perInstallment = count > 0 ? Math.round((remaining / count) * 100) / 100 : 0;
+  const perInstallment = count > 0 ? roundCurrency(remaining / count) : 0;
 
   const handleCountChange = useCallback((val: string) => {
     setInstallmentCount(val);
@@ -153,12 +154,33 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
 
   const handleManualAmountChange = (index: number, value: string) => {
     const num = parseFloat(value);
-    if (isNaN(num) || num < 0) return;
-    if (num > remaining) {
-      toast.error('Taksit tutarı kalan borçtan büyük olamaz');
+    if (isNaN(num) || num < 0) {
+      toast.error('Geçerli bir taksit tutarı girin');
       return;
     }
-    setManualAmounts(prev => ({ ...prev, [index]: num }));
+
+    const lockedTotalExcludingCurrent = Array.from(lockedIndexes).reduce((sum, lockedIndex) => {
+      if (lockedIndex === index) return sum;
+      return sum + Number(installmentPlan[lockedIndex]?.amount || 0);
+    }, 0);
+
+    if (roundCurrency(lockedTotalExcludingCurrent + num) > remaining + 0.01) {
+      toast.error('Bu tutar, sabitlenen taksitlerle birlikte kalan borcu aşıyor');
+      return;
+    }
+
+    setManualAmounts(() => {
+      const next: Record<number, number> = {};
+
+      lockedIndexes.forEach((lockedIndex) => {
+        if (lockedIndex !== index) {
+          next[lockedIndex] = installmentPlan[lockedIndex]?.amount ?? 0;
+        }
+      });
+
+      next[index] = roundCurrency(num);
+      return next;
+    });
   };
 
   const handleManualDateChange = (index: number, value: string) => {
@@ -230,7 +252,7 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[min(96vw,68rem)] max-w-4xl max-h-[80vh] overflow-hidden flex flex-col p-4 sm:p-6">
+      <DialogContent className="w-[min(96vw,68rem)] max-w-[68rem] max-h-[80vh] overflow-hidden flex flex-col p-4 sm:p-6">
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" /> Taksitlendirme
