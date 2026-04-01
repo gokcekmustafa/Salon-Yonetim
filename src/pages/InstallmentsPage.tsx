@@ -290,13 +290,6 @@ export default function InstallmentsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!hasPermission('can_manage_payments')) return <NoPermission feature="Taksit Yönetimi" />;
-  if (salonLoading || loadingInst || loadingPay) return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
-
   const today = startOfDay(new Date());
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.name ?? '-';
 
@@ -414,6 +407,13 @@ export default function InstallmentsPage() {
 
   // Group installment payments by installment
   const getInstPayments = (instId: string) => payments.filter(p => p.installment_id === instId);
+
+  if (!hasPermission('can_manage_payments')) return <NoPermission feature="Taksit Yönetimi" />;
+  if (salonLoading || loadingInst || loadingPay) return (
+    <div className="flex items-center justify-center py-20">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
 
   return (
     <StaffPageGuard permissionKey="page_installments" featureLabel="Taksitler">
