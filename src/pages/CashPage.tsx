@@ -479,9 +479,9 @@ export default function CashPage() {
             {/* Summary rows */}
             <div className="mt-2 space-y-1">
               {[
-                { label: 'Gider Nakit Toplamı', value: todayExpenseTotal, color: 'bg-red-600 text-white' },
-                { label: 'Bugünün Nakit Toplamı', value: todayIncomeTotal - todayExpenseTotal, color: 'bg-zinc-700 text-white' },
-                { label: 'Genel Nakit Kasası', value: todayIncomeTotal + yesterdayCarryover - todayExpenseTotal, color: 'bg-zinc-800 text-white' },
+                { label: 'Gider Nakit Toplamı', value: dayExpenseTotal, color: 'bg-red-600 text-white' },
+                { label: 'Günün Nakit Toplamı', value: dayIncomeTotal - dayExpenseTotal, color: 'bg-zinc-700 text-white' },
+                { label: 'Genel Nakit Kasası', value: dayIncomeTotal + carryover - dayExpenseTotal, color: 'bg-zinc-800 text-white' },
               ].map(row => (
                 <div key={row.label} className={`flex items-center justify-between px-4 py-2 rounded-lg ${row.color} text-sm font-semibold`}>
                   <span>{row.label}</span>
