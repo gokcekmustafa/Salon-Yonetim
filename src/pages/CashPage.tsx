@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { format, parseISO, isSameMonth, isSameDay, startOfDay, subDays } from 'date-fns';
+import { format, parseISO, isSameMonth, isSameDay, startOfDay, subDays, addDays, isToday as dateFnsIsToday } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Loader2, ArrowUpCircle, ArrowDownCircle,
