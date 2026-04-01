@@ -193,7 +193,7 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[75vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[min(96vw,68rem)] max-w-4xl max-h-[80vh] overflow-hidden flex flex-col p-4 sm:p-6">
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" /> Taksitlendirme
@@ -204,7 +204,7 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 py-2">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 py-2 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
             {/* Left column */}
             <div className="space-y-3">
               <div className="space-y-1">
@@ -276,12 +276,12 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
             </div>
 
             {/* Right column - Payment Plan */}
-            <div className="space-y-1.5">
+               <div className="space-y-1.5 min-h-0">
               <Label className="text-xs font-semibold flex items-center gap-1">
                 Ödeme Planı
                 <span className="text-muted-foreground font-normal ml-1">(tıklayarak düzenle)</span>
               </Label>
-              <div className="space-y-1 max-h-[280px] overflow-y-auto pr-1">
+               <div className="space-y-1 max-h-[42vh] overflow-y-auto pr-1">
                 {installmentPlan.map((p, idx) => (
                   <div key={p.number} className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/30 border gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
