@@ -477,6 +477,8 @@ const handleComplete = async () => {
 
     setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'iptal' } : prev));
     setCancelConfirmOpen(false);
+    const customerName = customers.find(c => c.id === currentDetailApt.customer_id)?.name || '';
+    logAction({ action: 'cancel', target_type: 'appointment', target_id: currentDetailApt.id, target_label: customerName });
     toast.info('Randevu iptal edildi.');
   };
 
