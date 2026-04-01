@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { InstallmentPlanDialog } from './InstallmentPlanDialog';
+import { format } from 'date-fns';
 
 interface Props {
   open: boolean;
@@ -51,6 +52,7 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
   const [saving, setSaving] = useState(false);
   const [installmentDialogOpen, setInstallmentDialogOpen] = useState(false);
   const [pendingSaleTotal, setPendingSaleTotal] = useState(0);
+  const [saleDate, setSaleDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   useFormGuard(open);
 
@@ -118,7 +120,6 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
   const handleSave = async () => {
     if (!salonId || !user || (serviceItems.length === 0 && productItems.length === 0)) return;
 
-    // If installment selected, open installment dialog instead
     if (paymentMethod === 'installment') {
       if (!customerId) {
         toast.error('Taksitli ödeme için müşteri seçilmelidir');
@@ -137,6 +138,7 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
     setSaving(true);
     try {
       const soldServiceIds = [...new Set(serviceItems.map(item => item.service_id))];
+      const saleTimestamp = new Date(saleDate + 'T12:00:00').toISOString();
 
       // Service sales
       for (const item of serviceItems) {
@@ -149,7 +151,8 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
           total_price: item.quantity * item.unit_price,
           payment_method: method === 'installment' ? 'installment' : method,
           sold_by: user.id,
-        });
+          created_at: saleTimestamp,
+        } as any);
         if (error) throw error;
       }
 
@@ -164,7 +167,8 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
           total_price: item.quantity * item.unit_price,
           payment_method: method === 'installment' ? 'installment' : method,
           sold_by: user.id,
-        });
+          created_at: saleTimestamp,
+        } as any);
         if (saleErr) throw saleErr;
 
         const { error: moveErr } = await supabase.from('stock_movements').insert({
@@ -193,7 +197,8 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
             description: `Hizmet satışı${customerName ? ` - ${customerName}` : ''}: ${serviceItems.map(i => `${i.name} x${i.quantity}`).join(', ')}`,
             payment_method: method,
             created_by: user.id,
-          });
+            transaction_date: saleTimestamp,
+          } as any);
           if (cashErr) throw cashErr;
         }
 
@@ -205,7 +210,8 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
             description: `Ürün satışı${customerName ? ` - ${customerName}` : ''}: ${productItems.map(i => `${i.name} x${i.quantity}`).join(', ')}`,
             payment_method: method,
             created_by: user.id,
-          });
+            transaction_date: saleTimestamp,
+          } as any);
           if (cashErr) throw cashErr;
         }
       }
@@ -232,7 +238,6 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
   };
 
   const handleInstallmentComplete = async () => {
-    // Process the sale records (without cash entry - installments handle that)
     await processSale('installment');
     setInstallmentDialogOpen(false);
   };
@@ -341,8 +346,14 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
             </TabsContent>
           </Tabs>
 
-          {/* Payment & Totals */}
+          {/* Sale Date & Payment */}
           <div className="space-y-3 border-t pt-3">
+            {/* Sale Date */}
+            <div className="space-y-1">
+              <Label className="text-xs">Satış Tarihi</Label>
+              <Input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} className="h-9 w-44" />
+            </div>
+
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-xs">Ödeme Yöntemi</Label>
