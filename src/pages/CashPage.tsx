@@ -15,12 +15,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { format, parseISO, isSameMonth, isSameDay, startOfDay, subDays } from 'date-fns';
+import { format, parseISO, isSameMonth, isSameDay, startOfDay, subDays, addDays, isToday as dateFnsIsToday } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Loader2, ArrowUpCircle, ArrowDownCircle,
   Receipt, Pencil, Trash2, Banknote, CreditCard, Building2, Send, FileSpreadsheet, FileText,
-  Clock, Check, X,
+  Clock, Check, X, ChevronLeft, ChevronRight, CalendarDays,
 } from 'lucide-react';
 import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -74,7 +74,8 @@ export default function CashPage() {
   const [transferDescription, setTransferDescription] = useState('');
 
   const salonId = currentSalonId;
-  const today = new Date();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const isSelectedToday = dateFnsIsToday(selectedDate);
 
   // Fetch cash boxes
   const { data: cashBoxes = [], isLoading: loadingBoxes } = useQuery({
@@ -109,15 +110,14 @@ export default function CashPage() {
     enabled: !!salonId && !!user,
   });
 
-  // Today's transactions
-  const todayTransactions = useMemo(() => {
+  const dayTransactions = useMemo(() => {
     return transactions.filter(tx => {
-      try { return isSameDay(parseISO(tx.transaction_date), today); } catch { return false; }
+      try { return isSameDay(parseISO(tx.transaction_date), selectedDate); } catch { return false; }
     });
-  }, [transactions, today]);
+  }, [transactions, selectedDate]);
 
-  const todayIncome = useMemo(() => todayTransactions.filter(t => t.type === 'income'), [todayTransactions]);
-  const todayExpense = useMemo(() => todayTransactions.filter(t => t.type === 'expense'), [todayTransactions]);
+  const dayIncome = useMemo(() => dayTransactions.filter(t => t.type === 'income'), [dayTransactions]);
+  const dayExpense = useMemo(() => dayTransactions.filter(t => t.type === 'expense'), [dayTransactions]);
 
   // Monthly transactions for stats
   const monthTransactions = useMemo(() => {
@@ -139,33 +139,32 @@ export default function CashPage() {
     });
   }, [cashBoxes, transactions]);
 
-  // Today's totals per payment method
-  const todayMethodTotals = useMemo(() => {
+  const dayMethodTotals = useMemo(() => {
     const methods: Record<string, { income: number; expense: number }> = {};
     DEFAULT_BOXES.forEach(b => { methods[b.payment_method] = { income: 0, expense: 0 }; });
-    todayTransactions.forEach(tx => {
+    dayTransactions.forEach(tx => {
       const key = tx.payment_method || 'cash';
       if (!methods[key]) methods[key] = { income: 0, expense: 0 };
       if (tx.type === 'income') methods[key].income += Number(tx.amount);
       else methods[key].expense += Number(tx.amount);
     });
     return methods;
-  }, [todayTransactions]);
+  }, [dayTransactions]);
 
-  // Today totals
-  const todayIncomeTotal = todayIncome.reduce((s, t) => s + Number(t.amount), 0);
-  const todayExpenseTotal = todayExpense.reduce((s, t) => s + Number(t.amount), 0);
+  // Day totals
+  const dayIncomeTotal = dayIncome.reduce((s, t) => s + Number(t.amount), 0);
+  const dayExpenseTotal = dayExpense.reduce((s, t) => s + Number(t.amount), 0);
 
-  // Yesterday's carryover (all income - all expense before today)
-  const yesterdayCarryover = useMemo(() => {
-    const todayStart = startOfDay(today);
-    const beforeToday = transactions.filter(tx => {
-      try { return parseISO(tx.transaction_date) < todayStart; } catch { return false; }
+  // Carryover: all transactions before selectedDate
+  const carryover = useMemo(() => {
+    const dayStart = startOfDay(selectedDate);
+    const beforeDay = transactions.filter(tx => {
+      try { return parseISO(tx.transaction_date) < dayStart; } catch { return false; }
     });
-    const inc = beforeToday.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-    const exp = beforeToday.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+    const inc = beforeDay.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+    const exp = beforeDay.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
     return inc - exp;
-  }, [transactions, today]);
+  }, [transactions, selectedDate]);
 
   const resetForm = useCallback(() => {
     setTxType('income'); setTxAmount(''); setTxDescription('');
@@ -303,11 +302,27 @@ export default function CashPage() {
                 <Button size="sm" variant="destructive" className="gap-1.5" onClick={openAddExpense}>
                   <ArrowDownCircle className="h-4 w-4" /> Para Çıkışı
                 </Button>
-                <div className="flex items-center gap-2 rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1.5">
-                  <Clock className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                    {format(today, 'd MMMM yyyy, EEEE', { locale: tr })}
-                  </span>
+                <div className="flex items-center gap-1 rounded-lg bg-amber-500/15 border border-amber-500/30 px-2 py-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedDate(d => subDays(d, 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-1.5 px-1">
+                    <CalendarDays className="h-4 w-4 text-amber-600" />
+                    <input
+                      type="date"
+                      value={format(selectedDate, 'yyyy-MM-dd')}
+                      onChange={e => { if (e.target.value) setSelectedDate(new Date(e.target.value + 'T00:00:00')); }}
+                      className="bg-transparent border-none text-sm font-semibold text-amber-700 dark:text-amber-400 w-32 cursor-pointer focus:outline-none"
+                    />
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedDate(d => addDays(d, 1))} disabled={isSelectedToday}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  {!isSelectedToday && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={() => setSelectedDate(new Date())}>
+                      Bugün
+                    </Button>
+                  )}
                 </div>
                 <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTransferDialogOpen(true)}>
                   <Send className="h-4 w-4" /> Ödeme Yap
@@ -329,10 +344,10 @@ export default function CashPage() {
             </div>
             <Card className="rounded-t-none shadow-soft border-border/60 overflow-hidden">
               <CardContent className="p-0">
-                {todayIncome.length === 0 ? (
+                {dayIncome.length === 0 ? (
                   <div className="py-10 text-center text-muted-foreground text-sm">
                     <Receipt className="h-7 w-7 mx-auto mb-2 text-muted-foreground/30" />
-                    Bugün gelen ödeme bulunmamaktadır
+                    Bu güne ait gelen ödeme bulunmamaktadır
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -348,7 +363,7 @@ export default function CashPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {todayIncome.map((tx, idx) => (
+                        {dayIncome.map((tx, idx) => (
                           <TableRow key={tx.id} className="group">
                             <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
                             <TableCell className="text-sm">{format(parseISO(tx.transaction_date), 'HH:mm')}</TableCell>
@@ -379,7 +394,7 @@ export default function CashPage() {
               {DEFAULT_BOXES.map(b => (
                 <div key={b.payment_method} className="py-2 bg-emerald-600/10 border-r last:border-r-0 border-emerald-600/20">
                   <div className="text-emerald-700 dark:text-emerald-400">{b.name}</div>
-                  <div className="text-foreground tabular-nums">{fmtCurrency(todayMethodTotals[b.payment_method]?.income || 0)}</div>
+                  <div className="text-foreground tabular-nums">{fmtCurrency(dayMethodTotals[b.payment_method]?.income || 0)}</div>
                 </div>
               ))}
             </div>
@@ -387,9 +402,9 @@ export default function CashPage() {
             {/* Summary rows */}
             <div className="mt-2 space-y-1">
               {[
-                { label: 'Gelen Nakit Toplamı', value: todayIncomeTotal, color: 'bg-emerald-600 text-white' },
-                { label: 'Dünden Nakit Devir', value: yesterdayCarryover, color: 'bg-zinc-700 text-white' },
-                { label: 'Genel Nakit Toplamı', value: todayIncomeTotal + yesterdayCarryover, color: 'bg-zinc-800 text-white' },
+                { label: 'Gelen Nakit Toplamı', value: dayIncomeTotal, color: 'bg-emerald-600 text-white' },
+                { label: 'Önceki Gün Devir', value: carryover, color: 'bg-zinc-700 text-white' },
+                { label: 'Genel Nakit Toplamı', value: dayIncomeTotal + carryover, color: 'bg-zinc-800 text-white' },
               ].map(row => (
                 <div key={row.label} className={`flex items-center justify-between px-4 py-2 rounded-lg ${row.color} text-sm font-semibold`}>
                   <span>{row.label}</span>
@@ -406,10 +421,10 @@ export default function CashPage() {
             </div>
             <Card className="rounded-t-none shadow-soft border-border/60 overflow-hidden">
               <CardContent className="p-0">
-                {todayExpense.length === 0 ? (
+                {dayExpense.length === 0 ? (
                   <div className="py-10 text-center text-muted-foreground text-sm">
                     <Receipt className="h-7 w-7 mx-auto mb-2 text-muted-foreground/30" />
-                    Bugün giden ödeme bulunmamaktadır
+                    Bu güne ait giden ödeme bulunmamaktadır
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -425,7 +440,7 @@ export default function CashPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {todayExpense.map((tx, idx) => (
+                        {dayExpense.map((tx, idx) => (
                           <TableRow key={tx.id} className="group">
                             <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
                             <TableCell className="text-sm">{format(parseISO(tx.transaction_date), 'HH:mm')}</TableCell>
@@ -456,7 +471,7 @@ export default function CashPage() {
               {DEFAULT_BOXES.map(b => (
                 <div key={b.payment_method} className="py-2 bg-red-600/10 border-r last:border-r-0 border-red-600/20">
                   <div className="text-red-700 dark:text-red-400">{b.name}</div>
-                  <div className="text-foreground tabular-nums">{fmtCurrency(todayMethodTotals[b.payment_method]?.expense || 0)}</div>
+                  <div className="text-foreground tabular-nums">{fmtCurrency(dayMethodTotals[b.payment_method]?.expense || 0)}</div>
                 </div>
               ))}
             </div>
@@ -464,9 +479,9 @@ export default function CashPage() {
             {/* Summary rows */}
             <div className="mt-2 space-y-1">
               {[
-                { label: 'Gider Nakit Toplamı', value: todayExpenseTotal, color: 'bg-red-600 text-white' },
-                { label: 'Bugünün Nakit Toplamı', value: todayIncomeTotal - todayExpenseTotal, color: 'bg-zinc-700 text-white' },
-                { label: 'Genel Nakit Kasası', value: todayIncomeTotal + yesterdayCarryover - todayExpenseTotal, color: 'bg-zinc-800 text-white' },
+                { label: 'Gider Nakit Toplamı', value: dayExpenseTotal, color: 'bg-red-600 text-white' },
+                { label: 'Günün Nakit Toplamı', value: dayIncomeTotal - dayExpenseTotal, color: 'bg-zinc-700 text-white' },
+                { label: 'Genel Nakit Kasası', value: dayIncomeTotal + carryover - dayExpenseTotal, color: 'bg-zinc-800 text-white' },
               ].map(row => (
                 <div key={row.label} className={`flex items-center justify-between px-4 py-2 rounded-lg ${row.color} text-sm font-semibold`}>
                   <span>{row.label}</span>
