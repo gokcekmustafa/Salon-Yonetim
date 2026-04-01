@@ -81,6 +81,7 @@ export default function CustomersPage() {
   const { hasPermission } = usePermissions();
   const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, payments, loading } = useBranchFilteredData();
   const { currentSalonId } = useAuth();
+  const { logAction } = useAuditLog();
   const [searchParams, setSearchParams] = useSearchParams();
   const [nameSearch, setNameSearch] = useState('');
   const [phoneSearch, setPhoneSearch] = useState('');
