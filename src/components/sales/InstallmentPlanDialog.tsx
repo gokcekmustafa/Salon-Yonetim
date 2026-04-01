@@ -193,7 +193,7 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[75vh] overflow-hidden flex flex-col">
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" /> Taksitlendirme
@@ -281,7 +281,7 @@ export function InstallmentPlanDialog({ open, onOpenChange, customerId, customer
                 Ödeme Planı
                 <span className="text-muted-foreground font-normal ml-1">(tıklayarak düzenle)</span>
               </Label>
-              <div className="space-y-1 max-h-[340px] overflow-y-auto pr-1">
+              <div className="space-y-1 max-h-[280px] overflow-y-auto pr-1">
                 {installmentPlan.map((p, idx) => (
                   <div key={p.number} className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/30 border gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
