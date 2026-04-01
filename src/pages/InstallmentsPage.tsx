@@ -194,19 +194,18 @@ export default function InstallmentsPage() {
   const markPaidMutation = useMutation({
     mutationFn: async () => {
       if (!selectedPayment || !salonId || !user) throw new Error('No payment');
+      const selectedDateISO = new Date(payDate).toISOString();
       const { error } = await supabase.from('installment_payments').update({
         is_paid: true,
         paid_amount: selectedPayment.amount,
-        paid_at: new Date().toISOString(),
+        paid_at: selectedDateISO,
         payment_method: payMethod,
       } as any).eq('id', selectedPayment.id);
       if (error) throw error;
 
-      // Find installment to get customer name
       const inst = installments.find(i => i.id === selectedPayment.installment_id);
       const custName = inst ? getCustomerName(inst.customer_id) : '';
 
-      // Auto cash transaction with proper cash_box_id
       const { error: cashErr } = await supabase.from('cash_transactions').insert({
         salon_id: salonId,
         type: 'income',
@@ -215,6 +214,7 @@ export default function InstallmentsPage() {
         payment_method: payMethod,
         cash_box_id: findCashBoxId(payMethod),
         created_by: user.id,
+        transaction_date: selectedDateISO,
       });
       if (cashErr) throw cashErr;
     },
@@ -224,6 +224,25 @@ export default function InstallmentsPage() {
       toast.success('Taksit ödendi olarak işaretlendi');
       setPayDialogOpen(false);
       setSelectedPayment(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const editPaymentMutation = useMutation({
+    mutationFn: async () => {
+      if (!editPayment) throw new Error('No payment');
+      const updates: any = {};
+      if (editAmount) updates.amount = parseFloat(editAmount);
+      if (editDueDate) updates.due_date = editDueDate;
+      if (!Object.keys(updates).length) throw new Error('Değişiklik yok');
+      const { error } = await supabase.from('installment_payments').update(updates).eq('id', editPayment.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['installment_payments', salonId] });
+      toast.success('Taksit güncellendi');
+      setEditDialogOpen(false);
+      setEditPayment(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
