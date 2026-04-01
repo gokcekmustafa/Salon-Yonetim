@@ -139,18 +139,17 @@ export default function CashPage() {
     });
   }, [cashBoxes, transactions]);
 
-  // Today's totals per payment method
-  const todayMethodTotals = useMemo(() => {
+  const dayMethodTotals = useMemo(() => {
     const methods: Record<string, { income: number; expense: number }> = {};
     DEFAULT_BOXES.forEach(b => { methods[b.payment_method] = { income: 0, expense: 0 }; });
-    todayTransactions.forEach(tx => {
+    dayTransactions.forEach(tx => {
       const key = tx.payment_method || 'cash';
       if (!methods[key]) methods[key] = { income: 0, expense: 0 };
       if (tx.type === 'income') methods[key].income += Number(tx.amount);
       else methods[key].expense += Number(tx.amount);
     });
     return methods;
-  }, [todayTransactions]);
+  }, [dayTransactions]);
 
   // Today totals
   const todayIncomeTotal = todayIncome.reduce((s, t) => s + Number(t.amount), 0);
