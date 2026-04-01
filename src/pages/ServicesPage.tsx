@@ -114,9 +114,11 @@ export default function ServicesPage() {
     setSaving(true);
     if (editingCat) {
       await supabase.from('service_categories').update({ name: catName.trim() }).eq('id', editingCat.id);
+      logAction({ action: 'update', target_type: 'service', target_id: editingCat.id, target_label: `Kategori: ${catName.trim()}` });
       toast.success('Kategori güncellendi');
     } else {
       await supabase.from('service_categories').insert({ name: catName.trim(), salon_id: currentSalonId, sort_order: categories.length });
+      logAction({ action: 'create', target_type: 'service', target_label: `Kategori: ${catName.trim()}` });
       toast.success('Kategori eklendi');
     }
     setSaving(false);
