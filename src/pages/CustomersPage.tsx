@@ -251,7 +251,46 @@ export default function CustomersPage() {
     return balances;
   }, [customerInstallmentInfo, customers]);
 
-  // Get customer service summary for hover tooltip
+  // Sales list: group by customer, only those with sales
+  const salesListCustomers = useMemo(() => {
+    const customerSalesMap: Record<string, { customer: DbCustomer; totalAmount: number; saleCount: number; lastSaleDate: string }> = {};
+    
+    serviceSales.forEach((ss: any) => {
+      if (!ss.customer_id) return;
+      const cust = customers.find(c => c.id === ss.customer_id);
+      if (!cust) return;
+      if (!customerSalesMap[ss.customer_id]) {
+        customerSalesMap[ss.customer_id] = { customer: cust, totalAmount: 0, saleCount: 0, lastSaleDate: ss.created_at };
+      }
+      customerSalesMap[ss.customer_id].totalAmount += Number(ss.total_price);
+      customerSalesMap[ss.customer_id].saleCount++;
+      if (ss.created_at > customerSalesMap[ss.customer_id].lastSaleDate) {
+        customerSalesMap[ss.customer_id].lastSaleDate = ss.created_at;
+      }
+    });
+
+    productSalesAll.forEach((ps: any) => {
+      if (!ps.customer_id) return;
+      const cust = customers.find(c => c.id === ps.customer_id);
+      if (!cust) return;
+      if (!customerSalesMap[ps.customer_id]) {
+        customerSalesMap[ps.customer_id] = { customer: cust, totalAmount: 0, saleCount: 0, lastSaleDate: ps.created_at };
+      }
+      customerSalesMap[ps.customer_id].totalAmount += Number(ps.total_price);
+      customerSalesMap[ps.customer_id].saleCount++;
+      if (ps.created_at > customerSalesMap[ps.customer_id].lastSaleDate) {
+        customerSalesMap[ps.customer_id].lastSaleDate = ps.created_at;
+      }
+    });
+
+    const list = Object.values(customerSalesMap);
+    if (salesListSort === 'newest') {
+      list.sort((a, b) => new Date(b.lastSaleDate).getTime() - new Date(a.lastSaleDate).getTime());
+    } else {
+      list.sort((a, b) => new Date(a.lastSaleDate).getTime() - new Date(b.lastSaleDate).getTime());
+    }
+    return list;
+  }, [serviceSales, productSalesAll, customers, salesListSort]);
   const getCustomerServiceSummary = (customerId: string) => {
     const custAppts = appointments.filter(a => a.customer_id === customerId);
     const serviceMap: Record<string, { name: string; total: number; completed: number; cancelled: number }> = {};
