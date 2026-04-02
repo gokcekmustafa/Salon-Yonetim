@@ -1,4 +1,4 @@
-import { Calendar, Plus, UserCheck, BarChart3, CreditCard, Package, ShoppingBag, Wallet, UserSearch } from 'lucide-react';
+import { Calendar, Plus, UserCheck, BarChart3, CreditCard, Package, Wallet, UserSearch } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function DashboardQuickActions() {
