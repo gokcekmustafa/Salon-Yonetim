@@ -125,9 +125,13 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
         await deleteCashTransaction(serviceName);
       }
 
+      // Delete linked session credits
+      await supabase.from('customer_session_credits').delete().eq('service_sale_id', sale.id);
+
       const { error } = await supabase.from('service_sales').delete().eq('id', sale.id);
       if (error) throw error;
       invalidateAllSaleQueries();
+      qc.invalidateQueries({ queryKey: ['session_credits'] });
       logAction({ action: 'delete', target_type: 'service_sale', target_id: sale.id, target_label: `${customerName} - ${serviceName}` });
       toast.success('Satış silindi');
     } catch (e: any) {

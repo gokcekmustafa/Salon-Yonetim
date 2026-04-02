@@ -186,12 +186,13 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
       const discountRatio = subtotal > 0 ? discountAmount / subtotal : 0;
 
       // Service sales
+      const serviceSaleIds: { service_id: string; sale_id: string; quantity: number }[] = [];
       for (const item of serviceItems) {
         const itemTotal = item.quantity * item.unit_price;
         const itemDiscount = Math.round(itemTotal * discountRatio * 100) / 100;
         const finalPrice = itemTotal - itemDiscount;
 
-        const { error } = await supabase.from('service_sales').insert({
+        const { data: saleRow, error } = await supabase.from('service_sales').insert({
           salon_id: salonId,
           customer_id: customerId || null,
           service_id: item.service_id,
@@ -201,8 +202,9 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
           payment_method: method === 'installment' ? 'installment' : method,
           sold_by: user.id,
           created_at: saleTimestamp,
-        } as any);
+        } as any).select('id').single();
         if (error) throw error;
+        if (saleRow) serviceSaleIds.push({ service_id: item.service_id, sale_id: (saleRow as any).id, quantity: item.quantity });
       }
 
       // Product sales
@@ -273,16 +275,17 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
         }
       }
 
-      // Create session credits for service sales
+      // Create session credits for service sales (linked to sale)
       if (customerId) {
-        for (const item of serviceItems) {
+        for (const entry of serviceSaleIds) {
           await supabase.from('customer_session_credits').insert({
             salon_id: salonId,
             customer_id: customerId,
-            service_id: item.service_id,
-            total_sessions: item.quantity,
+            service_id: entry.service_id,
+            total_sessions: entry.quantity,
             used_sessions: 0,
-            remaining_sessions: item.quantity,
+            remaining_sessions: entry.quantity,
+            service_sale_id: entry.sale_id,
           } as any);
         }
       }
