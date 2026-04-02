@@ -987,6 +987,27 @@ export default function CustomersPage() {
                   </div>
                 );
               })()}
+              {(() => {
+                const credits = sessionCredits.filter((sc: any) => sc.customer_id === detailCustomer.id);
+                if (credits.length === 0) return null;
+                return (
+                  <div className="border-t pt-3">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase flex items-center gap-1">
+                      <Ticket className="h-3.5 w-3.5" /> Seans Hakları
+                    </p>
+                    {credits.map((sc: any, i: number) => (
+                      <div key={i} className="flex justify-between py-1.5 text-xs border-b border-border/30 last:border-0">
+                        <span className="font-medium">{sc.services?.name || 'Bilinmeyen'}</span>
+                        <span>
+                          <span className="text-emerald-600 font-semibold">{sc.remaining_sessions}</span>
+                          <span className="text-muted-foreground"> / {sc.total_sessions} kalan</span>
+                          {sc.used_sessions > 0 && <span className="text-muted-foreground ml-1">({sc.used_sessions} kullanıldı)</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </DialogContent>
