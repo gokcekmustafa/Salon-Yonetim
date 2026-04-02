@@ -326,9 +326,8 @@ export default function CustomersPage() {
 
   const tabCounts = useMemo(() => ({
     all: customers.length,
-    installment: customers.filter(c => c.customer_type === 'installment').length,
+    installment: customers.filter(c => c.customer_type === 'installment' || c.customer_type === 'cash').length,
     single_session: customers.filter(c => c.customer_type === 'single_session').length,
-    cash: customers.filter(c => c.customer_type === 'cash').length,
   }), [customers]);
 
   if (!hasPermission('can_manage_customers')) return <NoPermission feature="Müşteri Yönetimi" />;
