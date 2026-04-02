@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuditLog } from '@/hooks/useAuditLog';
@@ -66,6 +66,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
   const [installmentDialogOpen, setInstallmentDialogOpen] = useState(false);
   const [pendingSaleTotal, setPendingSaleTotal] = useState(0);
   const [createdCustomerId, setCreatedCustomerId] = useState<string | null>(null);
+  const installmentCompletionRef = useRef(false);
 
   useFormGuard(open);
 
@@ -133,10 +134,29 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
     setDiscountValue('');
     setSaleDate(format(new Date(), 'yyyy-MM-dd'));
     setCreatedCustomerId(null);
+    setPendingSaleTotal(0);
     setActiveTab('services');
   };
 
+  const cleanupDraftCustomer = async (customerId: string | null) => {
+    if (!customerId || !salonId) return;
+
+    const { error } = await supabase.rpc('delete_customer_cascade', {
+      _customer_id: customerId,
+      _salon_id: salonId,
+    });
+
+    if (error) {
+      await supabase.from('customers').delete().eq('id', customerId).eq('salon_id', salonId);
+    }
+
+    setCreatedCustomerId((prev) => (prev === customerId ? null : prev));
+  };
+
   const handleClose = (open: boolean) => {
+    if (!open && createdCustomerId) {
+      void cleanupDraftCustomer(createdCustomerId);
+    }
     if (!open) resetAll();
     onOpenChange(open);
   };
@@ -222,9 +242,14 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
   const processSale = async (method: string) => {
     if (!salonId || !user) return;
     setSaving(true);
+    let customerIdForRollback: string | null = null;
+    const stockMovementIds: string[] = [];
+    const originalStocks = new Map<string, number>();
+
     try {
       const custId = await createCustomerIfNeeded();
       if (!custId) { setSaving(false); return; }
+      customerIdForRollback = custId;
 
       const soldServiceIds = [...new Set(serviceItems.map(item => item.service_id))];
       const saleTimestamp = new Date(saleDate + 'T12:00:00').toISOString();
@@ -257,15 +282,20 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
         } as any);
         if (saleErr) throw saleErr;
 
-        const { error: moveErr } = await supabase.from('stock_movements').insert({
+        const { data: moveRow, error: moveErr } = await supabase.from('stock_movements').insert({
           product_id: item.product_id, salon_id: salonId,
           quantity: item.quantity, type: 'out',
           description: `Satış - ${form.name}`, created_by: user.id,
-        });
+        }).select('id').single();
         if (moveErr) throw moveErr;
+        if (moveRow?.id) stockMovementIds.push(moveRow.id);
 
+        if (!originalStocks.has(item.product_id)) {
+          originalStocks.set(item.product_id, item.current_stock);
+        }
         const newStock = Math.max(0, item.current_stock - item.quantity);
-        await supabase.from('products').update({ current_stock: newStock }).eq('id', item.product_id);
+        const { error: stockErr } = await supabase.from('products').update({ current_stock: newStock }).eq('id', item.product_id);
+        if (stockErr) throw stockErr;
         if (newStock === 0) toast.warning(`${item.name} stokta kalmadı!`);
       }
 
@@ -302,18 +332,52 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
       logAction({ action: 'create', target_type: 'sale', target_label: form.name, details: { services: serviceItems.length, products: productItems.length, total: grandTotal, method } });
       toast.success(`Müşteri "${form.name}" oluşturuldu ve satış tamamlandı.`);
 
+      setCreatedCustomerId(null);
       onCompleted({ customerId: custId, customerName: form.name, serviceIds: soldServiceIds });
       handleClose(false);
+      return true;
     } catch (e: any) {
+      for (const [productId, stock] of originalStocks.entries()) {
+        await supabase.from('products').update({ current_stock: stock }).eq('id', productId);
+      }
+
+      if (stockMovementIds.length > 0) {
+        await supabase.from('stock_movements').delete().in('id', stockMovementIds);
+      }
+
+      if (customerIdForRollback) {
+        await cleanupDraftCustomer(customerIdForRollback);
+      }
+
       toast.error(e.message || 'Satış kaydedilemedi');
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
   const handleInstallmentComplete = async () => {
-    await processSale('installment');
-    setInstallmentDialogOpen(false);
+    installmentCompletionRef.current = true;
+    const success = await processSale('installment');
+    if (success) {
+      setInstallmentDialogOpen(false);
+      return;
+    }
+
+    installmentCompletionRef.current = false;
+  };
+
+  const handleInstallmentDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && !installmentCompletionRef.current && createdCustomerId) {
+      void cleanupDraftCustomer(createdCustomerId);
+    }
+
+    if (!nextOpen) {
+      setPendingSaleTotal(0);
+      installmentCompletionRef.current = false;
+    }
+
+    setInstallmentDialogOpen(nextOpen);
   };
 
   const renderItemRow = (
@@ -553,7 +617,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
       {createdCustomerId && (
         <InstallmentPlanDialog
           open={installmentDialogOpen}
-          onOpenChange={setInstallmentDialogOpen}
+          onOpenChange={handleInstallmentDialogOpenChange}
           customerId={createdCustomerId}
           customerName={form.name}
           totalAmount={pendingSaleTotal}
