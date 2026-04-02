@@ -31,6 +31,7 @@ import { CustomerSaleDialog } from '@/components/sales/CustomerSaleDialog';
 import { CustomerSalesHistory } from '@/components/sales/CustomerSalesHistory';
 import { CustomerInstallmentsPopup } from '@/components/sales/CustomerInstallmentsPopup';
 import { CustomerAddWithSaleDialog } from '@/components/customers/CustomerAddWithSaleDialog';
+import { SessionCreditsDetail } from '@/components/customers/SessionCreditsDetail';
 import { useQuery } from '@tanstack/react-query';
 
 const CUSTOMER_COLUMNS: ColumnMapping[] = [
