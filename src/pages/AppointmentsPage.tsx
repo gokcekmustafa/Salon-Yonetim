@@ -458,25 +458,7 @@ const handleComplete = async () => {
       }
 
       // Decrement session credits for the customer+service
-      if (currentSalonId && detailApt.customer_id && detailApt.service_id) {
-        const { data: credits } = await supabase
-          .from('customer_session_credits')
-          .select('id, remaining_sessions, used_sessions')
-          .eq('salon_id', currentSalonId)
-          .eq('customer_id', detailApt.customer_id)
-          .eq('service_id', detailApt.service_id)
-          .gt('remaining_sessions', 0)
-          .order('created_at', { ascending: true })
-          .limit(1);
-
-        if (credits && credits.length > 0) {
-          const credit = credits[0];
-          await supabase.from('customer_session_credits').update({
-            used_sessions: (credit as any).used_sessions + 1,
-            remaining_sessions: (credit as any).remaining_sessions - 1,
-          }).eq('id', (credit as any).id);
-        }
-      }
+      await adjustSessionCredit(detailApt.customer_id, detailApt.service_id, 'decrement');
     }
     const customerName = customers.find(c => c.id === detailApt.customer_id)?.name || '';
     logAction({ action: 'complete', target_type: 'appointment', target_id: detailApt.id, target_label: customerName, details: { payment_method: selectedPaymentMethod, amount: service?.price } });
@@ -506,13 +488,20 @@ const handleComplete = async () => {
   const handleReactivate = async () => {
     if (!currentDetailApt || !canAdminManageAppointments) return;
 
-    const error = await updateAppointment(currentDetailApt.id, { status: 'bekliyor' });
+    const wasDone = currentDetailApt.status === 'tamamlandi';
+
+    const error = await updateAppointment(currentDetailApt.id, { status: 'bekliyor', session_status: 'waiting' });
     if (error) {
       toast.error('Randevu aktif edilemedi.');
       return;
     }
 
-    setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'bekliyor' } : prev));
+    // Restore session credit if was completed
+    if (wasDone) {
+      await adjustSessionCredit(currentDetailApt.customer_id, currentDetailApt.service_id, 'increment');
+    }
+
+    setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'bekliyor', session_status: 'waiting' } : prev));
     toast.success('Randevu tekrar aktif edildi.');
   };
 
@@ -592,9 +581,52 @@ const handleComplete = async () => {
     toast.success('Randevu tarihi güncellendi.');
   };
 
+  // Idempotent session credit adjustment
+  const adjustSessionCredit = async (customerId: string, serviceId: string, direction: 'decrement' | 'increment') => {
+    if (!currentSalonId) return;
+    if (direction === 'decrement') {
+      const { data: credits } = await supabase
+        .from('customer_session_credits')
+        .select('id, remaining_sessions, used_sessions')
+        .eq('salon_id', currentSalonId)
+        .eq('customer_id', customerId)
+        .eq('service_id', serviceId)
+        .gt('remaining_sessions', 0)
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (credits && credits.length > 0) {
+        const c = credits[0];
+        await supabase.from('customer_session_credits').update({
+          used_sessions: (c as any).used_sessions + 1,
+          remaining_sessions: (c as any).remaining_sessions - 1,
+        }).eq('id', (c as any).id);
+      }
+    } else {
+      // increment: restore 1 session
+      const { data: credits } = await supabase
+        .from('customer_session_credits')
+        .select('id, remaining_sessions, used_sessions, total_sessions')
+        .eq('salon_id', currentSalonId)
+        .eq('customer_id', customerId)
+        .eq('service_id', serviceId)
+        .gt('used_sessions', 0)
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (credits && credits.length > 0) {
+        const c = credits[0];
+        await supabase.from('customer_session_credits').update({
+          used_sessions: (c as any).used_sessions - 1,
+          remaining_sessions: (c as any).remaining_sessions + 1,
+        }).eq('id', (c as any).id);
+      }
+    }
+  };
+
   const updateSessionStatus = async (aptId: string, sessionStatus: string) => {
     const current = appointments.find(a => a.id === aptId) || detailApt;
-    const nextStatus = current?.status === 'iptal' ? 'iptal' : sessionStatus === 'completed' ? 'tamamlandi' : 'bekliyor';
+    if (!current) return;
+    const prevStatus = current.status;
+    const nextStatus = current.status === 'iptal' ? 'iptal' : sessionStatus === 'completed' ? 'tamamlandi' : 'bekliyor';
 
     const error = await updateAppointment(aptId, {
       session_status: sessionStatus,
@@ -604,6 +636,15 @@ const handleComplete = async () => {
     if (error) {
       toast.error('Durum güncellenemedi.');
       return;
+    }
+
+    // Session credit: decrement if becoming tamamlandi, increment if leaving tamamlandi
+    const wasDone = prevStatus === 'tamamlandi';
+    const nowDone = nextStatus === 'tamamlandi';
+    if (!wasDone && nowDone) {
+      await adjustSessionCredit(current.customer_id, current.service_id, 'decrement');
+    } else if (wasDone && !nowDone) {
+      await adjustSessionCredit(current.customer_id, current.service_id, 'increment');
     }
 
     setDetailApt(prev => (prev && prev.id === aptId ? { ...prev, session_status: sessionStatus, status: nextStatus } : prev));
