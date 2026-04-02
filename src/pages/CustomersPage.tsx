@@ -105,6 +105,7 @@ export default function CustomersPage() {
   const [salesListSort, setSalesListSort] = useState<'newest' | 'oldest'>('newest');
   const [salesListCustomer, setSalesListCustomer] = useState<DbCustomer | null>(null);
   const [salesListHistoryOpen, setSalesListHistoryOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   useFormGuard(dialogOpen);
 
   // Fetch installment data for all customers
