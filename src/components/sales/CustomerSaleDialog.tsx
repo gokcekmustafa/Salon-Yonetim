@@ -42,6 +42,7 @@ type ProductItem = {
 
 export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
+  const { requireBranchForAction } = useBranch();
   const qc = useQueryClient();
   const { logAction } = useAuditLog();
   const salonId = currentSalonId;
