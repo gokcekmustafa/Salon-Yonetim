@@ -975,10 +975,21 @@ export default function CustomersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add/Edit Dialog */}
+      {/* Add Dialog (combined with sale) */}
+      <CustomerAddWithSaleDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        staff={staff}
+        onCompleted={({ customerId, customerName, serviceIds }) => {
+          setRecentSaleServiceIds(prev => ({ ...prev, [customerId]: serviceIds }));
+          refetch();
+        }}
+      />
+
+      {/* Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? 'Müşteri Düzenle' : 'Yeni Müşteri'}</DialogTitle><DialogDescription>{editing ? 'Müşteri bilgilerini güncelleyin' : 'Yeni müşteri ekleyin'}</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Müşteri Düzenle</DialogTitle><DialogDescription>Müşteri bilgilerini güncelleyin</DialogDescription></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2"><Label className="text-xs font-semibold">Ad Soyad *</Label><Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ad Soyad" className="h-10" /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Telefon *</Label><Input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="0500 000 0000" type="tel" className="h-10" /></div>
@@ -987,17 +998,6 @@ export default function CustomersPage() {
             <div className="space-y-2"><Label className="text-xs font-semibold">Adres <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.address} onChange={e => set('address', e.target.value)} placeholder="Müşteri adresi..." rows={2} /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Doğum Tarihi <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className="h-10" /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Notlar <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Müşteri notları..." rows={3} /></div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Müşteri Türü</Label>
-              <Select value={form.customer_type} onValueChange={v => set('customer_type', v)}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="installment">Taksitli Müşteri</SelectItem>
-                  <SelectItem value="single_session">Tek Seans Müşteri</SelectItem>
-                  <SelectItem value="cash">Peşin Müşteri</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Müşteri Kaynağı <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label>
               <Select value={form.source_type} onValueChange={v => set('source_type', v)}>
