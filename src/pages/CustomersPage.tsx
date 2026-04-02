@@ -52,9 +52,9 @@ const SOURCE_OPTIONS = [
 ];
 const getSourceLabel = (val: string | null) => SOURCE_OPTIONS.find(o => o.value === val)?.label ?? val ?? '-';
 
-const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '', customer_type: 'installment', assigned_staff_id: '', assigned_staff_other: '' };
+const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '', assigned_staff_id: '', assigned_staff_other: '' };
 
-type TabFilter = 'all' | 'installment' | 'single_session' | 'cash';
+type TabFilter = 'all' | 'installment' | 'single_session';
 
 function getRowColorClass(customerType: string, hasDebt: boolean): string {
   if (hasDebt) return 'bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30';
