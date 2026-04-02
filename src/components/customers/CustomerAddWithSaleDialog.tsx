@@ -225,6 +225,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
     // Determine customer_type
     const customerType = totalServiceSessions > 1 ? 'installment' : 'single_session';
 
+    const branchId = getEffectiveBranchId();
     const { data: inserted, error } = await supabase.from('customers').insert({
       name: form.name, phone: form.phone, salon_id: salonId,
       birth_date: form.birth_date || null, notes: form.notes || null,
@@ -233,6 +234,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
       source_type: form.source_type || null, source_detail: form.source_detail || null,
       customer_type: customerType,
       assigned_staff_id: form.assigned_staff_id === '__other__' ? null : (form.assigned_staff_id || null),
+      branch_id: branchId,
     }).select('id').single();
 
     if (error) {
