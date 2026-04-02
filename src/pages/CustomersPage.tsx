@@ -790,7 +790,6 @@ export default function CustomersPage() {
           { key: 'all', label: 'Tümü' },
           { key: 'installment', label: 'Paket Müşterileri' },
           { key: 'single_session', label: 'Tek Seanslık Müşteriler' },
-          { key: 'cash', label: 'Peşin Müşteriler' },
         ] as { key: TabFilter; label: string }[]).map(tab => (
           <button
             key={tab.key}
