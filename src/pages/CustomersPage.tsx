@@ -1097,7 +1097,7 @@ export default function CustomersPage() {
             </DialogTitle>
             <DialogDescription>Satın alınan hizmetlerin seans hakları ve kullanım geçmişi</DialogDescription>
           </DialogHeader>
-          {sessionCreditsCustomer && <SessionCreditsDetail customerId={sessionCreditsCustomer.id} sessionCredits={sessionCredits} appointments={appointments} services={services} staff={staff} rooms={rooms} />}
+          {sessionCreditsCustomer && <SessionCreditsDetail customerId={sessionCreditsCustomer.id} sessionCredits={sessionCredits} appointments={appointments} services={services} staff={staff} />}
         </DialogContent>
       </Dialog>
 
