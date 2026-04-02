@@ -365,6 +365,58 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Satışı Silmek İstediğinize Emin Misiniz?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Bu işlem geri alınamaz. Aşağıdakiler de silinecektir:</p>
+                <ul className="list-disc list-inside text-sm space-y-1">
+                  <li>Satışa bağlı tüm seans hakları (kullanılmış dahil)</li>
+                  {deleteConfirm?.type === 'service' && deleteConfirm.linkedAppointments.length > 0 && (
+                    <li className="text-destructive font-medium">
+                      <CalendarX className="h-3.5 w-3.5 inline mr-1" />
+                      {deleteConfirm.linkedAppointments.length} adet bağlı randevu silinecek
+                    </li>
+                  )}
+                  <li>İlgili kasa hareketleri</li>
+                  {deleteConfirm?.sale?.payment_method === 'installment' && (
+                    <li>Taksit planı ve ödemeleri</li>
+                  )}
+                </ul>
+                {deleteConfirm?.type === 'service' && deleteConfirm.linkedAppointments.length > 0 && (
+                  <div className="mt-2 p-2 rounded border bg-muted/50 max-h-32 overflow-y-auto">
+                    <p className="text-xs font-semibold mb-1">Silinecek Randevular:</p>
+                    {deleteConfirm.linkedAppointments.map((a: any) => (
+                      <p key={a.id} className="text-xs text-muted-foreground">
+                        {format(new Date(a.start_time), 'd MMM yyyy HH:mm', { locale: tr })} — {a.status}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteConfirm?.type === 'service') executeDeleteServiceSale();
+                else if (deleteConfirm?.type === 'product') executeDeleteProductSale();
+              }}
+            >
+              Evet, Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
