@@ -458,25 +458,7 @@ const handleComplete = async () => {
       }
 
       // Decrement session credits for the customer+service
-      if (currentSalonId && detailApt.customer_id && detailApt.service_id) {
-        const { data: credits } = await supabase
-          .from('customer_session_credits')
-          .select('id, remaining_sessions, used_sessions')
-          .eq('salon_id', currentSalonId)
-          .eq('customer_id', detailApt.customer_id)
-          .eq('service_id', detailApt.service_id)
-          .gt('remaining_sessions', 0)
-          .order('created_at', { ascending: true })
-          .limit(1);
-
-        if (credits && credits.length > 0) {
-          const credit = credits[0];
-          await supabase.from('customer_session_credits').update({
-            used_sessions: (credit as any).used_sessions + 1,
-            remaining_sessions: (credit as any).remaining_sessions - 1,
-          }).eq('id', (credit as any).id);
-        }
-      }
+      await adjustSessionCredit(detailApt.customer_id, detailApt.service_id, 'decrement');
     }
     const customerName = customers.find(c => c.id === detailApt.customer_id)?.name || '';
     logAction({ action: 'complete', target_type: 'appointment', target_id: detailApt.id, target_label: customerName, details: { payment_method: selectedPaymentMethod, amount: service?.price } });
