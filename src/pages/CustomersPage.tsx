@@ -30,6 +30,7 @@ import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 import { CustomerSaleDialog } from '@/components/sales/CustomerSaleDialog';
 import { CustomerSalesHistory } from '@/components/sales/CustomerSalesHistory';
 import { CustomerInstallmentsPopup } from '@/components/sales/CustomerInstallmentsPopup';
+import { CustomerAddWithSaleDialog } from '@/components/customers/CustomerAddWithSaleDialog';
 import { useQuery } from '@tanstack/react-query';
 
 const CUSTOMER_COLUMNS: ColumnMapping[] = [
@@ -51,22 +52,20 @@ const SOURCE_OPTIONS = [
 ];
 const getSourceLabel = (val: string | null) => SOURCE_OPTIONS.find(o => o.value === val)?.label ?? val ?? '-';
 
-const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '', customer_type: 'installment', assigned_staff_id: '', assigned_staff_other: '' };
+const emptyForm = { name: '', phone: '', birth_date: '', notes: '', tc_kimlik_no: '', address: '', secondary_phone: '', source_type: '', source_detail: '', assigned_staff_id: '', assigned_staff_other: '' };
 
-type TabFilter = 'all' | 'installment' | 'single_session' | 'cash';
+type TabFilter = 'all' | 'installment' | 'single_session';
 
 function getRowColorClass(customerType: string, hasDebt: boolean): string {
   if (hasDebt) return 'bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30';
   if (customerType === 'installment') return 'bg-emerald-50/60 dark:bg-emerald-950/15 hover:bg-emerald-100/80 dark:hover:bg-emerald-950/25';
   if (customerType === 'single_session') return 'bg-sky-50/60 dark:bg-sky-950/15 hover:bg-sky-100/80 dark:hover:bg-sky-950/25';
-  if (customerType === 'cash') return 'bg-amber-50/60 dark:bg-amber-950/15 hover:bg-amber-100/80 dark:hover:bg-amber-950/25';
   return '';
 }
 
 function getStatusBadge(customerType: string) {
   if (customerType === 'single_session') return { label: 'Tek Seans', className: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border-sky-200 dark:border-sky-800' };
-  if (customerType === 'cash') return { label: 'Peşin', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800' };
-  return { label: 'Taksitli', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' };
+  return { label: 'Paket', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' };
 }
 
 function getPaymentMethodLabel(m: string) {
@@ -106,6 +105,7 @@ export default function CustomersPage() {
   const [salesListSort, setSalesListSort] = useState<'newest' | 'oldest'>('newest');
   const [salesListCustomer, setSalesListCustomer] = useState<DbCustomer | null>(null);
   const [salesListHistoryOpen, setSalesListHistoryOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   useFormGuard(dialogOpen);
 
   // Fetch installment data for all customers
@@ -327,9 +327,8 @@ export default function CustomersPage() {
 
   const tabCounts = useMemo(() => ({
     all: customers.length,
-    installment: customers.filter(c => c.customer_type === 'installment').length,
+    installment: customers.filter(c => c.customer_type === 'installment' || c.customer_type === 'cash').length,
     single_session: customers.filter(c => c.customer_type === 'single_session').length,
-    cash: customers.filter(c => c.customer_type === 'cash').length,
   }), [customers]);
 
   if (!hasPermission('can_manage_customers')) return <NoPermission feature="Müşteri Yönetimi" />;
@@ -343,21 +342,20 @@ export default function CustomersPage() {
     const matchName = !nameSearch || c.name.toLowerCase().includes(nameSearch.toLowerCase());
     const matchPhone = !phoneSearch || (c.phone || '').includes(phoneSearch) || (c.secondary_phone || '').includes(phoneSearch);
     const matchTc = !tcSearch || (c.tc_kimlik_no || '').includes(tcSearch);
-    const matchTab = tabFilter === 'all' || c.customer_type === tabFilter;
+    const matchTab = tabFilter === 'all' || c.customer_type === tabFilter || (tabFilter === 'installment' && c.customer_type === 'cash');
     return matchName && matchPhone && matchTc && matchTab;
   });
 
   const hasAnyFilter = nameSearch || phoneSearch || tcSearch;
   const clearFilters = () => { setNameSearch(''); setPhoneSearch(''); setTcSearch(''); };
 
-  const openAdd = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
+  const openAdd = () => { setAddDialogOpen(true); };
   const openEdit = (c: DbCustomer) => {
     setEditing(c);
     setForm({
       name: c.name, phone: c.phone || '', birth_date: c.birth_date || '', notes: c.notes || '',
       tc_kimlik_no: c.tc_kimlik_no || '', address: c.address || '', secondary_phone: c.secondary_phone || '',
       source_type: c.source_type || '', source_detail: c.source_detail || '',
-      customer_type: c.customer_type || 'installment',
       assigned_staff_id: (c as any).assigned_staff_id || '', assigned_staff_other: '',
     });
     setDialogOpen(true);
@@ -374,7 +372,6 @@ export default function CustomersPage() {
       secondary_phone: form.secondary_phone || null,
       source_type: form.source_type || null,
       source_detail: form.source_detail || null,
-      customer_type: form.customer_type,
       assigned_staff_id: form.assigned_staff_id === '__other__' ? null : (form.assigned_staff_id || null),
     };
     if (editing) {
@@ -383,21 +380,6 @@ export default function CustomersPage() {
       toast.success('Müşteri güncellendi.');
       setSaving(false);
       setDialogOpen(false);
-    } else {
-      const result = await addCustomer({ name: form.name, phone: form.phone, ...optionals });
-      logAction({ action: 'create', target_type: 'customer', target_label: form.name, details: { phone: form.phone, type: form.customer_type } });
-      toast.success('Müşteri eklendi.');
-      setSaving(false);
-      setDialogOpen(false);
-      if (result && !result.error) {
-        setTimeout(() => {
-          const newCustomer = customers.find(c => c.phone === form.phone && c.name === form.name);
-          if (newCustomer) {
-            setSaleCustomer(newCustomer);
-            setSaleDialogOpen(true);
-          }
-        }, 500);
-      }
     }
   };
 
@@ -808,7 +790,6 @@ export default function CustomersPage() {
           { key: 'all', label: 'Tümü' },
           { key: 'installment', label: 'Paket Müşterileri' },
           { key: 'single_session', label: 'Tek Seanslık Müşteriler' },
-          { key: 'cash', label: 'Peşin Müşteriler' },
         ] as { key: TabFilter; label: string }[]).map(tab => (
           <button
             key={tab.key}
@@ -994,10 +975,21 @@ export default function CustomersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add/Edit Dialog */}
+      {/* Add Dialog (combined with sale) */}
+      <CustomerAddWithSaleDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        staff={staff}
+        onCompleted={({ customerId, customerName, serviceIds }) => {
+          setRecentSaleServiceIds(prev => ({ ...prev, [customerId]: serviceIds }));
+          refetch();
+        }}
+      />
+
+      {/* Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? 'Müşteri Düzenle' : 'Yeni Müşteri'}</DialogTitle><DialogDescription>{editing ? 'Müşteri bilgilerini güncelleyin' : 'Yeni müşteri ekleyin'}</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Müşteri Düzenle</DialogTitle><DialogDescription>Müşteri bilgilerini güncelleyin</DialogDescription></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2"><Label className="text-xs font-semibold">Ad Soyad *</Label><Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ad Soyad" className="h-10" /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Telefon *</Label><Input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="0500 000 0000" type="tel" className="h-10" /></div>
@@ -1006,17 +998,6 @@ export default function CustomersPage() {
             <div className="space-y-2"><Label className="text-xs font-semibold">Adres <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.address} onChange={e => set('address', e.target.value)} placeholder="Müşteri adresi..." rows={2} /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Doğum Tarihi <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className="h-10" /></div>
             <div className="space-y-2"><Label className="text-xs font-semibold">Notlar <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label><Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Müşteri notları..." rows={3} /></div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Müşteri Türü</Label>
-              <Select value={form.customer_type} onValueChange={v => set('customer_type', v)}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="installment">Taksitli Müşteri</SelectItem>
-                  <SelectItem value="single_session">Tek Seans Müşteri</SelectItem>
-                  <SelectItem value="cash">Peşin Müşteri</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Müşteri Kaynağı <span className="text-muted-foreground font-normal">(Opsiyonel)</span></Label>
               <Select value={form.source_type} onValueChange={v => set('source_type', v)}>
