@@ -30,6 +30,7 @@ interface Props {
 
 export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash', customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
+  const { requireBranchForAction } = useBranch();
   const qc = useQueryClient();
   const salonId = currentSalonId;
 
