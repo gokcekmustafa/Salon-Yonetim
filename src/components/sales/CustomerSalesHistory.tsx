@@ -171,8 +171,14 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
     }
   };
 
-  const handleDeleteProductSale = async (sale: any) => {
-    if (!confirm('Bu satışı silmek istediğinize emin misiniz?')) return;
+  const prepareDeleteProductSale = (sale: any) => {
+    setDeleteConfirm({ sale, type: 'product', linkedAppointments: [] });
+  };
+
+  const executeDeleteProductSale = async () => {
+    if (!deleteConfirm || deleteConfirm.type !== 'product') return;
+    const sale = deleteConfirm.sale;
+    setDeleteConfirm(null);
     setDeleting(sale.id);
     try {
       // Restore stock
