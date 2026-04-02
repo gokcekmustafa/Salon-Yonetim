@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Search, Pencil, Trash2, History, Users, Loader2, ShoppingCart, CalendarPlus, FileText, CreditCard, Phone, MessageSquare, UserCheck, Filter, X, Eye } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, History, Users, Loader2, ShoppingCart, CalendarPlus, FileText, CreditCard, Phone, MessageSquare, UserCheck, Filter, X, Eye, Ticket } from 'lucide-react';
 import { format, parseISO, differenceInDays, differenceInYears, startOfMonth, endOfMonth, isBefore, isAfter } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
