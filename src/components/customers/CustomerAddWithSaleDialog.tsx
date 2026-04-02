@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -44,6 +45,7 @@ const emptyCustomerForm = {
 export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, staff }: Props) {
   const { user, currentSalonId } = useAuth();
   const { logAction } = useAuditLog();
+  const { requireBranchForAction, getEffectiveBranchId } = useBranch();
   const qc = useQueryClient();
   const salonId = currentSalonId;
 
@@ -173,6 +175,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
       toast.error('Ad ve telefon zorunludur.');
       return;
     }
+    if (!requireBranchForAction()) return;
     setStep(2);
   };
 
@@ -222,6 +225,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
     // Determine customer_type
     const customerType = totalServiceSessions > 1 ? 'installment' : 'single_session';
 
+    const branchId = getEffectiveBranchId();
     const { data: inserted, error } = await supabase.from('customers').insert({
       name: form.name, phone: form.phone, salon_id: salonId,
       birth_date: form.birth_date || null, notes: form.notes || null,
@@ -230,6 +234,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
       source_type: form.source_type || null, source_detail: form.source_detail || null,
       customer_type: customerType,
       assigned_staff_id: form.assigned_staff_id === '__other__' ? null : (form.assigned_staff_id || null),
+      branch_id: branchId,
     }).select('id').single();
 
     if (error) {

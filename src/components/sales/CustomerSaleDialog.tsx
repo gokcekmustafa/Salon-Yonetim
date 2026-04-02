@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +42,7 @@ type ProductItem = {
 
 export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
+  const { requireBranchForAction } = useBranch();
   const qc = useQueryClient();
   const { logAction } = useAuditLog();
   const salonId = currentSalonId;
@@ -158,6 +160,7 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
 
   const handleSave = async () => {
     if (!salonId || !user || (serviceItems.length === 0 && productItems.length === 0)) return;
+    if (!requireBranchForAction()) return;
 
     if (paymentMethod === 'installment') {
       if (!customerId) {

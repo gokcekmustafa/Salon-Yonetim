@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +30,7 @@ interface Props {
 
 export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash', customerId, customerName }: Props) {
   const { user, currentSalonId } = useAuth();
+  const { requireBranchForAction } = useBranch();
   const qc = useQueryClient();
   const salonId = currentSalonId;
 
@@ -85,6 +87,7 @@ export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash', 
 
   const handleSave = async () => {
     if (!salonId || !user || items.length === 0) return;
+    if (!requireBranchForAction()) return;
     setSaving(true);
     try {
       for (const item of items) {
