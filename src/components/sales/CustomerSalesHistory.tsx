@@ -102,10 +102,37 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
     }
   };
 
-  const handleDeleteServiceSale = async (sale: any) => {
-    if (!confirm('Bu satışı silmek istediğinize emin misiniz?')) return;
+  const prepareDeleteServiceSale = async (sale: any) => {
+    // Find linked appointments for this customer + service
+    const { data: linkedAppts } = await supabase
+      .from('appointments')
+      .select('id, start_time, status, staff:staff(name), rooms:room_id(name)')
+      .eq('salon_id', currentSalonId!)
+      .eq('customer_id', customerId)
+      .eq('service_id', sale.service_id);
+    setDeleteConfirm({ sale, type: 'service', linkedAppointments: linkedAppts || [] });
+  };
+
+  const executeDeleteServiceSale = async () => {
+    if (!deleteConfirm || deleteConfirm.type !== 'service') return;
+    const sale = deleteConfirm.sale;
+    const linkedAppts = deleteConfirm.linkedAppointments;
+    setDeleteConfirm(null);
     setDeleting(sale.id);
     try {
+      // Delete linked appointments and their payments
+      if (linkedAppts.length > 0) {
+        const apptIds = linkedAppts.map((a: any) => a.id);
+        // Delete payments linked to these appointments
+        for (const apptId of apptIds) {
+          await supabase.from('payments').delete().eq('appointment_id', apptId).eq('salon_id', currentSalonId!);
+        }
+        // Delete the appointments
+        for (const apptId of apptIds) {
+          await supabase.from('appointments').delete().eq('id', apptId);
+        }
+      }
+
       // Delete related installments if payment_method is installment
       if (sale.payment_method === 'installment') {
         const { data: instData } = await supabase
@@ -127,15 +154,16 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
         await deleteCashTransaction(serviceName);
       }
 
-      // Delete linked session credits
+      // Delete linked session credits (even if used)
       await supabase.from('customer_session_credits').delete().eq('service_sale_id', sale.id);
 
       const { error } = await supabase.from('service_sales').delete().eq('id', sale.id);
       if (error) throw error;
       invalidateAllSaleQueries();
       qc.invalidateQueries({ queryKey: ['session_credits'] });
+      qc.invalidateQueries({ queryKey: ['appointments'] });
       logAction({ action: 'delete', target_type: 'service_sale', target_id: sale.id, target_label: `${customerName} - ${serviceName}` });
-      toast.success('Satış silindi');
+      toast.success(`Satış${linkedAppts.length > 0 ? `, ${linkedAppts.length} randevu` : ''} ve seans hakları silindi`);
     } catch (e: any) {
       toast.error(e.message || 'Satış silinemedi');
     } finally {
