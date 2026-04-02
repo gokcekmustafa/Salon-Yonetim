@@ -708,7 +708,10 @@ export default function CustomersPage() {
             </ContextMenuSubContent>
           </ContextMenuSub>
           <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => openHistory(c)}>
-            <History className="h-4 w-4" /> Seans Geçmişi
+            <History className="h-4 w-4" /> Randevu Geçmişi
+          </ContextMenuItem>
+          <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => setSessionCreditsCustomer(c)}>
+            <Ticket className="h-4 w-4" /> Seans Hakları
           </ContextMenuItem>
           <ContextMenuSub>
             <ContextMenuSubTrigger className="gap-2">
