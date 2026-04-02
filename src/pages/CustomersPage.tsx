@@ -386,10 +386,7 @@ export default function CustomersPage() {
       if (result?.deleted_cash_transactions > 0) parts.push(`${result.deleted_cash_transactions} kasa hareketi`);
       const detail = parts.length > 0 ? ` (${parts.join(', ')} silindi)` : '';
       toast.success(`Müşteri "${customerToDelete.name}" ve tüm bağlantılı verileri silindi.${detail}`);
-      // Trigger refetch to update all data
-      const { refetch } = await import('@/hooks/useBranchFilteredData').then(() => ({ refetch: null }));
-      // Force page data refresh by calling the parent refetch
-      window.dispatchEvent(new CustomEvent('salon-data-refresh'));
+      await refetch();
     } catch (err: any) {
       toast.error('Müşteri silinirken bir hata oluştu: ' + (err?.message || 'Bilinmeyen hata'));
     } finally {
