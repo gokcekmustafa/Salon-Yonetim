@@ -488,13 +488,20 @@ const handleComplete = async () => {
   const handleReactivate = async () => {
     if (!currentDetailApt || !canAdminManageAppointments) return;
 
-    const error = await updateAppointment(currentDetailApt.id, { status: 'bekliyor' });
+    const wasDone = currentDetailApt.status === 'tamamlandi';
+
+    const error = await updateAppointment(currentDetailApt.id, { status: 'bekliyor', session_status: 'waiting' });
     if (error) {
       toast.error('Randevu aktif edilemedi.');
       return;
     }
 
-    setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'bekliyor' } : prev));
+    // Restore session credit if was completed
+    if (wasDone) {
+      await adjustSessionCredit(currentDetailApt.customer_id, currentDetailApt.service_id, 'increment');
+    }
+
+    setDetailApt(prev => (prev && prev.id === currentDetailApt.id ? { ...prev, status: 'bekliyor', session_status: 'waiting' } : prev));
     toast.success('Randevu tekrar aktif edildi.');
   };
 
