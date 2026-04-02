@@ -1171,92 +1171,97 @@ const liveDetailApt = detailApt ? appointments.find(a => a.id === detailApt.id) 
 
       {/* Appointment Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={v => { setDetailOpen(v); if (!v) setDetailApt(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Randevu Detayı</DialogTitle><DialogDescription>Randevu bilgilerini görüntüleyin ve yönetin</DialogDescription></DialogHeader>
           {currentDetailApt && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 xs:grid-cols-2 gap-x-4 gap-y-3">
-                <div>
-                  <p className="text-xs text-muted-foreground">Müşteri</p>
-                  <p className="font-medium text-sm">{getCustomerName(currentDetailApt.customer_id)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Personel</p>
-                  <p className="font-medium text-sm">{getStaffName(currentDetailApt.staff_id)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Hizmet</p>
-                  <p className="font-medium text-sm">{getServiceName(currentDetailApt.service_id)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Ücret</p>
-                  <p className="font-medium text-sm">₺{getServicePrice(currentDetailApt.service_id).toLocaleString('tr-TR')}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Şube</p>
-                  <p className="font-medium text-sm">{getBranchName(currentDetailApt.branch_id || '')}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Tarih & Saat</p>
-                  <p className="font-medium text-sm">
-                    {format(new Date(currentDetailApt.start_time), 'd MMM yyyy HH:mm', { locale: tr })} — {format(new Date(currentDetailApt.end_time), 'HH:mm', { locale: tr })}
-                  </p>
-                </div>
-              </div>
-
-              {canAdminManageAppointments && currentDetailApt.status !== 'iptal' && (
-                <div className="space-y-2 rounded-lg border border-border/60 p-3">
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase">Tarih & Saat Düzenle</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input type="date" value={rescheduleDate} onChange={e => setRescheduleDate(e.target.value)} />
-                    <Input type="time" value={rescheduleTime} onChange={e => setRescheduleTime(e.target.value)} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Left column - Info */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Müşteri</p>
+                    <p className="font-medium text-sm">{getCustomerName(currentDetailApt.customer_id)}</p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={handleReschedule} disabled={isRescheduling}>
-                    {isRescheduling && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Tarihi Güncelle
-                  </Button>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Personel</p>
+                    <p className="font-medium text-sm">{getStaffName(currentDetailApt.staff_id)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Hizmet</p>
+                    <p className="font-medium text-sm">{getServiceName(currentDetailApt.service_id)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Ücret</p>
+                    <p className="font-medium text-sm">₺{getServicePrice(currentDetailApt.service_id).toLocaleString('tr-TR')}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Şube</p>
+                    <p className="font-medium text-sm">{getBranchName(currentDetailApt.branch_id || '')}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Tarih & Saat</p>
+                    <p className="font-medium text-sm">
+                      {format(new Date(currentDetailApt.start_time), 'd MMM yyyy HH:mm', { locale: tr })} — {format(new Date(currentDetailApt.end_time), 'HH:mm', { locale: tr })}
+                    </p>
+                  </div>
                 </div>
-              )}
-
-              {/* Room Assignment */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase">Oda</Label>
-                <Select
-                  value={currentDetailApt.room_id || 'none'}
-                  onValueChange={v => updateRoomAssignment(currentDetailApt.id, v)}
-                >
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">— Atanmamış —</SelectItem>
-                    {activeRooms.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Randevu Durumu</p>
+                  <Badge variant={statusVariant(currentDetailStatus)}>{statusLabel[currentDetailStatus]}</Badge>
+                </div>
               </div>
 
-              {/* Session Status */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase">Seans Durumu</Label>
-                <div className="flex gap-2">
-                  {SESSION_STATUSES.map(s => (
-                    <Button
-                      key={s.value}
-                      size="sm"
-                      variant={(currentDetailApt.session_status || 'waiting') === s.value ? 'default' : 'outline'}
-                      className="text-xs flex-1"
-                      onClick={() => updateSessionStatus(currentDetailApt.id, s.value)}
-                    >
-                      {s.label}
+              {/* Right column - Actions */}
+              <div className="space-y-3">
+                {canAdminManageAppointments && currentDetailApt.status !== 'iptal' && (
+                  <div className="space-y-2 rounded-lg border border-border/60 p-3">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase">Tarih & Saat Düzenle</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input type="date" value={rescheduleDate} onChange={e => setRescheduleDate(e.target.value)} />
+                      <Input type="time" value={rescheduleTime} onChange={e => setRescheduleTime(e.target.value)} />
+                    </div>
+                    <Button size="sm" variant="outline" onClick={handleReschedule} disabled={isRescheduling}>
+                      {isRescheduling && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Tarihi Güncelle
                     </Button>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                )}
 
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Randevu Durumu</p>
-                <Badge variant={statusVariant(currentDetailStatus)}>{statusLabel[currentDetailStatus]}</Badge>
+                {/* Room Assignment */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase">Oda</Label>
+                  <Select
+                    value={currentDetailApt.room_id || 'none'}
+                    onValueChange={v => updateRoomAssignment(currentDetailApt.id, v)}
+                  >
+                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— Atanmamış —</SelectItem>
+                      {activeRooms.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Session Status */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase">Seans Durumu</Label>
+                  <div className="flex gap-2">
+                    {SESSION_STATUSES.map(s => (
+                      <Button
+                        key={s.value}
+                        size="sm"
+                        variant={(currentDetailApt.session_status || 'waiting') === s.value ? 'default' : 'outline'}
+                        className="text-xs flex-1"
+                        onClick={() => updateSessionStatus(currentDetailApt.id, s.value)}
+                      >
+                        {s.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 sm:gap-0 flex-wrap">
             {canAdminManageAppointments && currentDetailApt?.status === 'iptal' && (
               <Button variant="outline" onClick={handleReactivate}>Tekrar Aktif Et</Button>
             )}
