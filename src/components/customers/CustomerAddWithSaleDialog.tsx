@@ -325,6 +325,18 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
         }
       }
 
+      // Create session credits for service sales
+      for (const item of serviceItems) {
+        await supabase.from('customer_session_credits').insert({
+          salon_id: salonId,
+          customer_id: custId,
+          service_id: item.service_id,
+          total_sessions: item.quantity,
+          used_sessions: 0,
+          remaining_sessions: item.quantity,
+        } as any);
+      }
+
       qc.invalidateQueries({ queryKey: ['products', salonId] });
       qc.invalidateQueries({ queryKey: ['services', salonId] });
       qc.invalidateQueries({ queryKey: ['cash_transactions'] });
@@ -332,6 +344,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
       qc.invalidateQueries({ queryKey: ['service_sales'] });
       qc.invalidateQueries({ queryKey: ['service_sales_all'] });
       qc.invalidateQueries({ queryKey: ['product_sales_all'] });
+      qc.invalidateQueries({ queryKey: ['session_credits'] });
 
       logAction({ action: 'create', target_type: 'sale', target_label: form.name, details: { services: serviceItems.length, products: productItems.length, total: grandTotal, method } });
       toast.success(`Müşteri "${form.name}" oluşturuldu ve satış tamamlandı.`);
