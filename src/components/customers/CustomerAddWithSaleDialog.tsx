@@ -265,17 +265,19 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
       const discountRatio = subtotal > 0 ? discountAmount / subtotal : 0;
 
       // Service sales
+      const serviceSaleIds: { service_id: string; sale_id: string; quantity: number }[] = [];
       for (const item of serviceItems) {
         const itemTotal = item.quantity * item.unit_price;
         const itemDiscount = Math.round(itemTotal * discountRatio * 100) / 100;
         const finalPrice = itemTotal - itemDiscount;
-        const { error } = await supabase.from('service_sales').insert({
+        const { data: saleRow, error } = await supabase.from('service_sales').insert({
           salon_id: salonId, customer_id: custId, service_id: item.service_id,
           quantity: item.quantity, unit_price: item.unit_price, total_price: finalPrice,
           payment_method: method === 'installment' ? 'installment' : method,
           sold_by: user.id, created_at: saleTimestamp,
-        } as any);
+        } as any).select('id').single();
         if (error) throw error;
+        if (saleRow) serviceSaleIds.push({ service_id: item.service_id, sale_id: (saleRow as any).id, quantity: item.quantity });
       }
 
       // Product sales
