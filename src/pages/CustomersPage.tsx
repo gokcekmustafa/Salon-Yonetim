@@ -30,6 +30,7 @@ import { StaffPageGuard } from '@/components/permissions/StaffPageGuard';
 import { CustomerSaleDialog } from '@/components/sales/CustomerSaleDialog';
 import { CustomerSalesHistory } from '@/components/sales/CustomerSalesHistory';
 import { CustomerInstallmentsPopup } from '@/components/sales/CustomerInstallmentsPopup';
+import { CustomerAddWithSaleDialog } from '@/components/customers/CustomerAddWithSaleDialog';
 import { useQuery } from '@tanstack/react-query';
 
 const CUSTOMER_COLUMNS: ColumnMapping[] = [
