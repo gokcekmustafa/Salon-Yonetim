@@ -372,7 +372,6 @@ export default function CustomersPage() {
       secondary_phone: form.secondary_phone || null,
       source_type: form.source_type || null,
       source_detail: form.source_detail || null,
-      customer_type: form.customer_type,
       assigned_staff_id: form.assigned_staff_id === '__other__' ? null : (form.assigned_staff_id || null),
     };
     if (editing) {
@@ -381,21 +380,6 @@ export default function CustomersPage() {
       toast.success('Müşteri güncellendi.');
       setSaving(false);
       setDialogOpen(false);
-    } else {
-      const result = await addCustomer({ name: form.name, phone: form.phone, ...optionals });
-      logAction({ action: 'create', target_type: 'customer', target_label: form.name, details: { phone: form.phone, type: form.customer_type } });
-      toast.success('Müşteri eklendi.');
-      setSaving(false);
-      setDialogOpen(false);
-      if (result && !result.error) {
-        setTimeout(() => {
-          const newCustomer = customers.find(c => c.phone === form.phone && c.name === form.name);
-          if (newCustomer) {
-            setSaleCustomer(newCustomer);
-            setSaleDialogOpen(true);
-          }
-        }, 500);
-      }
     }
   };
 
