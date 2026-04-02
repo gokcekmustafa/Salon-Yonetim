@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -130,6 +130,7 @@ export default function StaffAddForm({ open, onOpenChange, branches, onSuccess }
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Yeni Personel Ekle</DialogTitle>
+          <DialogDescription>Personel bilgilerini girerek yeni bir personel kaydı oluşturun.</DialogDescription>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-2">
