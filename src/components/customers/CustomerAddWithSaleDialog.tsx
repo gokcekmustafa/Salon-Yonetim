@@ -45,6 +45,7 @@ const emptyCustomerForm = {
 export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, staff }: Props) {
   const { user, currentSalonId } = useAuth();
   const { logAction } = useAuditLog();
+  const { requireBranchForAction, getEffectiveBranchId } = useBranch();
   const qc = useQueryClient();
   const salonId = currentSalonId;
 
