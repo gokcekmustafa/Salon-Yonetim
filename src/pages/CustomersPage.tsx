@@ -349,7 +349,6 @@ export default function CustomersPage() {
   const hasAnyFilter = nameSearch || phoneSearch || tcSearch;
   const clearFilters = () => { setNameSearch(''); setPhoneSearch(''); setTcSearch(''); };
 
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const openAdd = () => { setAddDialogOpen(true); };
   const openEdit = (c: DbCustomer) => {
     setEditing(c);
