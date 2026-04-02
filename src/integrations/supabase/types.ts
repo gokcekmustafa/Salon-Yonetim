@@ -549,6 +549,74 @@ export type Database = {
           },
         ]
       }
+      customer_session_credits: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          remaining_sessions: number
+          salon_id: string
+          service_id: string
+          service_sale_id: string | null
+          total_sessions: number
+          updated_at: string
+          used_sessions: number
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          remaining_sessions?: number
+          salon_id: string
+          service_id: string
+          service_sale_id?: string | null
+          total_sessions?: number
+          updated_at?: string
+          used_sessions?: number
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          remaining_sessions?: number
+          salon_id?: string
+          service_id?: string
+          service_sale_id?: string | null
+          total_sessions?: number
+          updated_at?: string
+          used_sessions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_session_credits_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_session_credits_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_session_credits_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_session_credits_service_sale_id_fkey"
+            columns: ["service_sale_id"]
+            isOneToOne: false
+            referencedRelation: "service_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null

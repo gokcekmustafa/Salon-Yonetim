@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Search, Pencil, Trash2, History, Users, Loader2, ShoppingCart, CalendarPlus, FileText, CreditCard, Phone, MessageSquare, UserCheck, Filter, X, Eye } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, History, Users, Loader2, ShoppingCart, CalendarPlus, FileText, CreditCard, Phone, MessageSquare, UserCheck, Filter, X, Eye, Ticket } from 'lucide-react';
 import { format, parseISO, differenceInDays, differenceInYears, startOfMonth, endOfMonth, isBefore, isAfter } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -106,6 +106,7 @@ export default function CustomersPage() {
   const [salesListCustomer, setSalesListCustomer] = useState<DbCustomer | null>(null);
   const [salesListHistoryOpen, setSalesListHistoryOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [sessionCreditsCustomer, setSessionCreditsCustomer] = useState<DbCustomer | null>(null);
   useFormGuard(dialogOpen);
 
   // Fetch installment data for all customers
@@ -153,6 +154,19 @@ export default function CustomersPage() {
       const { data } = await supabase
         .from('product_sales')
         .select('*, products(name)')
+        .eq('salon_id', currentSalonId!);
+      return data || [];
+    },
+    enabled: !!currentSalonId,
+  });
+
+  // Fetch session credits
+  const { data: sessionCredits = [] } = useQuery({
+    queryKey: ['session_credits', currentSalonId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('customer_session_credits')
+        .select('*, services(name)')
         .eq('salon_id', currentSalonId!);
       return data || [];
     },
@@ -694,7 +708,10 @@ export default function CustomersPage() {
             </ContextMenuSubContent>
           </ContextMenuSub>
           <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => openHistory(c)}>
-            <History className="h-4 w-4" /> Seans Geçmişi
+            <History className="h-4 w-4" /> Randevu Geçmişi
+          </ContextMenuItem>
+          <ContextMenuItem className="gap-2 cursor-pointer" onClick={() => setSessionCreditsCustomer(c)}>
+            <Ticket className="h-4 w-4" /> Seans Hakları
           </ContextMenuItem>
           <ContextMenuSub>
             <ContextMenuSubTrigger className="gap-2">
@@ -970,6 +987,27 @@ export default function CustomersPage() {
                   </div>
                 );
               })()}
+              {(() => {
+                const credits = sessionCredits.filter((sc: any) => sc.customer_id === detailCustomer.id);
+                if (credits.length === 0) return null;
+                return (
+                  <div className="border-t pt-3">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase flex items-center gap-1">
+                      <Ticket className="h-3.5 w-3.5" /> Seans Hakları
+                    </p>
+                    {credits.map((sc: any, i: number) => (
+                      <div key={i} className="flex justify-between py-1.5 text-xs border-b border-border/30 last:border-0">
+                        <span className="font-medium">{sc.services?.name || 'Bilinmeyen'}</span>
+                        <span>
+                          <span className="text-emerald-600 font-semibold">{sc.remaining_sessions}</span>
+                          <span className="text-muted-foreground"> / {sc.total_sessions} kalan</span>
+                          {sc.used_sessions > 0 && <span className="text-muted-foreground ml-1">({sc.used_sessions} kullanıldı)</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </DialogContent>
@@ -1046,6 +1084,48 @@ export default function CustomersPage() {
               ))}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Session Credits Dialog */}
+      <Dialog open={!!sessionCreditsCustomer} onOpenChange={(open) => !open && setSessionCreditsCustomer(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ticket className="h-5 w-5 text-primary" /> {sessionCreditsCustomer?.name} — Seans Hakları
+            </DialogTitle>
+            <DialogDescription>Satın alınan hizmetlerin kalan seans hakları</DialogDescription>
+          </DialogHeader>
+          {sessionCreditsCustomer && (() => {
+            const credits = sessionCredits.filter((sc: any) => sc.customer_id === sessionCreditsCustomer.id);
+            if (credits.length === 0) return (
+              <div className="text-center py-8 text-muted-foreground">
+                <Ticket className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Seans hakkı bulunamadı</p>
+              </div>
+            );
+            return (
+              <div className="space-y-2">
+                {credits.map((sc: any) => (
+                  <div key={sc.id} className="flex justify-between items-center p-3.5 rounded-xl bg-muted/30 border border-transparent hover:border-border/40 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium">{sc.services?.name || 'Bilinmeyen Hizmet'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Toplam: {sc.total_sessions} seans
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold">
+                        <span className={sc.remaining_sessions > 0 ? 'text-emerald-600' : 'text-muted-foreground'}>{sc.remaining_sessions}</span>
+                        <span className="text-muted-foreground font-normal"> kalan</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">{sc.used_sessions} kullanıldı</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

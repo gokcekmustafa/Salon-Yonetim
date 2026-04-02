@@ -270,11 +270,26 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
         }
       }
 
+      // Create session credits for service sales
+      if (customerId) {
+        for (const item of serviceItems) {
+          await supabase.from('customer_session_credits').insert({
+            salon_id: salonId,
+            customer_id: customerId,
+            service_id: item.service_id,
+            total_sessions: item.quantity,
+            used_sessions: 0,
+            remaining_sessions: item.quantity,
+          } as any);
+        }
+      }
+
       qc.invalidateQueries({ queryKey: ['products', salonId] });
       qc.invalidateQueries({ queryKey: ['services', salonId] });
       qc.invalidateQueries({ queryKey: ['cash_transactions'] });
       qc.invalidateQueries({ queryKey: ['product_sales'] });
       qc.invalidateQueries({ queryKey: ['service_sales'] });
+      qc.invalidateQueries({ queryKey: ['session_credits'] });
       logAction({ action: 'create', target_type: 'sale', target_label: customerName || '', details: { services: serviceItems.length, products: productItems.length, total: grandTotal, method } });
       toast.success('Satış tamamlandı');
       setServiceItems([]);
