@@ -175,6 +175,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
       toast.error('Ad ve telefon zorunludur.');
       return;
     }
+    if (!requireBranchForAction()) return;
     setStep(2);
   };
 
