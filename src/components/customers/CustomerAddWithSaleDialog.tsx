@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { useFormGuard } from '@/hooks/useFormGuard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
