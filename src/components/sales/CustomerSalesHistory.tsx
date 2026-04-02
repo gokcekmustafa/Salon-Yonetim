@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, History, ShoppingCart, Scissors, Package, Trash2, Pencil, AlertTriangle } from 'lucide-react';
+import { Loader2, History, ShoppingCart, Scissors, Package, Trash2, Pencil, AlertTriangle, CalendarX } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -30,6 +31,7 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
   const [editQuantity, setEditQuantity] = useState('1');
   const [editUnitPrice, setEditUnitPrice] = useState('0');
   const [editSaving, setEditSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ sale: any; type: 'service' | 'product'; linkedAppointments: any[] } | null>(null);
 
   const { data: serviceSales = [], isLoading: loadingServices } = useQuery({
     queryKey: ['service_sales', currentSalonId, customerId],
@@ -100,10 +102,37 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
     }
   };
 
-  const handleDeleteServiceSale = async (sale: any) => {
-    if (!confirm('Bu satışı silmek istediğinize emin misiniz?')) return;
+  const prepareDeleteServiceSale = async (sale: any) => {
+    // Find linked appointments for this customer + service
+    const { data: linkedAppts } = await supabase
+      .from('appointments')
+      .select('id, start_time, status, staff:staff(name), rooms:room_id(name)')
+      .eq('salon_id', currentSalonId!)
+      .eq('customer_id', customerId)
+      .eq('service_id', sale.service_id);
+    setDeleteConfirm({ sale, type: 'service', linkedAppointments: linkedAppts || [] });
+  };
+
+  const executeDeleteServiceSale = async () => {
+    if (!deleteConfirm || deleteConfirm.type !== 'service') return;
+    const sale = deleteConfirm.sale;
+    const linkedAppts = deleteConfirm.linkedAppointments;
+    setDeleteConfirm(null);
     setDeleting(sale.id);
     try {
+      // Delete linked appointments and their payments
+      if (linkedAppts.length > 0) {
+        const apptIds = linkedAppts.map((a: any) => a.id);
+        // Delete payments linked to these appointments
+        for (const apptId of apptIds) {
+          await supabase.from('payments').delete().eq('appointment_id', apptId).eq('salon_id', currentSalonId!);
+        }
+        // Delete the appointments
+        for (const apptId of apptIds) {
+          await supabase.from('appointments').delete().eq('id', apptId);
+        }
+      }
+
       // Delete related installments if payment_method is installment
       if (sale.payment_method === 'installment') {
         const { data: instData } = await supabase
@@ -125,15 +154,16 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
         await deleteCashTransaction(serviceName);
       }
 
-      // Delete linked session credits
+      // Delete linked session credits (even if used)
       await supabase.from('customer_session_credits').delete().eq('service_sale_id', sale.id);
 
       const { error } = await supabase.from('service_sales').delete().eq('id', sale.id);
       if (error) throw error;
       invalidateAllSaleQueries();
       qc.invalidateQueries({ queryKey: ['session_credits'] });
+      qc.invalidateQueries({ queryKey: ['appointments'] });
       logAction({ action: 'delete', target_type: 'service_sale', target_id: sale.id, target_label: `${customerName} - ${serviceName}` });
-      toast.success('Satış silindi');
+      toast.success(`Satış${linkedAppts.length > 0 ? `, ${linkedAppts.length} randevu` : ''} ve seans hakları silindi`);
     } catch (e: any) {
       toast.error(e.message || 'Satış silinemedi');
     } finally {
@@ -141,8 +171,14 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
     }
   };
 
-  const handleDeleteProductSale = async (sale: any) => {
-    if (!confirm('Bu satışı silmek istediğinize emin misiniz?')) return;
+  const prepareDeleteProductSale = (sale: any) => {
+    setDeleteConfirm({ sale, type: 'product', linkedAppointments: [] });
+  };
+
+  const executeDeleteProductSale = async () => {
+    if (!deleteConfirm || deleteConfirm.type !== 'product') return;
+    const sale = deleteConfirm.sale;
+    setDeleteConfirm(null);
     setDeleting(sale.id);
     try {
       // Restore stock
@@ -259,7 +295,7 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(s, 'service')}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={deleting === s.id} onClick={() => handleDeleteServiceSale(s)}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={deleting === s.id} onClick={() => prepareDeleteServiceSale(s)}>
                             {deleting === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                           </Button>
                         </div>
@@ -291,7 +327,7 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(s, 'product')}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={deleting === s.id} onClick={() => handleDeleteProductSale(s)}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={deleting === s.id} onClick={() => prepareDeleteProductSale(s)}>
                             {deleting === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                           </Button>
                         </div>
@@ -335,6 +371,58 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Satışı Silmek İstediğinize Emin Misiniz?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Bu işlem geri alınamaz. Aşağıdakiler de silinecektir:</p>
+                <ul className="list-disc list-inside text-sm space-y-1">
+                  <li>Satışa bağlı tüm seans hakları (kullanılmış dahil)</li>
+                  {deleteConfirm?.type === 'service' && deleteConfirm.linkedAppointments.length > 0 && (
+                    <li className="text-destructive font-medium">
+                      <CalendarX className="h-3.5 w-3.5 inline mr-1" />
+                      {deleteConfirm.linkedAppointments.length} adet bağlı randevu silinecek
+                    </li>
+                  )}
+                  <li>İlgili kasa hareketleri</li>
+                  {deleteConfirm?.sale?.payment_method === 'installment' && (
+                    <li>Taksit planı ve ödemeleri</li>
+                  )}
+                </ul>
+                {deleteConfirm?.type === 'service' && deleteConfirm.linkedAppointments.length > 0 && (
+                  <div className="mt-2 p-2 rounded border bg-muted/50 max-h-32 overflow-y-auto">
+                    <p className="text-xs font-semibold mb-1">Silinecek Randevular:</p>
+                    {deleteConfirm.linkedAppointments.map((a: any) => (
+                      <p key={a.id} className="text-xs text-muted-foreground">
+                        {format(new Date(a.start_time), 'd MMM yyyy HH:mm', { locale: tr })} — {a.status}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteConfirm?.type === 'service') executeDeleteServiceSale();
+                else if (deleteConfirm?.type === 'product') executeDeleteProductSale();
+              }}
+            >
+              Evet, Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
