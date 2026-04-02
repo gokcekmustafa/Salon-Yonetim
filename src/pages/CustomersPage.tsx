@@ -143,6 +143,19 @@ export default function CustomersPage() {
     enabled: !!currentSalonId,
   });
 
+  // Fetch product_sales for sales list
+  const { data: productSalesAll = [] } = useQuery({
+    queryKey: ['product_sales_all', currentSalonId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('product_sales')
+        .select('*, products(name)')
+        .eq('salon_id', currentSalonId!);
+      return data || [];
+    },
+    enabled: !!currentSalonId,
+  });
+
   useEffect(() => {
     if (searchParams.get('yeni') === '1' && !loading) {
       setEditing(null);
