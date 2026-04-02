@@ -1089,43 +1089,14 @@ export default function CustomersPage() {
 
       {/* Session Credits Dialog */}
       <Dialog open={!!sessionCreditsCustomer} onOpenChange={(open) => !open && setSessionCreditsCustomer(null)}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Ticket className="h-5 w-5 text-primary" /> {sessionCreditsCustomer?.name} — Seans Hakları
             </DialogTitle>
-            <DialogDescription>Satın alınan hizmetlerin kalan seans hakları</DialogDescription>
+            <DialogDescription>Satın alınan hizmetlerin seans hakları ve kullanım geçmişi</DialogDescription>
           </DialogHeader>
-          {sessionCreditsCustomer && (() => {
-            const credits = sessionCredits.filter((sc: any) => sc.customer_id === sessionCreditsCustomer.id);
-            if (credits.length === 0) return (
-              <div className="text-center py-8 text-muted-foreground">
-                <Ticket className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Seans hakkı bulunamadı</p>
-              </div>
-            );
-            return (
-              <div className="space-y-2">
-                {credits.map((sc: any) => (
-                  <div key={sc.id} className="flex justify-between items-center p-3.5 rounded-xl bg-muted/30 border border-transparent hover:border-border/40 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium">{sc.services?.name || 'Bilinmeyen Hizmet'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Toplam: {sc.total_sessions} seans
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold">
-                        <span className={sc.remaining_sessions > 0 ? 'text-emerald-600' : 'text-muted-foreground'}>{sc.remaining_sessions}</span>
-                        <span className="text-muted-foreground font-normal"> kalan</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">{sc.used_sessions} kullanıldı</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
+          {sessionCreditsCustomer && <SessionCreditsDetail customerId={sessionCreditsCustomer.id} sessionCredits={sessionCredits} appointments={appointments} services={services} staff={staff} rooms={rooms} />}
         </DialogContent>
       </Dialog>
 
