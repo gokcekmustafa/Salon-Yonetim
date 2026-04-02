@@ -160,6 +160,19 @@ export default function CustomersPage() {
     enabled: !!currentSalonId,
   });
 
+  // Fetch session credits
+  const { data: sessionCredits = [] } = useQuery({
+    queryKey: ['session_credits', currentSalonId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('customer_session_credits')
+        .select('*, services(name)')
+        .eq('salon_id', currentSalonId!);
+      return data || [];
+    },
+    enabled: !!currentSalonId,
+  });
+
   useEffect(() => {
     if (searchParams.get('yeni') === '1' && !loading) {
       setEditing(null);
