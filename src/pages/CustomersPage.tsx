@@ -965,19 +965,23 @@ export default function CustomersPage() {
       {saleCustomer && <CustomerSalesHistory open={salesHistoryOpen} onOpenChange={setSalesHistoryOpen} customerId={saleCustomer.id} customerName={saleCustomer.name} />}
       {installmentsCustomer && <CustomerInstallmentsPopup open={installmentsPopupOpen} onOpenChange={setInstallmentsPopupOpen} customerId={installmentsCustomer.id} customerName={installmentsCustomer.name} />}
 
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={(open) => { if (!saving) setDeleteConfirmOpen(open); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{deleteBlocked ? 'Müşteri Silinemez' : 'Müşteriyi Sil'}</AlertDialogTitle>
+            <AlertDialogTitle>Müşteriyi Sil</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteBlocked
-                ? `"${customerToDelete?.name}" adlı müşterinin ileri tarihli aktif randevusu bulunmaktadır.`
-                : `"${customerToDelete?.name}" adlı müşteriyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
+              <strong>"{customerToDelete?.name}"</strong> adlı müşteriyi silmek istediğinize emin misiniz?
+              <br /><br />
+              Bu işlemle birlikte müşteriye ait <strong>tüm randevular, ödemeler, taksit planları, satışlar, sözleşmeler ve kasa hareketleri</strong> kalıcı olarak silinecektir.
+              <br /><br />
+              <span className="text-destructive font-medium">Bu işlem geri alınamaz.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            {!deleteBlocked && <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sil</AlertDialogAction>}
+            <AlertDialogCancel disabled={saving}>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} disabled={saving} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Siliniyor...</> : 'Evet, Sil'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
