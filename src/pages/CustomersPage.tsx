@@ -357,12 +357,46 @@ export default function CustomersPage() {
   };
 
   const confirmDelete = async () => {
-    if (!customerToDelete) return;
-    await deleteCustomer(customerToDelete.id);
-    logAction({ action: 'delete', target_type: 'customer', target_id: customerToDelete.id, target_label: customerToDelete.name });
-    toast.success('Müşteri silindi.');
-    setDeleteConfirmOpen(false);
-    setCustomerToDelete(null);
+    if (!customerToDelete || !currentSalonId) return;
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.rpc('delete_customer_cascade', {
+        _customer_id: customerToDelete.id,
+        _salon_id: currentSalonId,
+      });
+      if (error) {
+        toast.error('Müşteri silinemedi: ' + error.message);
+        setSaving(false);
+        return;
+      }
+      const result = data as any;
+      if (result && result.success === false) {
+        toast.error(result.error || 'Müşteri silinemedi.');
+        setSaving(false);
+        return;
+      }
+      logAction({ action: 'delete', target_type: 'customer', target_id: customerToDelete.id, target_label: customerToDelete.name, details: result });
+      const parts: string[] = [];
+      if (result?.deleted_appointments > 0) parts.push(`${result.deleted_appointments} randevu`);
+      if (result?.deleted_payments > 0) parts.push(`${result.deleted_payments} ödeme`);
+      if (result?.deleted_installments > 0) parts.push(`${result.deleted_installments} taksit planı`);
+      if (result?.deleted_service_sales > 0) parts.push(`${result.deleted_service_sales} hizmet satışı`);
+      if (result?.deleted_product_sales > 0) parts.push(`${result.deleted_product_sales} ürün satışı`);
+      if (result?.deleted_contracts > 0) parts.push(`${result.deleted_contracts} sözleşme`);
+      if (result?.deleted_cash_transactions > 0) parts.push(`${result.deleted_cash_transactions} kasa hareketi`);
+      const detail = parts.length > 0 ? ` (${parts.join(', ')} silindi)` : '';
+      toast.success(`Müşteri "${customerToDelete.name}" ve tüm bağlantılı verileri silindi.${detail}`);
+      // Trigger refetch to update all data
+      const { refetch } = await import('@/hooks/useBranchFilteredData').then(() => ({ refetch: null }));
+      // Force page data refresh by calling the parent refetch
+      window.dispatchEvent(new CustomEvent('salon-data-refresh'));
+    } catch (err: any) {
+      toast.error('Müşteri silinirken bir hata oluştu: ' + (err?.message || 'Bilinmeyen hata'));
+    } finally {
+      setSaving(false);
+      setDeleteConfirmOpen(false);
+      setCustomerToDelete(null);
+    }
   };
 
   const openHistory = (c: DbCustomer) => { setSelectedCustomer(c); setHistoryOpen(true); };
