@@ -130,6 +130,7 @@ export default function StaffAddForm({ open, onOpenChange, branches, onSuccess }
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Yeni Personel Ekle</DialogTitle>
+          <DialogDescription>Personel bilgilerini girerek yeni bir personel kaydı oluşturun.</DialogDescription>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-2">
