@@ -900,7 +900,59 @@ export default function CustomersPage() {
         </CardContent>
       </Card>
 
-      {/* Detail Dialog */}
+      {/* Sales List Section */}
+      <Card className="shadow-soft border-border/60 mt-4">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-primary" /> Satış Listesi
+              <Badge variant="secondary" className="text-xs">{salesListCustomers.length}</Badge>
+            </h2>
+            <Select value={salesListSort} onValueChange={(v: 'newest' | 'oldest') => setSalesListSort(v)}>
+              <SelectTrigger className="w-36 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">En Yeni</SelectItem>
+                <SelectItem value="oldest">En Eski</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {salesListCustomers.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Henüz satış kaydı yok</p>
+            </div>
+          ) : (
+            <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
+              {salesListCustomers.map((item) => (
+                <div
+                  key={item.customer.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-transparent hover:border-border/40 cursor-pointer transition-colors"
+                  onClick={() => {
+                    setSalesListCustomer(item.customer);
+                    setSalesListHistoryOpen(true);
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary text-xs font-bold">
+                      {item.customer.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-primary hover:underline">{item.customer.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.saleCount} satış • Son: {format(parseISO(item.lastSaleDate), 'dd.MM.yyyy', { locale: tr })}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-bold whitespace-nowrap">{item.totalAmount.toLocaleString('tr-TR')} ₺</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Dialog open={!!detailCustomer} onOpenChange={(open) => !open && setDetailCustomer(null)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
