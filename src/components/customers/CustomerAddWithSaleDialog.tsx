@@ -67,6 +67,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
   const [pendingSaleTotal, setPendingSaleTotal] = useState(0);
   const [createdCustomerId, setCreatedCustomerId] = useState<string | null>(null);
   const installmentCompletionRef = useRef(false);
+  const skipDraftCleanupOnCloseRef = useRef(false);
 
   useFormGuard(open);
 
@@ -154,10 +155,13 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
   };
 
   const handleClose = (open: boolean) => {
-    if (!open && createdCustomerId) {
+    if (!open && !skipDraftCleanupOnCloseRef.current && createdCustomerId) {
       void cleanupDraftCustomer(createdCustomerId);
     }
-    if (!open) resetAll();
+    if (!open) {
+      skipDraftCleanupOnCloseRef.current = false;
+      resetAll();
+    }
     onOpenChange(open);
   };
 
@@ -332,6 +336,7 @@ export function CustomerAddWithSaleDialog({ open, onOpenChange, onCompleted, sta
       logAction({ action: 'create', target_type: 'sale', target_label: form.name, details: { services: serviceItems.length, products: productItems.length, total: grandTotal, method } });
       toast.success(`Müşteri "${form.name}" oluşturuldu ve satış tamamlandı.`);
 
+      skipDraftCleanupOnCloseRef.current = true;
       setCreatedCustomerId(null);
       onCompleted({ customerId: custId, customerName: form.name, serviceIds: soldServiceIds });
       handleClose(false);
