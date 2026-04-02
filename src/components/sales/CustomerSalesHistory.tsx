@@ -31,6 +31,7 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
   const [editQuantity, setEditQuantity] = useState('1');
   const [editUnitPrice, setEditUnitPrice] = useState('0');
   const [editSaving, setEditSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ sale: any; type: 'service' | 'product'; linkedAppointments: any[] } | null>(null);
 
   const { data: serviceSales = [], isLoading: loadingServices } = useQuery({
     queryKey: ['service_sales', currentSalonId, customerId],
