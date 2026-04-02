@@ -289,7 +289,7 @@ export function CustomerSalesHistory({ open, onOpenChange, customerId, customerN
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(s, 'service')}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={deleting === s.id} onClick={() => handleDeleteServiceSale(s)}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={deleting === s.id} onClick={() => prepareDeleteServiceSale(s)}>
                             {deleting === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                           </Button>
                         </div>
