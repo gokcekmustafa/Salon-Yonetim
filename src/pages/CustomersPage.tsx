@@ -176,9 +176,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     if (searchParams.get('yeni') === '1' && !loading) {
-      setEditing(null);
-      setForm(emptyForm);
-      setDialogOpen(true);
+      setAddDialogOpen(true);
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, loading]);
