@@ -160,6 +160,7 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
 
   const handleSave = async () => {
     if (!salonId || !user || (serviceItems.length === 0 && productItems.length === 0)) return;
+    if (!requireBranchForAction()) return;
 
     if (paymentMethod === 'installment') {
       if (!customerId) {
