@@ -341,7 +341,7 @@ export default function CustomersPage() {
     const matchName = !nameSearch || c.name.toLowerCase().includes(nameSearch.toLowerCase());
     const matchPhone = !phoneSearch || (c.phone || '').includes(phoneSearch) || (c.secondary_phone || '').includes(phoneSearch);
     const matchTc = !tcSearch || (c.tc_kimlik_no || '').includes(tcSearch);
-    const matchTab = tabFilter === 'all' || c.customer_type === tabFilter;
+    const matchTab = tabFilter === 'all' || c.customer_type === tabFilter || (tabFilter === 'installment' && c.customer_type === 'cash');
     return matchName && matchPhone && matchTc && matchTab;
   });
 
