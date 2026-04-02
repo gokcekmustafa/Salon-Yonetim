@@ -79,7 +79,7 @@ function getPaymentMethodLabel(m: string) {
 export default function CustomersPage() {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
-  const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, payments, loading } = useBranchFilteredData();
+  const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, payments, loading, refetch } = useBranchFilteredData();
   const { currentSalonId } = useAuth();
   const { logAction } = useAuditLog();
   const [searchParams, setSearchParams] = useSearchParams();
