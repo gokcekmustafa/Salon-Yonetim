@@ -79,7 +79,7 @@ function getPaymentMethodLabel(m: string) {
 export default function CustomersPage() {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
-  const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, payments, loading } = useBranchFilteredData();
+  const { customers, addCustomer, updateCustomer, deleteCustomer, appointments, services, staff, payments, loading, refetch } = useBranchFilteredData();
   const { currentSalonId } = useAuth();
   const { logAction } = useAuditLog();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -357,12 +357,43 @@ export default function CustomersPage() {
   };
 
   const confirmDelete = async () => {
-    if (!customerToDelete) return;
-    await deleteCustomer(customerToDelete.id);
-    logAction({ action: 'delete', target_type: 'customer', target_id: customerToDelete.id, target_label: customerToDelete.name });
-    toast.success('Müşteri silindi.');
-    setDeleteConfirmOpen(false);
-    setCustomerToDelete(null);
+    if (!customerToDelete || !currentSalonId) return;
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.rpc('delete_customer_cascade', {
+        _customer_id: customerToDelete.id,
+        _salon_id: currentSalonId,
+      });
+      if (error) {
+        toast.error('Müşteri silinemedi: ' + error.message);
+        setSaving(false);
+        return;
+      }
+      const result = data as any;
+      if (result && result.success === false) {
+        toast.error(result.error || 'Müşteri silinemedi.');
+        setSaving(false);
+        return;
+      }
+      logAction({ action: 'delete', target_type: 'customer', target_id: customerToDelete.id, target_label: customerToDelete.name, details: result });
+      const parts: string[] = [];
+      if (result?.deleted_appointments > 0) parts.push(`${result.deleted_appointments} randevu`);
+      if (result?.deleted_payments > 0) parts.push(`${result.deleted_payments} ödeme`);
+      if (result?.deleted_installments > 0) parts.push(`${result.deleted_installments} taksit planı`);
+      if (result?.deleted_service_sales > 0) parts.push(`${result.deleted_service_sales} hizmet satışı`);
+      if (result?.deleted_product_sales > 0) parts.push(`${result.deleted_product_sales} ürün satışı`);
+      if (result?.deleted_contracts > 0) parts.push(`${result.deleted_contracts} sözleşme`);
+      if (result?.deleted_cash_transactions > 0) parts.push(`${result.deleted_cash_transactions} kasa hareketi`);
+      const detail = parts.length > 0 ? ` (${parts.join(', ')} silindi)` : '';
+      toast.success(`Müşteri "${customerToDelete.name}" ve tüm bağlantılı verileri silindi.${detail}`);
+      await refetch();
+    } catch (err: any) {
+      toast.error('Müşteri silinirken bir hata oluştu: ' + (err?.message || 'Bilinmeyen hata'));
+    } finally {
+      setSaving(false);
+      setDeleteConfirmOpen(false);
+      setCustomerToDelete(null);
+    }
   };
 
   const openHistory = (c: DbCustomer) => { setSelectedCustomer(c); setHistoryOpen(true); };
@@ -934,19 +965,23 @@ export default function CustomersPage() {
       {saleCustomer && <CustomerSalesHistory open={salesHistoryOpen} onOpenChange={setSalesHistoryOpen} customerId={saleCustomer.id} customerName={saleCustomer.name} />}
       {installmentsCustomer && <CustomerInstallmentsPopup open={installmentsPopupOpen} onOpenChange={setInstallmentsPopupOpen} customerId={installmentsCustomer.id} customerName={installmentsCustomer.name} />}
 
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={(open) => { if (!saving) setDeleteConfirmOpen(open); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{deleteBlocked ? 'Müşteri Silinemez' : 'Müşteriyi Sil'}</AlertDialogTitle>
+            <AlertDialogTitle>Müşteriyi Sil</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteBlocked
-                ? `"${customerToDelete?.name}" adlı müşterinin ileri tarihli aktif randevusu bulunmaktadır.`
-                : `"${customerToDelete?.name}" adlı müşteriyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
+              <strong>"{customerToDelete?.name}"</strong> adlı müşteriyi silmek istediğinize emin misiniz?
+              <br /><br />
+              Bu işlemle birlikte müşteriye ait <strong>tüm randevular, ödemeler, taksit planları, satışlar, sözleşmeler ve kasa hareketleri</strong> kalıcı olarak silinecektir.
+              <br /><br />
+              <span className="text-destructive font-medium">Bu işlem geri alınamaz.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            {!deleteBlocked && <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sil</AlertDialogAction>}
+            <AlertDialogCancel disabled={saving}>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} disabled={saving} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Siliniyor...</> : 'Evet, Sil'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
