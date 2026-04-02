@@ -60,14 +60,12 @@ function getRowColorClass(customerType: string, hasDebt: boolean): string {
   if (hasDebt) return 'bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30';
   if (customerType === 'installment') return 'bg-emerald-50/60 dark:bg-emerald-950/15 hover:bg-emerald-100/80 dark:hover:bg-emerald-950/25';
   if (customerType === 'single_session') return 'bg-sky-50/60 dark:bg-sky-950/15 hover:bg-sky-100/80 dark:hover:bg-sky-950/25';
-  if (customerType === 'cash') return 'bg-amber-50/60 dark:bg-amber-950/15 hover:bg-amber-100/80 dark:hover:bg-amber-950/25';
   return '';
 }
 
 function getStatusBadge(customerType: string) {
   if (customerType === 'single_session') return { label: 'Tek Seans', className: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border-sky-200 dark:border-sky-800' };
-  if (customerType === 'cash') return { label: 'Peşin', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800' };
-  return { label: 'Taksitli', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' };
+  return { label: 'Paket', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' };
 }
 
 function getPaymentMethodLabel(m: string) {
