@@ -2270,6 +2270,10 @@ export type Database = {
         Args: { _permission: string; _salon_id: string }
         Returns: boolean
       }
+      delete_customer_cascade: {
+        Args: { _customer_id: string; _salon_id: string }
+        Returns: Json
+      }
       get_email_by_username: { Args: { _username: string }; Returns: string }
       get_staff_branch: {
         Args: { _salon_id: string; _user_id: string }
