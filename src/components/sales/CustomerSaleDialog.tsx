@@ -275,16 +275,17 @@ export function CustomerSaleDialog({ open, onOpenChange, onSaleCompleted, custom
         }
       }
 
-      // Create session credits for service sales
+      // Create session credits for service sales (linked to sale)
       if (customerId) {
-        for (const item of serviceItems) {
+        for (const entry of serviceSaleIds) {
           await supabase.from('customer_session_credits').insert({
             salon_id: salonId,
             customer_id: customerId,
-            service_id: item.service_id,
-            total_sessions: item.quantity,
+            service_id: entry.service_id,
+            total_sessions: entry.quantity,
             used_sessions: 0,
-            remaining_sessions: item.quantity,
+            remaining_sessions: entry.quantity,
+            service_sale_id: entry.sale_id,
           } as any);
         }
       }
