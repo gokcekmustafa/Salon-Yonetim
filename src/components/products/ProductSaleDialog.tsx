@@ -87,6 +87,7 @@ export function ProductSaleDialog({ open, onOpenChange, paymentMethod = 'cash', 
 
   const handleSave = async () => {
     if (!salonId || !user || items.length === 0) return;
+    if (!requireBranchForAction()) return;
     setSaving(true);
     try {
       for (const item of items) {
